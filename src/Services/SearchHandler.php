@@ -4,6 +4,7 @@ namespace NSWDPC\Search\Typesense\Services;
 
 use ElliotSawyer\SilverstripeTypesense\Collection;
 use ElliotSawyer\SilverstripeTypesense\Typesense;
+use NSWDPC\Search\Typesense\Models\Result;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Control\Controller;
 use SilverStripe\Core\Injector\Injectable;
@@ -24,6 +25,7 @@ class SearchHandler {
     protected int $perPage = 10;
 
     private static bool $log_queries = false;
+
     private static string $log_level = "INFO";
 
     public function  __construct(int $pageLength = 0, int $perPage = 10) {
@@ -109,7 +111,7 @@ class SearchHandler {
                 $result = [];
                 $result = array_merge($result, (array)$hit['document']);
                 $results->push(
-                    ArrayData::create($result)
+                    Result::create($result)
                 );
             }
             return $results;
