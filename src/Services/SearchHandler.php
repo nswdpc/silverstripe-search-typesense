@@ -4,6 +4,7 @@ namespace NSWDPC\Search\Typesense\Services;
 
 use ElliotSawyer\SilverstripeTypesense\Collection;
 use ElliotSawyer\SilverstripeTypesense\Typesense;
+use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Control\Controller;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\ORM\ArrayList;
@@ -15,14 +16,19 @@ use SilverStripe\View\ArrayData;
  */
 class SearchHandler {
 
+    use Configurable;
     use Injectable;
 
     protected int $pageLength = 0;
 
     protected int $perPage = 10;
 
-    public function  __construct(int $pageLength = 0, int $perPage = 10) {
+    private static bool $log_queries = false;
+    private static string $log_level = "INFO";
 
+    public function  __construct(int $pageLength = 0, int $perPage = 10) {
+        $this->pageLength = abs($pageLength);
+        $this->perPage = abs($perPage);
     }
 
     public static function escapeString(string $string): string {
@@ -67,14 +73,13 @@ class SearchHandler {
 
         $search = [];
         if(is_string($searchQuery)) {
+            // basic string search on multiple fields
             $searchParameters = [
                 'q' => $searchQuery,
                 'query_by' => implode(",", self::escapeArray($fieldsForSearch))
             ];
-            // allow custom argument setting
-            $searchParameters = array_merge($searchParameters, $typesenseArgs);
-            $search = $client->collections[$collectionName]->documents->search($searchParameters);
         } else {
+            // Search in all fields and filter by fields
             // v26
             //Ref: https://github.com/typesense/typesense/issues/561
             //Ref: https://github.com/typesense/typesense/issues/696#issuecomment-1985042336
@@ -85,15 +90,18 @@ class SearchHandler {
             $filterBy = [];
             foreach($searchQuery as $field => $value) {
                 //TODO escaping
+                //TODO operations
                 $filterBy[] = "{$field}:*{$value}*";
             }
             if($filterBy !== []) {
                 $searchParameters['filter_by'] = implode(" || ", $filterBy);
-                // allow custom argument setting
-                $searchParameters = array_merge($searchParameters, $typesenseArgs);
-                $search = $client->collections[$collectionName]->documents->search($searchParameters);
             }
         }
+
+        // allow custom argument setting
+        $searchParameters = array_merge($searchParameters, $typesenseArgs);
+        $this->logQuery($searchParameters, $collectionName);
+        $search = $client->collections[$collectionName]->documents->search($searchParameters);
 
         // handle results
         if(isset($search['hits'])) {
@@ -134,8 +142,21 @@ class SearchHandler {
             $searchRequests = array_merge($searchRequests, $typesenseArgs);
             $commonSearchParams = [];
             $client = Typesense::client();
+            $this->logQuery($searchRequests);
             $search = $client->multiSearch->perform($searchRequests, $commonSearchParams);
         }
         return $search;
+    }
+
+    /**
+     * Log queries, if enabled
+     */
+    protected function logQuery(array $query, string $collectionName = ''): bool {
+        if(!self::config()->get('log_queries')) {
+            return false;
+        } else {
+            Logger::log("Query:" . json_encode($query) . " Collection:" . $collectionName, self::config()->get('log_level'));
+            return true;
+        }
     }
 }

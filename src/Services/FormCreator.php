@@ -8,8 +8,8 @@ use Codem\Utilities\HTML5\DateField;
 use Codem\Utilities\HTML5\DatetimeField;
 use ElliotSawyer\SilverstripeTypesense\Collection;
 use ElliotSawyer\SilverstripeTypesense\Field;
-use NSWDPC\Search\Forms\AdvancedSearchForm;
-use NSWDPC\Search\Forms\SearchForm;
+use NSWDPC\Search\Forms\Forms\AdvancedSearchForm;
+use NSWDPC\Search\Forms\Forms\SearchForm;
 use SilverStripe\Control\Controller;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\FieldList;
@@ -33,30 +33,30 @@ abstract class FormCreator {
             $form = SearchForm::create(
                 $controller,
                 'SearchForm',
-                FieldList::create(
+                FieldList::create([
                     TextField::create(
                         'Search',
                         _t(self::class . '.SEARCH_TERM_LABEL', 'Search for')
                     )
-                ),
-                FieldList::create(
+                ]),
+                FieldList::create([
                     FormAction::create(
                         'doSearch',
                         'Search'
                     )
-                )
+                ])
             );
         } else {
             $form = AdvancedSearchForm::create(
                 $controller,
                 'SearchForm',
-                FieldList::create(),
-                FieldList::create(
+                FieldList::create([]),
+                FieldList::create([
                     FormAction::create(
                         'doSearch',
                         'Search'
                     )
-                )
+                ])
             );
             $form = self::getFields($collection, $form);
         }
