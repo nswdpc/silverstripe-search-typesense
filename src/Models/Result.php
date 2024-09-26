@@ -21,6 +21,9 @@ class Result extends ViewableData {
 
     protected array $result;
 
+    /**
+     * Create a result using a hit from the search results returned from Typesense
+     */
     public function  __construct(array $result) {
         $this->result = $result;
     }
