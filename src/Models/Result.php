@@ -20,12 +20,20 @@ class Result extends ViewableData {
     private static string $template = "";
 
     protected array $result;
+    protected array $highlight;
+    protected array $highlights;
+    protected int $text_match;
+    protected array $text_match_info;
 
     /**
      * Create a result using a hit from the search results returned from Typesense
      */
-    public function  __construct(array $result) {
+    public function  __construct(array $result, array $highlight, array $highlights, int $text_match, array $text_match_info) {
         $this->result = $result;
+        $this->highlight = $highlight;
+        $this->highlights = $highlights;
+        $this->text_match = $text_match;
+        $this->text_match_info = $text_match_info;
     }
 
     public function forTemplate() {
@@ -49,5 +57,13 @@ class Result extends ViewableData {
 
     public function __isset($name) {
         return array_key_exists($name, $this->result);
+    }
+
+    public function TypesenseSearchResult(): ?TypesenseSearchResult {
+        $result = null;
+        if(isset($this->result['TypesenseSearchResultData'])) {
+            $result = TypesenseSearchResult::create($this->result['TypesenseSearchResultData']);
+        }
+        return $result;
     }
 }

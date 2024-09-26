@@ -68,7 +68,13 @@ class SearchHandler {
             return null;
         }
 
-        $fieldsForSearch = $collection->Fields()->filter(['index' => 1])->column('name');
+        // TODO nested object, object[] search
+        $fieldsForSearch = $collection->Fields()
+            ->filter([
+                'index' => 1,
+                'type' => ['string','string[]'] // Only fields that have a datatype of string or string[] in the collection schema can be specified in query_by
+            ])
+            ->column('name');
         if($fieldsForSearch === []) {
             return null;
         }
@@ -109,9 +115,18 @@ class SearchHandler {
         if(isset($search['hits'])) {
             foreach($search['hits'] as $hit) {
                 $result = [];
-                $result = array_merge($result, (array)$hit['document']);
+                if(!isset($hit['document']) || !is_array($hit['document'])) {
+                    // skip if no result returned
+                    continue;
+                }
                 $results->push(
-                    Result::create($result)
+                    Result::create(
+                        $hit['document'],
+                        isset($hit['highlight']) && is_array($hit['highlight']) ? $hit['highlight'] : [],
+                        isset($hit['highlights']) && is_array($hit['highlights']) ? $hit['highlights'] : [],
+                        isset($hit['text_match']) && is_int($hit['text_match']) ? $hit['text_match'] : 0,
+                        isset($hit['text_match_info']) && is_array($hit['text_match_info']) ? $hit['text_match_info'] : []
+                    )
                 );
             }
             return $results;

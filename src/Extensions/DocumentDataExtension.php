@@ -4,7 +4,6 @@ namespace NSWDPC\Search\Typesense\Extensions;
 
 use SilverStripe\ORM\DataExtension;
 
-
 class DocumentDataExtension extends DataExtension {
 
     /**
@@ -16,7 +15,7 @@ class DocumentDataExtension extends DataExtension {
      */
     public function getTypesenseDocument(array $fields) {
 
-        \NSWDPC\Search\Typesense\Services\Logger::log("DocumentDataExtension - getTypesenseDocument", "DEBUG");
+        // \NSWDPC\Search\Typesense\Services\Logger::log("DocumentDataExtension - getTypesenseDocument", "DEBUG");
 
         $data = [];
         $owner = $this->getOwner();
