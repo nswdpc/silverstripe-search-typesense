@@ -45,6 +45,8 @@ class DocumentDataExtension extends DataExtension {
                 // deal with DB fields
                 $dbValue = $owner->dbObject($field['name']);
                 if($dbValue instanceof \SilverStripe\ORM\FieldType\DBHTMLText || $dbValue instanceof \SilverStripe\ORM\FieldType\DBHTMLVarchar) {
+                    // do not process shortcodes in this field
+                    $dbValue->setProcessShortcodes(false);
                     // HTML values are made Plain, so that HTML is not stored in the index
                     $value = $dbValue->Plain();
                 } else if ($field['type'] == 'int64' && ($dbValue instanceof \SilverStripe\ORM\FieldType\DBDate)) {
