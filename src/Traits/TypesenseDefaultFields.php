@@ -24,17 +24,4 @@ trait TypesenseDefaultFields
         return TypesenseSearchResult::create();
     }
 
-
-    /**
-    - { name: TypesenseResultPublicDate, type: int64, optional: true, index: false }
-    - { name: TypesenseResultTitle, type: string, index: false }
-    - { name: TypesenseResultLink, type: string, index: false }
-    - { name: TypesenseResultImageURL, type: string, optional: true, index: false }
-    - { name: TypesenseResultImageAlt, type: string, optional: true, index: false }
-    - { name: TypesenseResultPrimaryLabel, type: string, optional: true, index: false }
-    - { name: TypesenseResultLabels, type: 'string[]', optional: true, index: false }
-    - { name: TypesenseResultExtract, type: string, optional: true, index: false }
-    - { name: TypesenseResultInfo, type: string, optional: true, index: false }
-    **/
-
 }

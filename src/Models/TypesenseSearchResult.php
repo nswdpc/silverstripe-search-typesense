@@ -4,7 +4,9 @@ namespace NSWDPC\Search\Typesense\Models;
 
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\ORM\ArrayList;
+use SilverStripe\ORM\FieldType\DBDate;
 use SilverStripe\View\ArrayData;
+use SilverStripe\View\SSViewer;
 use SilverStripe\View\ViewableData;
 
 /**
@@ -39,8 +41,23 @@ class TypesenseSearchResult extends ViewableData {
         $this->data = $data;
     }
 
-    public function getField($name) {
+    /**
+     * Set custom data value
+     */
+    public function __set($name, $value) {
+        $this->data[$name] = $value;
+        return $this;
+    }
+
+    /**
+     * Allows templates to request values from this instance's data
+     */
+    public function __get($name) {
         return $this->data[$name] ?? null;
+    }
+
+    public function __isset($name) {
+        return array_key_exists($name, $this->data);
     }
 
     public function toArray() {
@@ -59,59 +76,6 @@ class TypesenseSearchResult extends ViewableData {
      */
     public function Highlight(): string {
         return $this->highlight;
-    }
-
-    /**
-     * The result title
-     */
-    public function Title(): ?string {
-        return $this->getField('Title');
-    }
-
-    /**
-     * The date stored must be a unix timestamp
-     */
-    public function Date(string $format = ''): ?string {
-        return $this->getField('Date');
-    }
-
-    public function Link(): ?string {
-        return $this->getField('Link');
-    }
-
-    public function ImageURL(): ?string {
-        return $this->getField('ImageURL');
-    }
-
-    public function ImageAlt(): ?string {
-        return $this->getField('ImageAlt');
-    }
-
-    public function Label(): ?string {
-        return $this->getField('Label');
-    }
-
-    public function Labels(): ArrayList {
-        $list = ArrayList::create();
-        $labels = $this->getField('Labels');
-        if(is_array($labels)) {
-            foreach($labels as $label) {
-                $list->push(
-                    ArrayData::create([
-                        'Title' => $label
-                    ])
-                );
-            }
-        }
-        return $list;
-    }
-
-    public function Abstract(): ?string {
-        return $this->getField('Abstract');
-    }
-
-    public function Context(): ?string {
-        return $this->getField('Context');
     }
 
 }

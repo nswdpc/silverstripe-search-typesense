@@ -5,10 +5,12 @@ namespace NSWDPC\Search\Typesense\Services;
 use ElliotSawyer\SilverstripeTypesense\Collection;
 use ElliotSawyer\SilverstripeTypesense\Typesense;
 use NSWDPC\Search\Typesense\Models\Result;
+use NSWDPC\Search\Typesense\Models\SearchResults;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Control\Controller;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\ORM\ArrayList;
+use SilverStripe\ORM\PaginatedList;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\View\ArrayData;
 
@@ -20,17 +22,25 @@ class SearchHandler {
     use Configurable;
     use Injectable;
 
-    protected int $pageLength = 0;
+    const MAX_PER_PAGE = 250;
 
-    protected int $perPage = 10;
+    const DEFAULT_PER_PAGE = 10;
 
     private static bool $log_queries = false;
 
     private static string $log_level = "INFO";
 
-    public function  __construct(int $pageLength = 0, int $perPage = 10) {
-        $this->pageLength = abs($pageLength);
-        $this->perPage = abs($perPage);
+    protected string $startVarName = 'start';
+
+    public function __construct(string $startVarName = 'start') {
+        if($startVarName === '') {
+            throw new \InvalidArgumentException('Start var name cannot be an empty string');
+        }
+        $this->startVarName = $startVarName;
+    }
+
+    public function getStartVarName(): string {
+        return $this->startVarName;
     }
 
     public static function escapeString(string $string): string {
@@ -55,15 +65,21 @@ class SearchHandler {
 
     /**
      * do a search using the input values from a form and the model used for configuration
+     * @param HTTPRequest $request the current request object
+     * @param Collection $collection
+     * @param array|string $searchQuery
+     * @param int $pageStart the start offset for the results, e.g 0, 10, 20 for 10 results per page
+     * @param int $perPage the number of items per page, cannot be more than 250. If <= 0 the default of 10 is used
      * @param array $typesenseArgs extra search arguments to do a custom search beyond what can be automatically determined
+     * @return PaginatedList|null
      */
-    public function doSearch(Collection $collection, array|string $searchQuery, array $typesenseArgs = []): ?ArrayList {
+    public function doSearch(Collection $collection, array|string $searchQuery, int $pageStart = 0, int $perPage = 10, array $typesenseArgs = []): ?SearchResults {
         $client = Typesense::client();
         $collectionName = '';
         if($collection instanceof Collection) {
             $collectionName = (string)$collection->Name;
         }
-        $results = ArrayList::create();
+
         if($collectionName === '') {
             return null;
         }
@@ -106,20 +122,35 @@ class SearchHandler {
             }
         }
 
+
+
+        // pagination parameters
+        // items per page
+        $perPage = $this->setPerPage($perPage);
+        // current page number (if perPage = 10, e.g 0 = 1, 1 = 2)
+        $pageNumber = floor($pageStart / $perPage) + 1;
+        $paginationParameters = [
+            'page' => $pageNumber,
+            'per_page' => $perPage
+        ];
+
         // allow custom argument setting
-        $searchParameters = array_merge($searchParameters, $typesenseArgs);
+        $searchParameters = array_merge($searchParameters, $paginationParameters, $typesenseArgs);
+
         $this->logQuery($searchParameters, $collectionName);
         $search = $client->collections[$collectionName]->documents->search($searchParameters);
 
         // handle results
-        if(isset($search['hits'])) {
+        if(isset($search['hits']) && is_array($search['hits'])) {
+
+            $list = ArrayList::create();
             foreach($search['hits'] as $hit) {
-                $result = [];
+
                 if(!isset($hit['document']) || !is_array($hit['document'])) {
                     // skip if no result returned
                     continue;
                 }
-                $results->push(
+                $list->push(
                     Result::create(
                         $hit['document'],
                         isset($hit['highlight']) && is_array($hit['highlight']) ? $hit['highlight'] : [],
@@ -129,6 +160,17 @@ class SearchHandler {
                     )
                 );
             }
+
+            $results = SearchResults::create($list);
+            $results->setResultData($search, ['hits']);
+            $results->setPaginationGetVar($this->startVarName);
+            // page length should be set before the current page number
+            // as pageStart depends on pageLength
+            $results->setPageLength($perPage);
+            $results->setCurrentPage($pageNumber);// will set pageStart
+            // total items found in the search (not total index size)
+            $results->setTotalItems($search['found']);
+
             return $results;
         } else {
             return null;
@@ -175,5 +217,18 @@ class SearchHandler {
             Logger::log("Query:" . json_encode($query) . " Collection:" . $collectionName, self::config()->get('log_level'));
             return true;
         }
+    }
+
+    public function setPerPage(int $perPage): int {
+        if($perPage > 250) {
+            $perPage = static::MAX_PER_PAGE;
+        } else if($perPage <= 0) {
+            $perPage = static::DEFAULT_PER_PAGE;// default used
+        }
+        return $perPage;
+    }
+
+    public function getPageNumber(): int {
+        return $this->pageNumber;
     }
 }
