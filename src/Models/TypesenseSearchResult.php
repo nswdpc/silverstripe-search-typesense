@@ -72,6 +72,36 @@ class TypesenseSearchResult extends ViewableData {
     }
 
     /**
+     * Helper method to return an array of labels as an ArrayList
+     */
+    public function LabelList(): ?ArrayList {
+        $labels = $this->Labels;
+        if(is_array($labels)) {
+            // remove empty values
+            $labels = array_filter($labels);
+            $list = ArrayList::create();
+            foreach($labels as $label) {
+                if(is_string($label) && $label !== "") {
+                    $list->push(ArrayData::create([
+                        'Name' => $label,
+                        'Title' => $label
+                    ]));
+                } else if(is_array($label)) {
+                    // label has some metadata like name, link, title
+                    $list->push(ArrayData::create([
+                        'Name' => $label['Name'] ?? '',
+                        'Link' => $label['Link'] ?? '',
+                        'Title' => $label['Title'] ?? '',
+                    ]));
+                }
+            }
+            return $list;
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Return a highlight text for the result
      */
     public function Highlight(): string {
