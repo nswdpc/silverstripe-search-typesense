@@ -20,7 +20,7 @@ use SilverStripe\View\ViewableData;
  * Link - the result link
  * ImageURL - the result image, if any
  * ImageAlt - the result image alt text, if any
- * Abstract - the result abstract
+ * Abstract - the result abstract, the summary text for the result
  * Highlight - if the result returned a highlight, this will be set
  * Labels -  all the labels/tags for the result, if any
  * Label -  the primary label or category of the result
