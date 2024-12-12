@@ -18,7 +18,8 @@
         "codem/silverstripe-html5-inputs": "^1",
         "elliotsawyer/silverstripe-typesense": "^0.0.7",
         "typesense/typesense-php": "^4.9",
-        "nswdpc/silverstripe-search-forms": "*"
+        "nswdpc/silverstripe-search-forms": "*",
+        "symbiote/silverstripe-queuedjobs": "^5"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.5",
