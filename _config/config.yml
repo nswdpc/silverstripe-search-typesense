@@ -1,7 +1,14 @@
 ---
 Name: nswdpc-search-typesense
 ---
+SilverStripe\Core\Injector\Injector:
+  # Block upsteam DocumentUpdate handling
+  # Apply the RecordChangeHandler extension to DataObjects that need upset/delete on write/delete
+  ElliotSawyer\SilverstripeTypesense\DocumentUpdate:
+    class: NSWDPC\Search\Typesense\Extensions\BlockDocumentUpdate
 ElliotSawyer\SilverstripeTypesense\Collection:
+  extensions:
+    - NSWDPC\Search\Typesense\Extensions\CollectionExtension
   default_collection_fields:
     # an object of all data that can be displayed in a search result
     - { name: TypesenseSearchResultData, type: 'object[]', index: false }

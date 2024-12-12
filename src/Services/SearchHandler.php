@@ -4,15 +4,20 @@ namespace NSWDPC\Search\Typesense\Services;
 
 use ElliotSawyer\SilverstripeTypesense\Collection;
 use ElliotSawyer\SilverstripeTypesense\Typesense;
+use NSWDPC\Search\Typesense\Jobs\DeleteJob;
+use NSWDPC\Search\Typesense\Jobs\UpsertJob;
 use NSWDPC\Search\Typesense\Models\Result;
 use NSWDPC\Search\Typesense\Models\SearchResults;
+use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Control\Controller;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\ORM\ArrayList;
+use SilverStripe\ORM\DataList;
 use SilverStripe\ORM\PaginatedList;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\View\ArrayData;
+use SilverStripe\View\ViewableData;
 
 /**
  * Typesense search handler
@@ -230,5 +235,119 @@ class SearchHandler {
 
     public function getPageNumber(): int {
         return $this->pageNumber;
+    }
+
+    /**
+     * Return all collections for a record, removing certain parent classes
+     */
+    public static function getCollectionsForRecord(DataObject $record): ?DataList
+    {
+        $ancestry = ClassInfo::ancestry($record, false);
+        $ancestry = array_filter(
+            $ancestry,
+            function($k,$v) {
+                return $v !== DataObject::class && $v != ViewableData::class;
+            },
+            ARRAY_FILTER_USE_BOTH
+        );
+
+        if($ancestry === []) {
+            return null;
+        }
+
+        return Collection::get()
+            ->filter(['RecordClass' => $ancestry]);
+    }
+
+    /*
+     * Return whether this record is linked to any collections
+     */
+    public static function isLinkedToCollections(DataObject $record): ?DataList {
+        $collections = static::getCollectionsForRecord($record);
+        if(is_null($collections) || $collections->count() == 0) {
+            return null;
+        } else {
+            return $collections;
+        }
+    }
+
+    /**
+     * Attempt to upsert this record to Typesense collections via a queued job
+     */
+    public static function upsertToTypesense(DataObject $record, bool $viaQueuedJob = false): bool {
+
+        // Check if this record is linked to any collections
+        if(!($collections = static::isLinkedToCollections($record))) {
+            Logger::log("Attempt to upsert record #{$record->ID}/{$record->ClassName} not linked to any collections", "INFO");
+            return false;
+        }
+
+        if(!$viaQueuedJob) {
+            // Direct upsert .. UpsertJob process calls this.
+            $success = 0;
+            $client = Typesense::client();
+            foreach($collections as $collection) {
+                try {
+                    if ($collection && $collection->checkExistance()) {
+                        $data = [];
+                        $fieldsArray = $collection->FieldsArray();
+                        if ($record->hasMethod('getTypesenseDocument')) {
+                            $data = $record->getTypesenseDocument($fieldsArray);
+                        } else {
+                            $data = $collection->getTypesenseDocument($record, $fieldsArray);
+                        }
+                        $upsert = $client->collections[$collection->Name]->documents->upsert($data);
+                        Logger::log("Upserted record #{$record->ID}/{$record->ClassName} to collection {$collection->Name}", "INFO");
+                        $success++;
+                    }
+                } catch (\Exception $exception) {
+                    Logger::log(get_class($exception) . ": failed to upsert #{$record->ID}/{$record->ClassName} to collection {$collection->Name}: " . $exception->getMessage(), "NOTICE");
+                }
+            }
+            return $success == $collections->count();
+        } else {
+            // Upsert via job
+            return UpsertJob::queueMyself($record);
+        }
+    }
+
+    /**
+     * Delete this record from all linked collections via a queued job
+     */
+    public static function deleteFromTypesense(DataObject $record, bool $viaQueuedJob = false): bool {
+
+        // Check if this record is linked to any collections
+        if(!($collections = static::isLinkedToCollections($record))) {
+            Logger::log("Attempt to delete record #{$record->ID}/{$record->ClassName} not linked to any collections", "INFO");
+            return false;
+        }
+
+        if(!$viaQueuedJob) {
+            // Direct delete .. DeleteJob process calls this.
+            $success = 0;
+            $client = Typesense::client();
+            foreach($collections as $collection) {
+                try {
+                    if ($collection && $collection->checkExistance()) {
+                        $data = [];
+                        $fieldsArray = $collection->FieldsArray();
+                        if ($record->hasMethod('getTypesenseDocument')) {
+                            $data = $record->getTypesenseDocument($fieldsArray);
+                        } else {
+                            $data = $collection->getTypesenseDocument($record, $fieldsArray);
+                        }
+                        $client->collections[$collection->Name]->documents[(string) $record->ID]->delete();
+                        Logger::log("Delete record #{$record->ID}/{$record->ClassName} from collection {$collection->Name}", "INFO");
+                        $success++;
+                    }
+                } catch (\Exception $e) {
+                    Logger::log(get_class($exception) . ": failed to delete #{$record->ID}/{$record->ClassName} from collection {$collection->Name}: " . $exception->getMessage(), "NOTICE");
+                }
+            }
+            return $success == $collections->count();
+        } else {
+            // delete via job
+            return DeleteJob::queueMyself($record);
+        }
     }
 }
