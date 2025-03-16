@@ -32,24 +32,25 @@ abstract class InstantSearch {
     /**
      * Create a configuration array
      */
-    public static function createConfiguration(string $searchOnlyApiKey, string $queryBy): array {
-
-        $server = Typesense::parse_typesense_server();
-        if (!$server) {
-            throw new \Exception(
-                _t(static::class.'.EXCEPTION_schemeformat', 'TYPESENSE_SERVER must be in scheme://host:port format')
-            );
-        }
-        $host = $server['host'] ?? '';
-        $port = $server['port'] ?? 8081;
-        $scheme = $server['scheme'] ?? 'https';
-        $nodes = [];
-        if ($host && $port && $scheme) {
-            $nodes[] = [
-                'host' => $host,
-                'port' => $port,
-                'protocol' => $scheme,
-            ];
+    public static function createConfiguration(string $searchOnlyApiKey, string $queryBy, array $nodes = []): array {
+        if($nodes === []) {
+            $server = Typesense::parse_typesense_server();
+            if (!$server) {
+                throw new \Exception(
+                    _t(static::class.'.EXCEPTION_schemeformat', 'TYPESENSE_SERVER must be in scheme://host:port format')
+                );
+            }
+            $host = $server['host'] ?? '';
+            $port = $server['port'] ?? 8081;
+            $scheme = $server['scheme'] ?? 'https';
+            $nodes = [];
+            if ($host && $port && $scheme) {
+                $nodes[] = [
+                    'host' => $host,
+                    'port' => $port,
+                    'protocol' => $scheme,
+                ];
+            }
         }
         $server = [
             'apiKey' => $searchOnlyApiKey,
