@@ -1,0 +1,33 @@
+.instantsearch-hits {
+  position: relative;
+  padding: 0;
+  display: block;
+}
+.instantsearch-hits.hide {
+  display: none;
+}
+.instantsearch-hits ul {
+  position: absolute;
+  z-index: 9000;
+  top:0;
+  left:0;
+  list-style-type: none;
+  margin:0;
+  padding:0;
+  background: #fff;
+  border: 1px solid #ccc;
+}
+.instantsearch-hits ul li {
+  margin: 0;
+  padding: 0.625rem;
+}
+
+.instantsearch-hits ul li mark {
+  padding: 0;
+}
+
+input.instantsearch-bound {
+}
+
+input.instantsearch-active {
+}

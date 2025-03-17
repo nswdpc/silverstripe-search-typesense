@@ -8,7 +8,7 @@ use SilverStripe\Control\Director;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\Core\Manifest\ModuleResourceLoader;
 use SilverStripe\ORM\FieldType\DBField;
-use SilverStripe\ORM\FieldType\DBVarchar;
+use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\View\ArrayData;
 use SilverStripe\View\Requirements;
 use SilverStripe\View\SSViewer;
@@ -24,49 +24,38 @@ abstract class InstantSearch {
     /**
      * Provide the instant search service
      */
-    public static function provide(string $id, array $spec) {
+    public static function provide(array $config): DBHTMLText {
         static::addRequirements();
-        static::addLocalRequirement($id,$spec);
+        $nodes = $config['nodes'] ?? [];
+        if(!is_array($nodes) || count($nodes) == 0) {
+            $nodes = static::getServerNodes();
+        }
+        $tag = static::addLocalRequirement($config);
+        return $tag;
     }
 
     /**
-     * Create a configuration array
+     * Get configured server node(s). Used if nodes are not passed to configuration
      */
-    public static function createConfiguration(string $searchOnlyApiKey, string $queryBy, array $nodes = []): array {
-        if($nodes === []) {
-            $server = Typesense::parse_typesense_server();
-            if (!$server) {
-                throw new \Exception(
-                    _t(static::class.'.EXCEPTION_schemeformat', 'TYPESENSE_SERVER must be in scheme://host:port format')
-                );
-            }
-            $host = $server['host'] ?? '';
-            $port = $server['port'] ?? 8081;
-            $scheme = $server['scheme'] ?? 'https';
-            $nodes = [];
-            if ($host && $port && $scheme) {
-                $nodes[] = [
-                    'host' => $host,
-                    'port' => $port,
-                    'protocol' => $scheme,
-                ];
-            }
+    public static function getServerNodes(): array {
+        $server = Typesense::parse_typesense_server();
+        if (!$server) {
+            throw new \Exception(
+                _t(static::class.'.EXCEPTION_schemeformat', 'TYPESENSE_SERVER must be in scheme://host:port format')
+            );
         }
-        $server = [
-            'apiKey' => $searchOnlyApiKey,
-            'nodes' => $nodes
-        ];
-        $serverExtra = [];// support extra args to server entry
-        if($serverExtra !== []) {
-            $server = array_merge($serverExtra, $server);
+        $host = $server['host'] ?? '';
+        $port = $server['port'] ?? 8081;
+        $scheme = $server['scheme'] ?? 'https';
+        $nodes = [];
+        if ($host && $port && $scheme) {
+            $nodes[] = [
+                'host' => $host,
+                'port' => $port,
+                'protocol' => $scheme,
+            ];
         }
-        $additionalSearchParameters = [
-            'query_by' => $queryBy
-        ];
-        return [
-            'server' => $server,
-            'additionalSearchParameters' => $additionalSearchParameters
-        ];
+        return $nodes;
     }
 
     /**
@@ -80,7 +69,6 @@ abstract class InstantSearch {
                 "crossorigin" => "anonymous"
             ]
         );
-
         Requirements::javascript(
             "https://cdn.jsdelivr.net/npm/typesense-instantsearch-adapter@2.8.0/dist/typesense-instantsearch-adapter.min.js",
             [
@@ -88,28 +76,26 @@ abstract class InstantSearch {
                 "crossorigin" => "anonymous"
             ]
         );
+        Requirements::javascript(
+            'nswdpc/silverstripe-search-typesense:client/static/js/instantsearch.js'
+        );
+        Requirements::css(
+            'nswdpc/silverstripe-search-typesense:client/static/css/instantsearch.css'
+        );
     }
 
     /**
      * Add the local requirement
      */
-    protected static function addLocalRequirement(string $id, array $spec): void {
-
-        $data = [
-            'Configuration' => DBField::create_field('HTMLFragment', json_encode($spec['Configuration'])),
-            'CollectionName' => DBField::create_field(DBVarchar::class, $spec['CollectionName']),
-            'Searchbox' => DBField::create_field(DBVarchar::class, $spec['Searchbox']),
-            'Hitbox' => DBField::create_field(DBVarchar::class, $spec['Hitbox'])
-        ];
-
-        if(!$id) {
+    protected static function addLocalRequirement(array $config): DBHTMLText {
+        $id = $config['id'] ?? '';
+        if(!$id || !is_string($id)) {
+            // ensure we have unique id
             $id = bin2hex(random_bytes(2));
         }
-
-        $script = ArrayData::create($data)->renderWith('NSWDPC/Search/Typesense/Services/InstantSearch');
-        Requirements::customScript(
-            $script,
-            "typesense-local-{$id}"
+        return DBField::create_field(
+            'HTMLFragment',
+            "<div data-instantsearch=\"" . htmlspecialchars(json_encode($config)) . "\"></div>"
         );
     }
 

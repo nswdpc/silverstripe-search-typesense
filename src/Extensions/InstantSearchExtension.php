@@ -11,6 +11,7 @@ use SilverStripe\Forms\TextField;
 use SilverStripe\Forms\TextareaField;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\ORM\DataExtension;
+use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\ORM\ValidationException;
 
 /**
@@ -66,7 +67,6 @@ class InstantSearchExtension extends DataExtension {
                     'InstantSearchCollectionName',
                     _t(static::class . '.INSTANT_SEARCH_COLLECTION', '...or enter a collection name')
                 ),
-
                 TextField::create(
                     'InstantSearchQueryBy',
                     _t(static::class . '.INSTANT_SEARCH_PROMPT', 'Fields to query. Separate fields by a comma')
@@ -79,6 +79,9 @@ class InstantSearchExtension extends DataExtension {
         );
     }
 
+    /**
+     * Retrieve nodes for Typesense instantsearch usage
+     */
     protected function getTypesenseNodes(): array {
         $nodes = [];
         $searchNodes = preg_split("/[\n\r]+/", $this->getOwner()->InstantSearchNodes);
@@ -109,6 +112,9 @@ class InstantSearchExtension extends DataExtension {
         return $nodes;
     }
 
+    /**
+     * Perform validation if nodes are set
+     */
     public function onBeforeWrite() {
         $this->getTypesenseNodes();
     }
@@ -123,14 +129,35 @@ class InstantSearchExtension extends DataExtension {
     }
 
     /**
+     * The model using this extension needs to provide an input ID to bind to
+     */
+    public function getTypesenseBindToInputId(): string {
+        return "";
+    }
+
+    /**
+     * The model using this extension needs to provide the ID of a parent used to locate
+     * the hits box
+     */
+    public function getTypesenseBindToParentId(): string {
+        return "";
+    }
+
+    /**
      * template method for getting the element's unique ID in the DOM
      */
     public function TypesenseUniqID(): string {
         return $this->getOwner()->getTypesenseUniqID();
     }
 
+    /**
+     * Get the collection name
+     * If the model using this extension has a getCollection, this can be used provided
+     * the collection name is not set by this extension's CMS fields
+     */
     public function getCollectionName(): string {
         $collectionName = '';
+        // select via relation first, if set
         $collection = $this->getOwner()->InstantSearchCollection();
         if($collection && $collection->isInDB()) {
             $collectionName = $collection->Name;
@@ -139,6 +166,14 @@ class InstantSearchExtension extends DataExtension {
         if($this->getOwner()->InstantSearchCollectionName) {
             $collectionName = $this->getOwner()->InstantSearchCollectionName;
         }
+        // if not set, try to owner model
+        if(!$collectionName && $this->getOwner()->hasMethod('getCollection')) {
+            $collection = $this->getOwner()->getCollection();
+            if($collection && ($collection instanceof Collection)) {
+                $collectionName = $collection->Name;
+            }
+        }
+
         return (string)$collectionName;
     }
 
@@ -149,35 +184,43 @@ class InstantSearchExtension extends DataExtension {
      * <% include NSWDPC/Search/Typesense/InstantSearchResults %>
      * The include will call this method
      */
-    public function TypesenseInstantSearch(): void {
+    public function TypesenseInstantSearch(): ?DBHTMLText {
         if($this->getOwner()->UseInstantSearch == 0) {
-            return;
+            return null;
         }
         $collectionName = $this->getOwner()->getCollectionName();
         if($collectionName === '') {
-            return;
+            return null;
         }
+
         $id = $this->getOwner()->getTypesenseUniqID();
+        $inputId = $this->getOwner()->getTypesenseBindToInputId();
+        $parentId = $this->getOwner()->getTypesenseBindToParentId();
         $apiKey = $this->getOwner()->InstantSearchKey;
         try {
             $nodes = $this->getTypesenseNodes();
         } catch (\Exception $e) {
         }
-        $queryBy = 'Title';
+        $queryBy = $this->getOwner()->InstantSearchQueryBy;
+        if(!$queryBy) {
+            $queryBy = 'Title';
+        }
         $serverExtra = [
             'cacheSearchResultsForSeconds' => 120
         ];
-        $searchBox = "#{$id}-searchbox";
-        $hitBox = "#{$id}-hits";
-        $spec = [
-            'Nodes' => $nodes,
-            'Configuration' => InstantSearch::createConfiguration($apiKey, $queryBy, $nodes),
-            'CollectionName' => $collectionName,
-            'Searchbox' => $searchBox,
-            'Hitbox' => $hitBox
+
+        $data = [
+            'id' => $id,
+            'inputId' => $inputId,
+            'parentId' => $parentId,
+            'apiKey' => $apiKey,
+            'queryBy' => $queryBy,
+            'nodes' => $nodes,
+            'collectionName' => $collectionName,
+            'serverExtra' => $serverExtra
         ];
 
         // Add instantsearch
-        InstantSearch::provide($id, $spec);
+        return InstantSearch::provide($data);
     }
 }
