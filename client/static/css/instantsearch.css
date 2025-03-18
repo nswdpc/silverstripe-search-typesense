@@ -9,10 +9,9 @@
 .instantsearch-hits.hide {
   display: none;
 }
-.instantsearch-hits ul {
+.instantsearch-hits ol {
   position: absolute;
   width: 100%;
-  z-index: 9000;
   top: 4px;
   left: 0;
   list-style-type: none;
@@ -22,13 +21,23 @@
   box-shadow: 0 0.25rem 0.75rem 0 rgba(0 0 0 / 0.15);
   border-radius: 0.25rem;
 }
-.instantsearch-hits ul li {
+.instantsearch-hits ol li {
   margin: 0;
+  padding: 0;
+}
+
+.instantsearch-hits ol li a,
+.instantsearch-hits ol li span {
+  display: block;
   padding: 0.625rem;
 }
 
-.instantsearch-hits ul li mark {
+.instantsearch-hits ol li mark {
   padding: 0;
+}
+
+.instantsearch-has-hitbox {
+  z-index: 90000;
 }
 
 input.instantsearch-bound {

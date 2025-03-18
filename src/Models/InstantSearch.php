@@ -13,6 +13,8 @@ use SilverStripe\ORM\DataExtension;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\ORM\ValidationException;
+use SilverStripe\ORM\Filters\ExactMatchFilter;
+use SilverStripe\ORM\Filters\PartialMatchFilter;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
@@ -32,6 +34,7 @@ class InstantSearch extends DataObject implements PermissionProvider {
         'Title' => 'Varchar(255)',
         'Enabled' => 'Boolean',
         'Prompt' => 'Varchar(255)',
+        'AriaLabel' => 'Varchar(255)',
         'SearchKey' => 'Varchar(255)',
         'Nodes' => 'Text',
         'QueryBy' => 'Varchar(255)',
@@ -42,6 +45,16 @@ class InstantSearch extends DataObject implements PermissionProvider {
 
     private static array $has_one = [
         'Collection' => Collection::class
+    ];
+
+    private static array $summary_fields = [
+        'Title' => 'Title',
+        'Enabled.Nice' => 'Enabled?'
+    ];
+
+    private static array $searchable_fields = [
+        'Title' => PartialMatchFilter::class,
+        'Enabled' => ExactMatchFilter::class,
     ];
 
     private static array $indexes = [
@@ -84,11 +97,15 @@ class InstantSearch extends DataObject implements PermissionProvider {
                 ),
                 TextField::create(
                     'QueryBy',
-                    _t(static::class . '.INSTANT_SEARCH_PROMPT', 'Fields to query. Separate fields by a comma')
+                    _t(static::class . '.INSTANT_SEARCH_QUERYBY', 'Fields to query. Separate fields by a comma')
                 ),
                 TextField::create(
                     'Prompt',
                     _t(static::class . '.INSTANT_SEARCH_PROMPT', 'Field prompt, optional')
+                ),
+                TextField::create(
+                    'AriaLabel',
+                    _t(static::class . '.INSTANT_SEARCH_ARIA_LABEL', 'Instructions for screen readers')
                 ),
                 TextField::create(
                     'InputElementId',
@@ -215,6 +232,8 @@ class InstantSearch extends DataObject implements PermissionProvider {
         $serverExtra = [
             'cacheSearchResultsForSeconds' => 120
         ];
+        $prompt = $this->Prompt ?? '';
+        $ariaLabel = $this->AriaLabel ?? '';
 
         $data = [
             'c' => $this->ID,
@@ -225,7 +244,9 @@ class InstantSearch extends DataObject implements PermissionProvider {
             'queryBy' => $queryBy,
             'nodes' => $nodes,
             'collectionName' => $collectionName,
-            'serverExtra' => $serverExtra
+            'serverExtra' => $serverExtra,
+            'placeholder' => $prompt,
+            'ariaLabel' => $ariaLabel
         ];
 
         // Add instantsearch
