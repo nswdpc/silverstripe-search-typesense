@@ -73,7 +73,7 @@ class InstantSearchExtension extends DataExtension {
      */
     protected function getInstantSearch(): ?InstantSearch {
         $instantSearch = $this->getOwner()->InstantSearch();
-        if(!$instantSearch || !$instantSearch->isInDB() || !$instantsearch->Enabled) {
+        if(!$instantSearch || !$instantSearch->isInDB() || !$instantSearch->Enabled) {
             return null;
         } else {
             return $instantSearch;
