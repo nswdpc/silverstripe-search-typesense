@@ -94,7 +94,9 @@ class TypesenseInstantSearchClient {
             // Do some initial rendering and bind events
             this.hitBox = document.createElement('div');
             this.hitBox.classList.add('instantsearch-hits', 'hide');
-            this.hitBox.appendChild(document.createElement('ul'));
+            let list = document.createElement('ul');
+            list.setAttribute('role','listbox');
+            this.hitBox.appendChild(list);
             this.hitBoxParent.appendChild(this.hitBox);
         }
 
@@ -106,6 +108,7 @@ class TypesenseInstantSearchClient {
         renderOptions.items.map(
             function(item) {
                 let listItem = document.createElement('li');
+                listItem.setAttribute('role','option');
                 let listItemLink = document.createElement('a');
                 listItemLink.classList.add('instantsearch-hit');
                 listItemLink.setAttribute('href', item.TypesenseSearchResultData.Link);
