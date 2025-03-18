@@ -3,7 +3,7 @@
 namespace NSWDPC\Search\Typesense\Extensions;
 
 use ElliotSawyer\SilverstripeTypesense\Collection;
-use NSWDPC\Search\Typesense\Services\InstantSearch;
+use NSWDPC\Search\Typesense\Models\InstantSearch;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\CompositeField;
 use SilverStripe\Forms\DropdownField;
@@ -20,103 +20,21 @@ use SilverStripe\ORM\ValidationException;
  */
 class InstantSearchExtension extends DataExtension {
 
-    private static array $db = [
-        'UseInstantSearch' => 'Boolean',
-        'InstantSearchPrompt' => 'Varchar(255)',
-        'InstantSearchKey' => 'Varchar(255)',
-        'InstantSearchNodes' => 'Text',
-        'InstantSearchQueryBy' => 'Varchar(255)',
-        'InstantSearchCollectionName' => 'Varchar(255)'
-    ];
-
     private static array $has_one = [
-        'InstantSearchCollection' => Collection::class
-    ];
-
-    private static array $defaults = [
-        'UseInstantSearch' => 0
+        'InstantSearch' => InstantSearch::class
     ];
 
     public function updateCMSFields(FieldList $fields) {
         $fields->addFieldsToTab(
             'Root.InstantSearch',
             [
-                CheckboxField::create(
-                    'UseInstantSearch',
-                    _t(static::class . '.USE_INSTANT_SEARCH', 'Use "Instant Search"')
-                ),
-                TextField::create(
-                    'InstantSearchKey',
-                    _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY', 'Public key')
-                )->setDescription(
-                    _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_WARNING', 'Use a Typesense "Search-only API Key" only, here. This will be included publicly in the website.')
-                ),
-                TextareaField::create(
-                    'InstantSearchNodes',
-                    _t(static::class . '.INSTANT_SEARCH_NODES', 'The server node(s), if different to the main configured Typesense server(s)'),
-                )->setDescription(
-                    _t(static::class . '.INSTANT_SEARCH_NODES_NOTES', 'One node per line, include protocol host and port e.g. https://search1.example.com:1890')
-                )->setRows(3),
-
                 DropdownField::create(
-                    'InstantSearchCollectionID',
-                    _t(static::class . '.INSTANT_SEARCH_COLLECTION_SELECT', 'Choose a Collection to search'),
-                    Collection::get()->filter(['Enabled' => 1])->sort(['Name' => 'ASC'])->map('ID','Name')
-                )->setEmptyString(''),
-                TextField::create(
-                    'InstantSearchCollectionName',
-                    _t(static::class . '.INSTANT_SEARCH_COLLECTION', '...or enter a collection name')
-                ),
-                TextField::create(
-                    'InstantSearchQueryBy',
-                    _t(static::class . '.INSTANT_SEARCH_PROMPT', 'Fields to query. Separate fields by a comma')
-                ),
-                TextField::create(
-                    'InstantSearchPrompt',
-                    _t(static::class . '.INSTANT_SEARCH_PROMPT', 'Field prompt, optional')
-                )
+                    'InstantSearchID',
+                    _t(static::class . '.INSTANT_SEARCH_CHOOSE', 'Choose an Instant Search configuration to use'),
+                    InstantSearch::get()->filter(['Enabled' => 1])->sort(['Title' => 'ASC'])->map('ID','Title')
+                )->setEmptyString('')
             ]
         );
-    }
-
-    /**
-     * Retrieve nodes for Typesense instantsearch usage
-     */
-    protected function getTypesenseNodes(): array {
-        $nodes = [];
-        $searchNodes = preg_split("/[\n\r]+/", $this->getOwner()->InstantSearchNodes);
-        if(is_array($searchNodes)) {
-            foreach($searchNodes as $searchNode) {
-                $url = parse_url($searchNode);
-                $scheme = $url['scheme'] ?? '';
-                $host = $url['host'] ?? '';
-                $port = $url['port'] ?? '';
-                if(!$port) {
-                    $port = ($scheme == "https" ? 443 : 80);
-                }
-                $path = $url['path'] ?? '';
-                if(!isset($scheme)) {
-                    throw new ValidationException(_t(static::class . '.INSTANT_SEARCH_INVALID_URL_SCHEME', 'URL {url} does not include a scheme', ['url' => $searchNode]));
-                }
-                if(!isset($host)) {
-                    throw new ValidationException(_t(static::class . '.INSTANT_SEARCH_INVALID_URL_HOST', 'URL {url} does not include a host', ['url' => $searchNode]));
-                }
-                $nodes[] = [
-                    'host' => $host,
-                    'port' => $port,
-                    'protocol' => $scheme,
-                    'path' => $path
-                ];
-            }
-        }
-        return $nodes;
-    }
-
-    /**
-     * Perform validation if nodes are set
-     */
-    public function onBeforeWrite() {
-        $this->getTypesenseNodes();
     }
 
     /**
@@ -151,22 +69,31 @@ class InstantSearchExtension extends DataExtension {
     }
 
     /**
+     * Return the chosen InstantSearch config model for this model
+     */
+    protected function getInstantSearch(): ?InstantSearch {
+        $instantSearch = $this->getOwner()->InstantSearch();
+        if(!$instantSearch || !$instantSearch->isInDB() || !$instantsearch->Enabled) {
+            return null;
+        } else {
+            return $instantSearch;
+        }
+    }
+
+    /**
      * Get the collection name
-     * If the model using this extension has a getCollection, this can be used provided
-     * the collection name is not set by this extension's CMS fields
+     * If the model using this extension has a getCollection method, this can be used to provide
+     * the collection name
      */
     public function getCollectionName(): string {
-        $collectionName = '';
-        // select via relation first, if set
-        $collection = $this->getOwner()->InstantSearchCollection();
-        if($collection && $collection->isInDB()) {
-            $collectionName = $collection->Name;
+        $instantSearch = $this->getInstantSearch();
+        if(!$instantSearch) {
+            return '';
         }
-        // a static name provided in the field overrules
-        if($this->getOwner()->InstantSearchCollectionName) {
-            $collectionName = $this->getOwner()->InstantSearchCollectionName;
-        }
-        // if not set, try to owner model
+
+        // get from chosen config model
+        $collectionName = $instantSearch->getCollectionName();
+        // if not set, try to get from owner model
         if(!$collectionName && $this->getOwner()->hasMethod('getCollection')) {
             $collection = $this->getOwner()->getCollection();
             if($collection && ($collection instanceof Collection)) {
@@ -185,42 +112,11 @@ class InstantSearchExtension extends DataExtension {
      * The include will call this method
      */
     public function TypesenseInstantSearch(): ?DBHTMLText {
-        if($this->getOwner()->UseInstantSearch == 0) {
+        $instantSearch = $this->getInstantSearch();
+        if($instantSearch) {
+            return $instantSearch->provideInstantSearchFor($this->getOwner());
+        } else {
             return null;
         }
-        $collectionName = $this->getOwner()->getCollectionName();
-        if($collectionName === '') {
-            return null;
-        }
-
-        $id = $this->getOwner()->getTypesenseUniqID();
-        $inputId = $this->getOwner()->getTypesenseBindToInputId();
-        $parentId = $this->getOwner()->getTypesenseBindToParentId();
-        $apiKey = $this->getOwner()->InstantSearchKey;
-        try {
-            $nodes = $this->getTypesenseNodes();
-        } catch (\Exception $e) {
-        }
-        $queryBy = $this->getOwner()->InstantSearchQueryBy;
-        if(!$queryBy) {
-            $queryBy = 'Title';
-        }
-        $serverExtra = [
-            'cacheSearchResultsForSeconds' => 120
-        ];
-
-        $data = [
-            'id' => $id,
-            'inputId' => $inputId,
-            'parentId' => $parentId,
-            'apiKey' => $apiKey,
-            'queryBy' => $queryBy,
-            'nodes' => $nodes,
-            'collectionName' => $collectionName,
-            'serverExtra' => $serverExtra
-        ];
-
-        // Add instantsearch
-        return InstantSearch::provide($data);
     }
 }
