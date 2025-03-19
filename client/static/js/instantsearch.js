@@ -110,10 +110,13 @@ class TypesenseInstantSearchClient {
       hitBoxList.replaceChildren();
       renderOptions.items.map(
         function(hit) {
-          let listItem = document.createElement('li');
-          listItem.setAttribute('role','option');
-          listItem.appendChild(_inst.createHitLink(hit));
-          hitBoxList.appendChild(listItem);
+          let link = _inst.createHitLink(hit);
+          if(link) {
+            let listItem = document.createElement('li');
+            listItem.setAttribute('role','option');
+            listItem.appendChild(link);
+            hitBoxList.appendChild(listItem);
+          }
         }
       );
       if(!isFirstRender) {
@@ -148,11 +151,18 @@ class TypesenseInstantSearchClient {
   }
 
   createHitLink(item) {
-    let listItemLink = document.createElement('a');
-    listItemLink.classList.add('instantsearch-hit');
-    listItemLink.setAttribute('href', item.TypesenseSearchResultData.Link);
-    listItemLink.insertAdjacentHTML('afterbegin', instantsearch.highlight({ attribute: 'Title', hit: item }));
-    return listItemLink;
+    let data = {};
+    if(item.hasOwnProperty('TypesenseSearchResultData')) {
+      data = item.TypesenseSearchResultData;
+      let listItemLink = document.createElement('a');
+      listItemLink.classList.add('instantsearch-hit');
+      listItemLink.setAttribute('href', data.Link);
+      listItemLink.insertAdjacentHTML('afterbegin', instantsearch.highlight({ attribute: 'TypesenseSearchResultData.Title', hit: item }));
+      return listItemLink;
+    } else {
+      console.warn('Could not form link for item');
+      return false;
+    }
   }
 
   createSearchBoxEvents(renderOptions) {
