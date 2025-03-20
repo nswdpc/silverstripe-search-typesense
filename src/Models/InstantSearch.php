@@ -8,6 +8,7 @@ use NSWDPC\Search\Typesense\Services\InstantSearch as InstantSearchService;
 use NSWDPC\Search\Typesense\Services\Logger;
 use SilverStripe\Core\Environment;
 use SilverStripe\Forms\CheckboxField;
+use SilverStripe\Forms\CompositeField;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\TextField;
 use SilverStripe\Forms\TextareaField;
@@ -44,7 +45,10 @@ class InstantSearch extends DataObject implements PermissionProvider {
         'QueryBy' => 'Varchar(255)',
         'CollectionName' => 'Varchar(255)',
         'InputElementId' => 'Varchar(255)',
-        'ContainerElementId' => 'Varchar(255)'
+        'ContainerElementId' => 'Varchar(255)',
+        'HitLinkField' => 'Varchar(255)',
+        'HitTitleField' => 'Varchar(255)',
+        'HitAbstractField' => 'Varchar(255)',
     ];
 
     private static array $has_one = [
@@ -71,59 +75,108 @@ class InstantSearch extends DataObject implements PermissionProvider {
 
     public function getCMSFields() {
         $fields = parent::getCMSFields();
+        $fields->removeByName(array_merge(['CollectionID'], array_keys(static::$db)));
         $fields->addFieldsToTab(
             'Root.Main',
             [
-                CheckboxField::create(
-                    'Enabled',
-                    _t(static::class . '.USE_INSTANT_SEARCH', 'Enabled')
+                CompositeField::create(
+                    TextField::create(
+                        'Title',
+                        _t(static::class . '.INSTANT_SEARCH_TITLE', 'Title, for internal use only')
+                    )->setDescription(
+                        _t(static::class . '.INSTANT_SEARCH_TITLE_NOTE', "This is used to describe the search for CMS editors, so that they can select the relevant configuration")
+                    ),
+                    CheckboxField::create(
+                        'Enabled',
+                        _t(static::class . '.USE_INSTANT_ENABLED', 'Enabled')
+                    )->setDescription(
+                        _t(static::class . '.INSTANT_SEARCH_ENABLED_NOTE', "Only enabled search configurations can be used on this website")
+                    ),
+                )->setTitle(
+                    _t(static::class . '.INSTANT_SEARCH_GENERAL_DETAILS', 'General information')
                 ),
-                TextField::create(
-                    'SearchKey',
-                    _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY', 'Search-only key')
-                )->setDescription(
-                    _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_WARNING', "Use a Typesense search-only API key with the single action 'documents:search'.")
+
+                CompositeField::create(
+                    TextField::create(
+                        'SearchKey',
+                        _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY', 'Search-only key')
+                    )->setDescription(
+                        _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_WARNING', "Use a Typesense search-only API key with the single action 'documents:search'. This will be checked and validated on save.")
+                    ),
+                    TextareaField::create(
+                        'SearchScope',
+                        _t(static::class . '.INSTANT_SEARCH_SEARCHSCOPE', 'Provide the search scope as JSON'),
+                    )->setDescription(
+                        _t(static::class . '.INSTANT_SEARCH_SEARCHSCOPE_NOTES', "Review the Typesense documentation 'Generate Scoped Search Key' for help in setting this value. If this is not set, the scope will be set to <code>{default}</code>.", ['default' => json_encode(static::getDefaultScope())])
+                    )->setRows(10),
+                    TextareaField::create(
+                        'Nodes',
+                        _t(static::class . '.INSTANT_SEARCH_NODES', 'The server node(s), if different to the main configured Typesense server(s)'),
+                    )->setDescription(
+                        _t(static::class . '.INSTANT_SEARCH_NODES_NOTES', 'One node per line, include protocol host and port e.g. https://search1.example.com:1890')
+                    )->setRows(3),
+                    TextField::create(
+                        'QueryBy',
+                        _t(static::class . '.INSTANT_SEARCH_QUERYBY', 'Fields to query. Separate each field with a comma.')
+                    )
+                )->setTitle(
+                    _t(static::class . '.INSTANT_SEARCH_API_SERVER_DETAILS', 'API server details')
                 ),
-                TextareaField::create(
-                    'SearchScope',
-                    _t(static::class . '.INSTANT_SEARCH_SEARCHSCOPE', 'Provide the search scope as JSON'),
-                )->setDescription(
-                    _t(static::class . '.INSTANT_SEARCH_SEARCHSCOPE_NOTES', 'See Typesense documentation for instructions on setting this value')
-                )->setRows(10),
-                TextareaField::create(
-                    'Nodes',
-                    _t(static::class . '.INSTANT_SEARCH_NODES', 'The server node(s), if different to the main configured Typesense server(s)'),
-                )->setDescription(
-                    _t(static::class . '.INSTANT_SEARCH_NODES_NOTES', 'One node per line, include protocol host and port e.g. https://search1.example.com:1890')
-                )->setRows(3),
-                DropdownField::create(
-                    'CollectionID',
-                    _t(static::class . '.INSTANT_SEARCH_COLLECTION_SELECT', 'Choose a Collection to search'),
-                    Collection::get()->filter(['Enabled' => 1])->sort(['Name' => 'ASC'])->map('ID','Name')
-                )->setEmptyString(''),
-                TextField::create(
-                    'CollectionName',
-                    _t(static::class . '.INSTANT_SEARCH_COLLECTION', '...or enter a collection name')
+
+                CompositeField::create(
+                    DropdownField::create(
+                        'CollectionID',
+                        _t(static::class . '.INSTANT_SEARCH_COLLECTION_SELECT', 'Choose a Collection to search'),
+                        Collection::get()->filter(['Enabled' => 1])->sort(['Name' => 'ASC'])->map('ID','Name')
+                    )->setEmptyString(''),
+                    TextField::create(
+                        'CollectionName',
+                        _t(static::class . '.INSTANT_SEARCH_COLLECTION_NAME', '...or enter a collection name')
+                    )
+                )->setTitle(
+                    _t(static::class . '.INSTANT_SEARCH_COLLECTION', 'Collection selection')
                 ),
-                TextField::create(
-                    'QueryBy',
-                    _t(static::class . '.INSTANT_SEARCH_QUERYBY', 'Fields to query. Separate fields by a comma')
+
+                CompositeField::create(
+                    TextField::create(
+                        'InputElementId',
+                        _t(static::class . '.INSTANT_SEARCH_INPUT_ELEMENT_ID', "The 'id' attribute of the search field that should use this configuration.")
+                    ),
+                    TextField::create(
+                        'Prompt',
+                        _t(static::class . '.INSTANT_SEARCH_PROMPT', 'Field prompt, optional')
+                    ),
+                    TextField::create(
+                        'AriaLabel',
+                        _t(static::class . '.INSTANT_SEARCH_ARIA_LABEL', 'Instructions for screen readers')
+                    )->setDescription(
+                        _t(static::class . '.INSTANT_SEARCH_ARIA_LABEL_NOTES', 'This value will be added as the aria-label attribute on the search input')
+                    ),
+                )->setTitle(
+                    _t(static::class . '.INSTANT_SEARCH_BOX_CONFIGURATION', 'Searchbox/form details')
                 ),
-                TextField::create(
-                    'Prompt',
-                    _t(static::class . '.INSTANT_SEARCH_PROMPT', 'Field prompt, optional')
-                ),
-                TextField::create(
-                    'AriaLabel',
-                    _t(static::class . '.INSTANT_SEARCH_ARIA_LABEL', 'Instructions for screen readers')
-                ),
-                TextField::create(
-                    'InputElementId',
-                    _t(static::class . '.INSTANT_SEARCH_INPUT_ELEMENT_ID', "The 'id' attribute of the search input")
-                ),
-                TextField::create(
-                    'ContainerElementId',
-                    _t(static::class . '.INSTANT_SEARCH_PARENT_ELEMENT_ID', "The 'id' attribute of the container element that will show the hits")
+
+                CompositeField::create(
+                    TextField::create(
+                        'ContainerElementId',
+                        _t(static::class . '.INSTANT_SEARCH_PARENT_ELEMENT_ID', "The 'id' attribute of the container element that will hold the hits")
+                    )->setDescription(
+                        _t(static::class . '.INSTANT_SEARCH_PARENT_ELEMENT_ID_NOTES', 'The hitbox will be added to the end of this element')
+                    ),
+                    TextField::create(
+                        'HitLinkField',
+                        _t(static::class . '.INSTANT_SEARCH_HIT_LINK_PROPERTY', "The property on the 'hit' that holds the link to the result"),
+                    ),
+                    TextField::create(
+                        'HitTitleField',
+                        _t(static::class . '.INSTANT_SEARCH_HIT_TITLE_PROPERTY', "The property on the 'hit' that holds the title of the result")
+                    ),
+                    TextField::create(
+                        'HitAbstractField',
+                        _t(static::class . '.INSTANT_SEARCH_HIT_TITLE_PROPERTY', "The property on the 'hit' that holds the abstract of the result")
+                    )
+                )->setTitle(
+                        _t(static::class . '.INSTANT_SEARCH_BOX_CONFIGURATION', 'Hitbox details')
                 )
             ]
         );
@@ -316,6 +369,12 @@ class InstantSearch extends DataObject implements PermissionProvider {
         ];
     }
 
+    protected static function getDefaultScope(): array {
+        return [
+            'include_fields' => 'Title,TypesenseSearchResultData'
+        ];
+    }
+
     /**
      * Get a scoped search key, using the TYPESENSE_SEARCH_KEY or TYPESENSE_API_KEY if former not set
      */
@@ -343,9 +402,7 @@ class InstantSearch extends DataObject implements PermissionProvider {
         $client = Typesense::client();
         $searchScope = trim($this->SearchScope ?? '');
         // ensure a default scope is set, if invalid
-        $defaultScope = [
-            'include_fields' => 'TypesenseSearchResultData'
-        ];
+        $defaultScope = static::getDefaultScope();
         if($searchScope) {
             try {
                 $scope = json_decode($searchScope, true, 512, JSON_THROW_ON_ERROR);
@@ -411,6 +468,17 @@ class InstantSearch extends DataObject implements PermissionProvider {
         $prompt = $this->Prompt ?? '';
         $ariaLabel = $this->AriaLabel ?? '';
 
+        $hitTemplate = null;
+        $hitLinkField = $this->HitLinkField ?? '';
+        $hitTitleField = $this->HitTitleField ?? '';
+        if($hitLinkField && $hitTitleField) {
+            $hitTemplate = [
+                'link' => $hitLinkField,
+                'title' => $hitTitleField,
+                'abstract' => $this->HitAbstractField ?? ''
+            ];
+        }
+
         $data = [
             'c' => $this->ID,
             'id' => $id,
@@ -422,7 +490,8 @@ class InstantSearch extends DataObject implements PermissionProvider {
             'collectionName' => $collectionName,
             'serverExtra' => $serverExtra,
             'placeholder' => $prompt,
-            'ariaLabel' => $ariaLabel
+            'ariaLabel' => $ariaLabel,
+            'hitTemplate' => $hitTemplate
         ];
 
         // Add instantsearch
