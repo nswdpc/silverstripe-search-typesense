@@ -111,10 +111,14 @@ class TypesenseInstantSearchClient {
       renderOptions.items.map(
         function(hit) {
           let link = _inst.createHitLink(hit);
-          if(link) {
+          if(link && typeof link == 'string' || typeof link == 'object') {
             let listItem = document.createElement('li');
             listItem.setAttribute('role','option');
-            listItem.appendChild(link);
+            if(typeof link == 'string') {
+              listItem.insertAdjacentHTML('afterbegin', link);
+            } else {
+              listItem.appendChild(link);
+            }
             hitBoxList.appendChild(listItem);
           }
         }
@@ -150,19 +154,30 @@ class TypesenseInstantSearchClient {
     search.start();
   }
 
-  createHitLink(item) {
-    let data = {};
-    if(item.hasOwnProperty('TypesenseSearchResultData')) {
-      data = item.TypesenseSearchResultData;
+  createHitLink(hit) {
+    if(this.config.hitTemplate) {
+      return this.renderHitTemplate(this.config.hitTemplate, hit);
+    } else if(hit.hasOwnProperty('TypesenseSearchResultData')) {
       let listItemLink = document.createElement('a');
-      listItemLink.classList.add('instantsearch-hit');
-      listItemLink.setAttribute('href', data.Link);
-      listItemLink.insertAdjacentHTML('afterbegin', instantsearch.highlight({ attribute: 'TypesenseSearchResultData.Title', hit: item }));
+      listItemLink.classList.add('instantsearch-hit','instantsearch-hit-element');
+      listItemLink.setAttribute('href', hit.TypesenseSearchResultData.Link);
+      listItemLink.insertAdjacentHTML('afterbegin', instantsearch.highlight({ attribute: 'Title', hit: hit }));
       return listItemLink;
     } else {
-      console.warn('Could not form link for item');
-      return false;
+      return null;
     }
+  }
+
+  renderHitTemplate(templateData, hit) {
+    function hitLink(prop, hit) {
+      let link = prop.split('.').reduce((a, b) => a[b], hit);
+      return link;
+    }
+    let listItemLink = document.createElement('a');
+    listItemLink.classList.add('instantsearch-hit','instantsearch-hit-template');
+    listItemLink.setAttribute('href', hitLink(templateData.link, hit));
+    listItemLink.insertAdjacentHTML('afterbegin', instantsearch.highlight({ attribute: templateData.title, hit: hit }));
+    return listItemLink;
   }
 
   createSearchBoxEvents(renderOptions) {
