@@ -16,3 +16,7 @@ SilverStripe\SiteConfig\SiteConfig:
   extensions:
     # global search instantsearch support
     - 'NSWDPC\Search\Typesense\Extensions\InstantSearchExtension'
+NSWDPC\Search\Typesense\Models\InstantSearch:
+  extensions:
+    # scoped search support
+    - 'NSWDPC\Search\Typesense\Extensions\SearchScope'

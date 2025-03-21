@@ -70,15 +70,14 @@ class SearchHandler {
 
     /**
      * do a search using the input values from a form and the model used for configuration
-     * @param HTTPRequest $request the current request object
      * @param Collection $collection
      * @param array|string $searchQuery
      * @param int $pageStart the start offset for the results, e.g 0, 10, 20 for 10 results per page
      * @param int $perPage the number of items per page, cannot be more than 250. If <= 0 the default of 10 is used
-     * @param array $typesenseArgs extra search arguments to do a custom search beyond what can be automatically determined
+     * @param array $searchScope a Typesense search scope to be merged into the search parameters. The scop is an array of search parameters
      * @return PaginatedList|null
      */
-    public function doSearch(Collection $collection, array|string $searchQuery, int $pageStart = 0, int $perPage = 10, array $typesenseArgs = []): ?SearchResults {
+    public function doSearch(Collection $collection, array|string $searchQuery, int $pageStart = 0, int $perPage = 10, array $searchScope = []): ?SearchResults {
         $client = Typesense::client();
         $collectionName = '';
         if($collection instanceof Collection) {
@@ -89,33 +88,42 @@ class SearchHandler {
             return null;
         }
 
-        // TODO nested object, object[] search
-        $fieldsForSearch = $collection->Fields()
-            ->filter([
-                'index' => 1,
-                'type' => ['string','string[]'] // Only fields that have a datatype of string or string[] in the collection schema can be specified in query_by
-            ])
-            ->column('name');
-        if($fieldsForSearch === []) {
-            return null;
+        // query by handling
+        $queryBy = '';
+        if(!isset($searchScope['query_by'])) {
+            // TODO nested object, object[] search
+            $fieldsForSearch = $collection->Fields()
+                ->filter([
+                    'index' => 1,
+                    'type' => ['string','string[]'] // Only fields that have a datatype of string or string[] in the collection schema can be specified in query_by
+                ])
+                ->column('name');
+            $queryBy = implode(",", self::escapeArray($fieldsForSearch));
+        } else if(is_string($searchScope['query_by'])) {
+            $queryBy = trim($searchScope['query_by']);
         }
 
         $search = [];
         if(is_string($searchQuery)) {
             // basic string search on multiple fields
             $searchParameters = [
-                'q' => $searchQuery,
-                'query_by' => implode(",", self::escapeArray($fieldsForSearch))
+                'q' => $searchQuery
             ];
+            if($queryBy !== '') {
+                $searchParameters['query_by'] = $queryBy;
+            }
         } else {
+            // array of search queries
             // Search in all fields and filter by fields
             // v26
             //Ref: https://github.com/typesense/typesense/issues/561
             //Ref: https://github.com/typesense/typesense/issues/696#issuecomment-1985042336
             $searchParameters = [
-                'q' => '*',
-                'query_by' => implode(",", self::escapeArray($fieldsForSearch))
+                'q' => '*'
             ];
+            if($queryBy !== '') {
+                $searchParameters['query_by'] = $queryBy;
+            }
             $filterBy = [];
             foreach($searchQuery as $field => $value) {
                 //TODO escaping
@@ -127,8 +135,6 @@ class SearchHandler {
             }
         }
 
-
-
         // pagination parameters
         // items per page
         $perPage = $this->setPerPage($perPage);
@@ -139,8 +145,8 @@ class SearchHandler {
             'per_page' => $perPage
         ];
 
-        // allow custom argument setting
-        $searchParameters = array_merge($searchParameters, $paginationParameters, $typesenseArgs);
+        // construct search parameters using the searchScope, allow derived parameters to override
+        $searchParameters = array_merge($searchScope, $searchParameters, $paginationParameters);
 
         $this->logQuery($searchParameters, $collectionName);
         $search = $client->collections[$collectionName]->documents->search($searchParameters);
@@ -185,7 +191,7 @@ class SearchHandler {
     /**
      * Perform a multisearch in the single given collection
      */
-    public function doMultiSearch(string $collectionName, array $searchQuery, array $typesenseArgs = []): array {
+    public function doMultiSearch(string $collectionName, array $searchQuery, array $searchScope = []): array {
         // an array, do a multisearch on each column using the term from each field
         $searches = [];
         foreach($searchQuery as $field => $value) {
@@ -203,7 +209,7 @@ class SearchHandler {
                 'searches' => $searches
             ];
             // allow custom argument setting
-            $searchRequests = array_merge($searchRequests, $typesenseArgs);
+            $searchRequests = array_merge($searchRequests, $searchScope);
             $commonSearchParams = [];
             $client = Typesense::client();
             $this->logQuery($searchRequests);
@@ -216,10 +222,10 @@ class SearchHandler {
      * Log queries, if enabled
      */
     protected function logQuery(array $query, string $collectionName = ''): bool {
-        if(!self::config()->get('log_queries')) {
+        if(!static::config()->get('log_queries')) {
             return false;
         } else {
-            Logger::log("Query:" . json_encode($query) . " Collection:" . $collectionName, self::config()->get('log_level'));
+            Logger::log("Typesense Query=" . json_encode(["query" => $query, "collection" => $collectionName]), static::config()->get('log_level'));
             return true;
         }
     }

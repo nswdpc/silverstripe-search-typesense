@@ -3,19 +3,14 @@
 namespace NSWDPC\Search\Typesense\Models;
 
 use ElliotSawyer\SilverstripeTypesense\Collection;
-use ElliotSawyer\SilverstripeTypesense\Typesense;
 use NSWDPC\Search\Typesense\Services\InstantSearch as InstantSearchService;
-use NSWDPC\Search\Typesense\Services\Logger;
-use SilverStripe\Core\Environment;
+use NSWDPC\Search\Typesense\Extensions\SearchScope;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\CompositeField;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\TextField;
 use SilverStripe\Forms\TextareaField;
-use SilverStripe\Forms\FieldList;
-use SilverStripe\ORM\DataExtension;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\ORM\ValidationException;
 use SilverStripe\ORM\Filters\ExactMatchFilter;
 use SilverStripe\ORM\Filters\PartialMatchFilter;
@@ -39,8 +34,6 @@ class InstantSearch extends DataObject implements PermissionProvider {
         'Enabled' => 'Boolean',
         'Prompt' => 'Varchar(255)',
         'AriaLabel' => 'Varchar(255)',
-        'SearchKey' => 'Varchar(255)',
-        'SearchScope' => 'Text',
         'Nodes' => 'Text',
         'QueryBy' => 'Varchar(255)',
         'CollectionName' => 'Varchar(255)',
@@ -76,6 +69,7 @@ class InstantSearch extends DataObject implements PermissionProvider {
     public function getCMSFields() {
         $fields = parent::getCMSFields();
         $fields->removeByName(array_merge(['CollectionID'], array_keys(static::$db)));
+        $fields->removeByName(['SearchKey','SearchScope']);
         $fields->addFieldsToTab(
             'Root.Main',
             [
@@ -97,27 +91,19 @@ class InstantSearch extends DataObject implements PermissionProvider {
                 ),
 
                 CompositeField::create(
-                    TextField::create(
-                        'SearchKey',
-                        _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY', 'Search-only key')
-                    )->setDescription(
-                        _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_WARNING', "Use a Typesense search-only API key with the single action 'documents:search'. This will be checked and validated on save.")
-                    ),
-                    TextareaField::create(
-                        'SearchScope',
-                        _t(static::class . '.INSTANT_SEARCH_SEARCHSCOPE', 'Provide the search scope as JSON'),
-                    )->setDescription(
-                        _t(static::class . '.INSTANT_SEARCH_SEARCHSCOPE_NOTES', "Review the Typesense documentation 'Generate Scoped Search Key' for help in setting this value. If this is not set, the scope will be set to <code>{default}</code>.", ['default' => json_encode(static::getDefaultScope())])
-                    )->setRows(10),
                     TextareaField::create(
                         'Nodes',
                         _t(static::class . '.INSTANT_SEARCH_NODES', 'The server node(s), if different to the main configured Typesense server(s)'),
                     )->setDescription(
                         _t(static::class . '.INSTANT_SEARCH_NODES_NOTES', 'One node per line, include protocol host and port e.g. https://search1.example.com:1890')
                     )->setRows(3),
+                    SearchScope::getSearchKeyField(),
+                    SearchScope::getSearchScopeField(),
                     TextField::create(
                         'QueryBy',
                         _t(static::class . '.INSTANT_SEARCH_QUERYBY', 'Fields to query. Separate each field with a comma.')
+                    )->setDescription(
+                        _t(static::class . '.INSTANT_SEARCH_QUERYBY_NOTES', 'You can also add fields via query_by to the search scope field')
                     )
                 )->setTitle(
                     _t(static::class . '.INSTANT_SEARCH_API_SERVER_DETAILS', 'API server details')
@@ -189,33 +175,6 @@ class InstantSearch extends DataObject implements PermissionProvider {
     public function validate() {
         $result = parent::validate();
 
-        // validate the key entered
-        if($this->SearchKey) {
-            $searchKey = $this->validateSearchKey($this->SearchKey);
-            if($searchKey === '') {
-                $this->SearchKey = '';// reset on invalid
-                $result->addError(
-                    _t(
-                        static::class . ".SEARCH_KEY_INVALID",
-                        "The search key provided is invalid. It must exist at the Typesense server and have a single action 'documents:search'"
-                    )
-                );
-            }
-        }
-
-
-        if($this->SearchScope) {
-            $searchScope = $this->validateSearchScope($this->SearchScope);
-            if($searchScope === '') {
-                $result->addError(
-                    _t(
-                        static::class . ".SEARCH_SCOPE_INVALID_JSON",
-                        "The search scope provided is not valid JSON"
-                    )
-                );
-            }
-        }
-
         if(!$this->validateTypesenseNodes()) {
             $result->addError(
                 _t(
@@ -226,66 +185,6 @@ class InstantSearch extends DataObject implements PermissionProvider {
         }
 
         return $result;
-    }
-
-    /**
-     * Validate the search key provided
-     */
-    protected function validateSearchKey(string $searchKey): string {
-        try {
-            if($searchKey === '') {
-                return '';
-            }
-            $client = Typesense::client();
-            $results = $client->keys->retrieve();
-            $keyFound = false;
-            // print_r($results);
-            foreach($results['keys'] as $key) {
-                if(!str_starts_with($searchKey, $key['value_prefix'])) {
-                    // ignore this key returned
-                    continue;
-                }
-
-                $keyFound = true;
-                // check the prefixed key's actions
-                // scoped keys can only contain document:search
-                // https://typesense.org/docs/28.0/api/api-keys.html#generate-scoped-search-key
-                if(!isset($key['actions']) || $key['actions'] != ['documents:search']) {
-                    throw new \InvalidArgumentException("Invalid key actions value");
-                }
-            }
-
-            if(!$keyFound) {
-                throw new \InvalidArgumentException("The key entered does not exist");
-            }
-
-        } catch (\Exception $e) {
-            // on error clear the value
-            $searchKey = '';
-        }
-
-        return $searchKey;
-    }
-
-    /**
-     * Validate and return the search scope, if valid will pretty print the JSON value
-     * back into SearchScope value
-     */
-    public function validateSearchScope(string $searchScope): string {
-        $searchScope = trim($searchScope);
-        if($searchScope !== '') {
-            try {
-                $scope = json_decode($searchScope, true, 512, JSON_THROW_ON_ERROR);
-                if(is_array($scope)) {
-                    return json_encode($scope, JSON_PRETTY_PRINT);
-                }
-            } catch (\JsonException $jsonException) {
-                $searchScope = '';
-            }
-        } else {
-            $searchScope = '';
-        }
-        return $searchScope;
     }
 
     public function validateTypesenseNodes() {
@@ -344,6 +243,23 @@ class InstantSearch extends DataObject implements PermissionProvider {
         return (string)$collectionName;
     }
 
+
+    public function canEdit($member = null) {
+        return Permission::checkMember($member, 'INSTANTSEARCH_CONFIG_EDIT');
+    }
+
+    public function canView($member = null) {
+        return Permission::checkMember($member, 'INSTANTSEARCH_CONFIG_VIEW');
+    }
+
+    public function canCreate($member = null, $context = []) {
+        return Permission::checkMember($member, 'INSTANTSEARCH_CONFIG_CREATE');
+    }
+
+    public function canDelete($member = null) {
+        return Permission::checkMember($member, 'INSTANTSEARCH_CONFIG_DELETE');
+    }
+
     /**
      * @return array
      */
@@ -369,61 +285,6 @@ class InstantSearch extends DataObject implements PermissionProvider {
         ];
     }
 
-    protected static function getDefaultScope(): array {
-        return [
-            'include_fields' => 'Title,TypesenseSearchResultData'
-        ];
-    }
-
-    /**
-     * Get a scoped search key, using the TYPESENSE_SEARCH_KEY or TYPESENSE_API_KEY if former not set
-     */
-    protected function getScopedSearchKey(): ?string {
-
-        // prefer the stored key
-        $searchKey = Environment::getEnv('TYPESENSE_SEARCH_KEY');
-        if(!$searchKey) {
-            // try the one entered in the UI
-            $searchKey = $this->SearchKey;
-        }
-
-        // check if valid
-        if(!$searchKey) {
-            Logger::log("No Typesense search or API key defined - cannot create a scoped search key", "NOTICE");
-            return null;
-        }
-
-        $searchKey = $this->validateSearchKey($searchKey);
-        if($searchKey === '') {
-            Logger::log("The search key in use is invalid. Please provide a search only key with a single action of 'documents:search'.", "NOTICE");
-            return null;
-        }
-
-        $client = Typesense::client();
-        $searchScope = trim($this->SearchScope ?? '');
-        // ensure a default scope is set, if invalid
-        $defaultScope = static::getDefaultScope();
-        if($searchScope) {
-            try {
-                $scope = json_decode($searchScope, true, 512, JSON_THROW_ON_ERROR);
-                if(!is_array($scope)) {
-                    throw new \RuntimeException("Invalid JSON string");
-                }
-            } catch (\Exception $exception) {
-                $scope = $defaultScope;
-            }
-        } else {
-            $scope = $defaultScope;
-        }
-
-        $scopedKey = $client->keys->generateScopedSearchKey($searchKey, $scope);
-        if(is_string($scopedKey)) {
-            return $scopedKey;
-        } else {
-            return null;
-        }
-    }
-
     /**
      * Given a model, provide the instantsearch interface for it
      * using the configuration set in this model
@@ -435,7 +296,8 @@ class InstantSearch extends DataObject implements PermissionProvider {
             return null;
         }
 
-        $scopedApiKey = $this->getScopedSearchKey();
+        /** getTypesenseScopedSearchKey provided by SearchScope data extension */
+        $scopedApiKey = $this->getTypesenseScopedSearchKey();
         if(!$scopedApiKey) {
             return null;
         }
@@ -497,4 +359,5 @@ class InstantSearch extends DataObject implements PermissionProvider {
         // Add instantsearch
         return InstantSearchService::provide($data);
     }
+
 }
