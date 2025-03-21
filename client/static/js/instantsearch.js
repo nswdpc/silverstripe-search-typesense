@@ -44,19 +44,20 @@ class TypesenseInstantSearchClient {
   }
 
   getAdditionalSearchParameters() {
-    return {
-      query_by: this.config.queryBy
-    };
+    let params = {};
+    if(this.config.queryBy) {
+      params.query_by = this.config.queryBy;
+    }
+    return params;
   }
 
   bindToInput() {
-
     let _inst = this;
-
-    const typesenseInstantsearchAdapter = new TypesenseInstantSearchAdapter({
+    let config = {
       server: this.getConfiguration(),
       additionalSearchParameters: this.getAdditionalSearchParameters()
-    });
+    };
+    const typesenseInstantsearchAdapter = new TypesenseInstantSearchAdapter(config);
 
     // proxy search client
     const searchClient = {
