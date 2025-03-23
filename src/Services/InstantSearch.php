@@ -88,11 +88,6 @@ abstract class InstantSearch {
      * Add the local requirement
      */
     protected static function addLocalRequirement(array $config): DBHTMLText {
-        $id = $config['id'] ?? '';
-        if(!$id || !is_string($id)) {
-            // ensure we have unique id
-            $id = bin2hex(random_bytes(2));
-        }
         return DBField::create_field(
             'HTMLFragment',
             "<div data-instantsearch=\"" . htmlspecialchars(json_encode($config)) . "\"></div>"
