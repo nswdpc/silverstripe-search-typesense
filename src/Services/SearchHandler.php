@@ -74,7 +74,7 @@ class SearchHandler {
      * @param array|string $searchQuery
      * @param int $pageStart the start offset for the results, e.g 0, 10, 20 for 10 results per page
      * @param int $perPage the number of items per page, cannot be more than 250. If <= 0 the default of 10 is used
-     * @param array $searchScope a Typesense search scope to be merged into the search parameters. The scop is an array of search parameters
+     * @param array $searchScope a Typesense search scope to be merged into the search parameters. The scope is an array of search parameters
      * @return PaginatedList|null
      */
     public function doSearch(Collection $collection, array|string $searchQuery, int $pageStart = 0, int $perPage = 10, array $searchScope = []): ?SearchResults {
