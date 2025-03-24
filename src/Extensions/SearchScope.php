@@ -5,6 +5,7 @@ namespace NSWDPC\Search\Typesense\Extensions;
 use ElliotSawyer\SilverstripeTypesense\Typesense;
 use KevinGroeger\CodeEditorField\Forms\CodeEditorField;
 use NSWDPC\Search\Typesense\Services\Logger;
+use NSWDPC\Search\Typesense\Services\SearchHandler;
 use SilverStripe\Core\Environment;
 use SilverStripe\Forms\TextField;
 use SilverStripe\ORM\DataExtension;
@@ -75,7 +76,7 @@ class SearchScope extends DataExtension {
         // validate the key entered
         $searchKey = trim((string)$this->getOwner()->SearchKey);
         if($searchKey !== '') {
-            $searchKey = static::validateSearchKey($searchKey);
+            $searchKey = static::validateSearchOnlyKey($searchKey);
             if($searchKey === '') {
                 $this->getOwner()->SearchKey = '';// reset on invalid
                 $result->addError(
@@ -91,7 +92,7 @@ class SearchScope extends DataExtension {
     /**
      * Validate the search key provided
      */
-    public static function validateSearchKey(string $searchKey): string {
+    public static function validateSearchOnlyKey(string $searchKey): string {
         try {
             if($searchKey === '') {
                 return '';
@@ -165,7 +166,20 @@ class SearchScope extends DataExtension {
     }
 
     /**
-     * Get a scoped search key, using the TYPESENSE_SEARCH_KEY or TYPESENSE_API_KEY if former not set
+     * Given a search-only API key and a scope generate a scoped API key
+     */
+    public static function getScopedApiKey(string $searchOnlyKey, array $searchScope): ?string {
+        $client = Typesense::client();
+        $scopedKey = $client->keys->generateScopedSearchKey($searchOnlyKey, $searchScope);
+        if(is_string($scopedKey)) {
+            return $scopedKey;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Get a scoped search key for the owner dataobject
      */
     public function getTypesenseScopedSearchKey(): ?string {
 
@@ -174,9 +188,9 @@ class SearchScope extends DataExtension {
         if(!$searchKey) {
             // try the one entered in the UI
             $searchKey = $this->getOwner()->SearchKey;
-            Logger::log("SearchScope using field key", "INFO");
+            Logger::log("SearchScope using field key: " . get_class($this->getOwner()), "INFO");
         } else {
-            Logger::log("SearchScope using env key", "INFO");
+            Logger::log("SearchScope using env key: " . get_class($this->getOwner()), "INFO");
         }
 
         // check if valid
@@ -185,75 +199,18 @@ class SearchScope extends DataExtension {
             return null;
         }
 
-        $searchKey = static::validateTypesenseSearchKey($searchKey);
+        $searchKey = static::validateSearchOnlyKey($searchKey);
         if($searchKey === '') {
             Logger::log("The search key in use is invalid. Please provide a search only key with a single action of 'documents:search'.", "NOTICE");
             return null;
         }
 
-        $client = Typesense::client();
-        $searchScope = trim($this->getOwner()->SearchScope ?? '');
-        // ensure a default scope is set, if invalid
-        $defaultScope = static::getDefaultScope();
-        if($searchScope) {
-            try {
-                $scope = json_decode($searchScope, true, 512, JSON_THROW_ON_ERROR);
-                if(!is_array($scope)) {
-                    throw new \RuntimeException("Invalid JSON string");
-                }
-            } catch (\Exception $exception) {
-                $scope = $defaultScope;
-            }
-        } else {
-            $scope = $defaultScope;
+        $searchScope = static::validateSearchScope(trim($this->getOwner()->SearchScope ?? ''));
+        if($searchScope == '') {
+            // ensure a default scope is set, if invalid
+            $searchScope = static::getDefaultScope();
         }
-
-        $scopedKey = $client->keys->generateScopedSearchKey($searchKey, $scope);
-        if(is_string($scopedKey)) {
-            Logger::log("SearchScope created scoped key: " . base64_decode($scopedKey), "INFO");
-            return $scopedKey;
-        } else {
-            return null;
-        }
+        return static::getScopedApiKey($searchKey, static::getDecodedSearchScope($searchScope));
     }
 
-    /**
-     * Validate the search key provided, to ensure it is a correctly configured
-     * search-only API key
-     */
-    public static function validateTypesenseSearchKey(string $searchKey): string {
-        try {
-            if($searchKey === '') {
-                return '';
-            }
-            $client = Typesense::client();
-            $results = $client->keys->retrieve();
-            $keyFound = false;
-            // print_r($results);
-            foreach($results['keys'] as $key) {
-                if(!str_starts_with($searchKey, $key['value_prefix'])) {
-                    // ignore this key returned
-                    continue;
-                }
-
-                $keyFound = true;
-                // check the prefixed key's actions
-                // scoped keys can only contain document:search
-                // https://typesense.org/docs/28.0/api/api-keys.html#generate-scoped-search-key
-                if(!isset($key['actions']) || $key['actions'] != ['documents:search']) {
-                    throw new \InvalidArgumentException("Invalid key actions value");
-                }
-            }
-
-            if(!$keyFound) {
-                throw new \InvalidArgumentException("The key entered does not exist");
-            }
-
-        } catch (\Exception $e) {
-            // on error clear the value
-            $searchKey = '';
-        }
-
-        return $searchKey;
-    }
 }
