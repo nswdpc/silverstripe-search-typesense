@@ -19,4 +19,4 @@ SilverStripe\SiteConfig\SiteConfig:
 NSWDPC\Search\Typesense\Models\InstantSearch:
   extensions:
     # scoped search support
-    - 'NSWDPC\Search\Typesense\Extensions\SearchScope'
+    - 'NSWDPC\Search\Typesense\Extensions\ScopedSearchExtension'

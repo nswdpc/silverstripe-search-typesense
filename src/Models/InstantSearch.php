@@ -4,7 +4,7 @@ namespace NSWDPC\Search\Typesense\Models;
 
 use ElliotSawyer\SilverstripeTypesense\Collection;
 use NSWDPC\Search\Typesense\Services\InstantSearch as InstantSearchService;
-use NSWDPC\Search\Typesense\Extensions\SearchScope;
+use NSWDPC\Search\Typesense\Services\ScopedSearch;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\CompositeField;
 use SilverStripe\Forms\DropdownField;
@@ -97,8 +97,8 @@ class InstantSearch extends DataObject implements PermissionProvider {
                     )->setDescription(
                         _t(static::class . '.INSTANT_SEARCH_NODES_NOTES', 'One node per line, include protocol host and port e.g. https://search1.example.com:1890')
                     )->setRows(3),
-                    SearchScope::getSearchKeyField(),
-                    SearchScope::getSearchScopeField(),
+                    ScopedSearch::getSearchKeyField(),
+                    ScopedSearch::getSearchScopeField(),
                     TextField::create(
                         'QueryBy',
                         _t(static::class . '.INSTANT_SEARCH_QUERYBY', 'Fields to query. Separate each field with a comma.')
