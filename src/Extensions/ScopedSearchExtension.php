@@ -38,7 +38,8 @@ class ScopedSearchExtension extends DataExtension {
             );
         }
 
-        // validate the key entered
+        // validate the key entered - not currently in use
+        /*
         $searchKey = trim((string)$this->getOwner()->SearchKey);
         if($searchKey !== '' && !ScopedSearch::validateSearchOnlyKey($searchKey)) {
             $this->getOwner()->SearchKey = '';// reset on invalid
@@ -49,6 +50,7 @@ class ScopedSearchExtension extends DataExtension {
                 )
             );
         }
+        */
     }
 
     /**
@@ -67,11 +69,6 @@ class ScopedSearchExtension extends DataExtension {
         // check if valid
         if(!$searchKey) {
             Logger::log("No Typesense search or API key defined - cannot create a scoped search key", "NOTICE");
-            return null;
-        }
-
-        if(!ScopedSearch::validateSearchOnlyKey($searchKey)) {
-            Logger::log("The search key in use is invalid. Please provide a search only key with a single action of 'documents:search'.", "NOTICE");
             return null;
         }
 
