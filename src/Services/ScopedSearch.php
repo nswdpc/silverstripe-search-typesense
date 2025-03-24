@@ -3,6 +3,7 @@ namespace NSWDPC\Search\Typesense\Services;
 
 use ElliotSawyer\SilverstripeTypesense\Typesense;
 use KevinGroeger\CodeEditorField\Forms\CodeEditorField;
+use NSWDPC\Search\Typesense\Services\ClientManager;
 use NSWDPC\Search\Typesense\Services\Logger;
 use NSWDPC\Search\Typesense\Services\SearchHandler;
 use SilverStripe\Core\Environment;
@@ -58,7 +59,8 @@ abstract class ScopedSearch
             if($searchKey === '') {
                 throw new \InvalidArgumentException("Empty key provided");
             }
-            $client = Typesense::client();
+            $manager = new ClientManager();
+            $client = $manager->getConfiguredClient();
             $results = $client->keys->retrieve();
             $keyFound = false;
             // print_r($results);
@@ -127,7 +129,8 @@ abstract class ScopedSearch
      * Given a search-only API key and a scope generate a scoped API key
      */
     public static function getScopedApiKey(string $searchOnlyKey, array $searchScope): ?string {
-        $client = Typesense::client();
+        $manager = new ClientManager();
+        $client = $manager->getConfiguredClient();
         $scopedKey = $client->keys->generateScopedSearchKey($searchOnlyKey, $searchScope);
         if(is_string($scopedKey)) {
             return $scopedKey;

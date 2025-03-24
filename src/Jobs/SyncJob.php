@@ -4,6 +4,7 @@ namespace NSWDPC\Search\Typesense\Jobs;
 
 use ElliotSawyer\SilverstripeTypesense\Collection;
 use ElliotSawyer\SilverstripeTypesense\Typesense;
+use NSWDPC\Search\Typesense\Services\ClientManager;
 use NSWDPC\Search\Typesense\Services\Logger;
 use SilverStripe\ORM\DataList;
 use SilverStripe\Core\Injector\Injector;
@@ -70,7 +71,8 @@ class SyncJob extends AbstractQueuedJob
                 throw new \Exception("The collection '{$this->collectionName}' could not be found or created, maybe it is not enabled?");
             }
 
-            $client = Typesense::client();
+            $manager = new ClientManager();
+            $client = $manager->getConfiguredClient();
             $exists = $client->collections[$collection->Name]->exists();
             $this->addMessage("Collection '{$collection->Name}' sync (exists=" . (int)$exists . ")");
             $response = $collection->syncWithTypesenseServer();

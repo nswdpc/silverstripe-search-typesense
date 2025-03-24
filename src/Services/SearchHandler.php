@@ -20,6 +20,7 @@ use SilverStripe\ORM\PaginatedList;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\View\ArrayData;
 use SilverStripe\View\ViewableData;
+use Typesense\Client as TypesenseClient;
 
 /**
  * Typesense search handler
@@ -71,6 +72,24 @@ class SearchHandler {
     }
 
     /**
+     * Get the Typesense client from the Typesense SDK
+     * Provide a search scope and search only API key to return a client using that scoped API key
+     * If not provided, the default API key will be used
+     * @param array $searchScope a Typesense scope
+     * @param string $searchOnlyApiKey a Typesense search-only API key
+     */
+    protected function getClient(array $searchScope = [], string $searchOnlyApiKey = ''): TypesenseClient {
+        $manager = new ClientManager();
+        if(!$searchOnlyApiKey) {
+            $scopedApiKey = SearchScope::getScopedApiKey($searchOnlyApiKey, $searchScope);
+            $client = $manager->getConfiguredClientForApiKey($scopedApiKey);
+        } else {
+            $client = $manager->getConfiguredClient();
+        }
+        return $client;
+    }
+
+    /**
      * do a search using the input values from a form and the model used for configuration
      * @param Collection $collection
      * @param array|string $searchQuery
@@ -92,13 +111,7 @@ class SearchHandler {
         }
 
         // Client
-        $manager = new ClientManager();
-        if(!$searchOnlyApiKey) {
-            $scopedApiKey = SearchScope::getScopedApiKey($searchOnlyApiKey, $searchScope);
-            $client = $manager->getConfiguredClientForApiKey($scopedApiKey);
-        } else {
-            $client = $manager->getConfiguredClient();
-        }
+        $client = $this->getClient($searchScope, $searchOnlyApiKey);
 
         // query by handling
         $queryBy = '';
@@ -202,8 +215,9 @@ class SearchHandler {
 
     /**
      * Perform a multisearch in the single given collection
+     * @TODO this implementation needs work
      */
-    public function doMultiSearch(string $collectionName, array $searchQuery, array $searchScope = []): array {
+    public function doMultiSearch(string $collectionName, array $searchQuery, array $searchScope = [], string $searchOnlyApiKey = ''): array {
         // an array, do a multisearch on each column using the term from each field
         $searches = [];
         foreach($searchQuery as $field => $value) {
@@ -223,7 +237,7 @@ class SearchHandler {
             // allow custom argument setting
             $searchRequests = array_merge($searchRequests, $searchScope);
             $commonSearchParams = [];
-            $client = Typesense::client();
+            $client = $this->getClient($searchScope, $searchOnlyApiKey);
             $this->logQuery($searchRequests);
             $search = $client->multiSearch->perform($searchRequests, $commonSearchParams);
         }
@@ -303,7 +317,7 @@ class SearchHandler {
         if(!$viaQueuedJob) {
             // Direct upsert .. UpsertJob process calls this.
             $success = 0;
-            $client = Typesense::client();
+            $client = $this->getClient();
             foreach($collections as $collection) {
                 try {
                     if ($collection && $collection->checkExistance()) {
@@ -343,7 +357,7 @@ class SearchHandler {
         if(!$viaQueuedJob) {
             // Direct delete .. DeleteJob process calls this.
             $success = 0;
-            $client = Typesense::client();
+            $client = $this->getClient();
             foreach($collections as $collection) {
                 try {
                     if ($collection && $collection->checkExistance()) {
