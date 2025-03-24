@@ -52,6 +52,7 @@ abstract class ScopedSearch
 
     /**
      * Validate the search key provided
+     * @note this requires a stored TYPESENSE_API_KEY with keys:list permission
      * @throws \Exception
      */
     public static function validateSearchOnlyKey(string $searchKey): bool {
