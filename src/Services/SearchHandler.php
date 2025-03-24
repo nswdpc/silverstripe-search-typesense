@@ -4,10 +4,12 @@ namespace NSWDPC\Search\Typesense\Services;
 
 use ElliotSawyer\SilverstripeTypesense\Collection;
 use ElliotSawyer\SilverstripeTypesense\Typesense;
+use NSWDPC\Search\Typesense\Extensions\SearchScope;
 use NSWDPC\Search\Typesense\Jobs\DeleteJob;
 use NSWDPC\Search\Typesense\Jobs\UpsertJob;
 use NSWDPC\Search\Typesense\Models\Result;
 use NSWDPC\Search\Typesense\Models\SearchResults;
+use NSWDPC\Search\Typesense\Services\ClientManager;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Control\Controller;
@@ -75,17 +77,27 @@ class SearchHandler {
      * @param int $pageStart the start offset for the results, e.g 0, 10, 20 for 10 results per page
      * @param int $perPage the number of items per page, cannot be more than 250. If <= 0 the default of 10 is used
      * @param array $searchScope a Typesense search scope to be merged into the search parameters. The scope is an array of search parameters
+     * @param string $searchOnlyApiKey an optional search-only API key for this particular search
      * @return PaginatedList|null
      */
-    public function doSearch(Collection $collection, array|string $searchQuery, int $pageStart = 0, int $perPage = 10, array $searchScope = []): ?SearchResults {
-        $client = Typesense::client();
+    public function doSearch(Collection $collection, array|string $searchQuery, int $pageStart = 0, int $perPage = 10, array $searchScope = [], string $searchOnlyApiKey = ''): ?SearchResults {
+
+        // Collection
         $collectionName = '';
         if($collection instanceof Collection) {
-            $collectionName = (string)$collection->Name;
+            $collectionName = trim((string)$collection->Name);
         }
-
         if($collectionName === '') {
             return null;
+        }
+
+        // Client
+        $manager = new ClientManager();
+        if(!$searchOnlyApiKey) {
+            $scopedApiKey = SearchScope::getScopedApiKey($searchOnlyApiKey, $searchScope);
+            $client = $manager->getConfiguredClientForApiKey($scopedApiKey);
+        } else {
+            $client = $manager->getConfiguredClient();
         }
 
         // query by handling
@@ -356,4 +368,5 @@ class SearchHandler {
             return DeleteJob::queueMyself($record);
         }
     }
+
 }
