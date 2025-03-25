@@ -77,16 +77,23 @@ class SyncJob extends AbstractQueuedJob
 
             $manager = new ClientManager();
             $client = $manager->getConfiguredClient();
+
+            // check if collection exists
             $exists = $client->collections[$collection->Name]->exists();
-            $this->addMessage("Collection '{$collection->Name}' sync (exists=" . (int)$exists . ")");
-            $response = $collection->syncWithTypesenseServer();
-            $this->addMessage($response);
+            if(!$exists) {
+                // if it doesn't, create it
+                $this->addMessage("Collection '{$collection->Name}' does not exist");
+                $response = $collection->syncWithTypesenseServer();
+                $this->addMessage($response);
+            }
+
             $this->addMessage("Collection '{$collection->Name}' batch import {$this->batchLimit} from {$this->batchStart}");
             $this->lastBatchCount = $collection->batchedImport(
                 ['LastEdited' => 'DESC'],// import most recently edited first,
                 $this->batchLimit,
                 $this->batchStart
             );
+
             if($this->lastBatchCount == 0) {
                 // if there are no more records..
                 $this->addMessage("Collection '{$collection->Name}' batch import complete");
