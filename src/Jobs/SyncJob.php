@@ -89,7 +89,7 @@ class SyncJob extends AbstractQueuedJob
 
             $this->addMessage("Collection '{$collection->Name}' batch import {$this->batchLimit} from {$this->batchStart}");
             $this->lastBatchCount = $collection->batchedImport(
-                ['LastEdited' => 'DESC'],// import most recently edited first,
+                ['ID' => 'DESC'],
                 $this->batchLimit,
                 $this->batchStart
             );
