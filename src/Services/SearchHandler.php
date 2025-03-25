@@ -4,12 +4,13 @@ namespace NSWDPC\Search\Typesense\Services;
 
 use ElliotSawyer\SilverstripeTypesense\Collection;
 use ElliotSawyer\SilverstripeTypesense\Typesense;
-use NSWDPC\Search\Typesense\Extensions\SearchScope;
 use NSWDPC\Search\Typesense\Jobs\DeleteJob;
 use NSWDPC\Search\Typesense\Jobs\UpsertJob;
 use NSWDPC\Search\Typesense\Models\Result;
 use NSWDPC\Search\Typesense\Models\SearchResults;
 use NSWDPC\Search\Typesense\Services\ClientManager;
+use NSWDPC\Search\Typesense\Services\Logger;
+use NSWDPC\Search\Typesense\Services\ScopedSearch;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Control\Controller;
@@ -78,10 +79,10 @@ class SearchHandler {
      * @param array $searchScope a Typesense scope
      * @param string $searchOnlyApiKey a Typesense search-only API key
      */
-    protected function getClient(array $searchScope = [], string $searchOnlyApiKey = ''): TypesenseClient {
+    protected static function getClient(array $searchScope = [], string $searchOnlyApiKey = ''): TypesenseClient {
         $manager = new ClientManager();
-        if(!$searchOnlyApiKey) {
-            $scopedApiKey = SearchScope::getScopedApiKey($searchOnlyApiKey, $searchScope);
+        if($searchOnlyApiKey) {
+            $scopedApiKey = ScopedSearch::getScopedApiKey($searchOnlyApiKey, $searchScope);
             $client = $manager->getConfiguredClientForApiKey($scopedApiKey);
         } else {
             $client = $manager->getConfiguredClient();
@@ -111,7 +112,7 @@ class SearchHandler {
         }
 
         // Client
-        $client = $this->getClient($searchScope, $searchOnlyApiKey);
+        $client = static::getClient($searchScope, $searchOnlyApiKey);
 
         // query by handling
         $queryBy = '';
@@ -237,7 +238,7 @@ class SearchHandler {
             // allow custom argument setting
             $searchRequests = array_merge($searchRequests, $searchScope);
             $commonSearchParams = [];
-            $client = $this->getClient($searchScope, $searchOnlyApiKey);
+            $client = static::getClient($searchScope, $searchOnlyApiKey);
             $this->logQuery($searchRequests);
             $search = $client->multiSearch->perform($searchRequests, $commonSearchParams);
         }
@@ -317,7 +318,7 @@ class SearchHandler {
         if(!$viaQueuedJob) {
             // Direct upsert .. UpsertJob process calls this.
             $success = 0;
-            $client = $this->getClient();
+            $client = static::getClient();
             foreach($collections as $collection) {
                 try {
                     if ($collection && $collection->checkExistance()) {
@@ -357,7 +358,7 @@ class SearchHandler {
         if(!$viaQueuedJob) {
             // Direct delete .. DeleteJob process calls this.
             $success = 0;
-            $client = $this->getClient();
+            $client = static::getClient();
             foreach($collections as $collection) {
                 try {
                     if ($collection && $collection->checkExistance()) {
