@@ -30,10 +30,10 @@ class DocumentDataExtension extends DataExtension {
             $genericMethodName = "get{$field['name']}";
 
             if(method_exists($owner, $typesenseMethodName)) {
-                // raw value passed back from getTypesense(Field)
+                // raw value passed back from getTypesenseValueFor{FieldName}
                 $value = $owner->{$typesenseMethodName}($field);
             } else if(method_exists($owner, $genericMethodName)) {
-                // raw value passed back from get(Field)
+                // raw value passed back from get{FieldName}
                 $value = $owner->{$genericMethodName}();
             } else {
                 // get value via getField()

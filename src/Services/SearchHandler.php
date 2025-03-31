@@ -8,6 +8,9 @@ use NSWDPC\Search\Typesense\Jobs\DeleteJob;
 use NSWDPC\Search\Typesense\Jobs\UpsertJob;
 use NSWDPC\Search\Typesense\Models\Result;
 use NSWDPC\Search\Typesense\Models\SearchResults;
+use NSWDPC\Search\Typesense\Services\ClientManager;
+use NSWDPC\Search\Typesense\Services\Logger;
+use NSWDPC\Search\Typesense\Services\ScopedSearch;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Control\Controller;
@@ -18,6 +21,7 @@ use SilverStripe\ORM\PaginatedList;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\View\ArrayData;
 use SilverStripe\View\ViewableData;
+use Typesense\Client as TypesenseClient;
 
 /**
  * Typesense search handler
@@ -69,53 +73,83 @@ class SearchHandler {
     }
 
     /**
+     * Get the Typesense client from the Typesense SDK
+     * Provide a search scope and search only API key to return a client using that scoped API key
+     * If not provided, the default API key will be used
+     * @param array $searchScope a Typesense scope
+     * @param string $searchOnlyApiKey a Typesense search-only API key
+     */
+    protected static function getClient(array $searchScope = [], string $searchOnlyApiKey = ''): TypesenseClient {
+        $manager = new ClientManager();
+        if($searchOnlyApiKey) {
+            $scopedApiKey = ScopedSearch::getScopedApiKey($searchOnlyApiKey, $searchScope);
+            $client = $manager->getConfiguredClientForApiKey($scopedApiKey);
+        } else {
+            $client = $manager->getConfiguredClient();
+        }
+        return $client;
+    }
+
+    /**
      * do a search using the input values from a form and the model used for configuration
-     * @param HTTPRequest $request the current request object
      * @param Collection $collection
      * @param array|string $searchQuery
      * @param int $pageStart the start offset for the results, e.g 0, 10, 20 for 10 results per page
      * @param int $perPage the number of items per page, cannot be more than 250. If <= 0 the default of 10 is used
-     * @param array $typesenseArgs extra search arguments to do a custom search beyond what can be automatically determined
+     * @param array $searchScope a Typesense search scope to be merged into the search parameters. The scope is an array of search parameters
+     * @param string $searchOnlyApiKey an optional search-only API key for this particular search
      * @return PaginatedList|null
      */
-    public function doSearch(Collection $collection, array|string $searchQuery, int $pageStart = 0, int $perPage = 10, array $typesenseArgs = []): ?SearchResults {
-        $client = Typesense::client();
+    public function doSearch(Collection $collection, array|string $searchQuery, int $pageStart = 0, int $perPage = 10, array $searchScope = [], string $searchOnlyApiKey = ''): ?SearchResults {
+
+        // Collection
         $collectionName = '';
         if($collection instanceof Collection) {
-            $collectionName = (string)$collection->Name;
+            $collectionName = trim((string)$collection->Name);
         }
-
         if($collectionName === '') {
             return null;
         }
 
-        // TODO nested object, object[] search
-        $fieldsForSearch = $collection->Fields()
-            ->filter([
-                'index' => 1,
-                'type' => ['string','string[]'] // Only fields that have a datatype of string or string[] in the collection schema can be specified in query_by
-            ])
-            ->column('name');
-        if($fieldsForSearch === []) {
-            return null;
+        // Client
+        $client = static::getClient($searchScope, $searchOnlyApiKey);
+
+        // query by handling
+        $queryBy = '';
+        if(!isset($searchScope['query_by'])) {
+            // TODO nested object, object[] search
+            $fieldsForSearch = $collection->Fields()
+                ->filter([
+                    'index' => 1,
+                    'type' => ['string','string[]'] // Only fields that have a datatype of string or string[] in the collection schema can be specified in query_by
+                ])
+                ->column('name');
+            $queryBy = implode(",", self::escapeArray($fieldsForSearch));
+        } else if(is_string($searchScope['query_by'])) {
+            $queryBy = trim($searchScope['query_by']);
         }
 
         $search = [];
         if(is_string($searchQuery)) {
             // basic string search on multiple fields
             $searchParameters = [
-                'q' => $searchQuery,
-                'query_by' => implode(",", self::escapeArray($fieldsForSearch))
+                'q' => $searchQuery
             ];
+            if($queryBy !== '') {
+                $searchParameters['query_by'] = $queryBy;
+            }
         } else {
+            // array of search queries
             // Search in all fields and filter by fields
             // v26
             //Ref: https://github.com/typesense/typesense/issues/561
             //Ref: https://github.com/typesense/typesense/issues/696#issuecomment-1985042336
             $searchParameters = [
-                'q' => '*',
-                'query_by' => implode(",", self::escapeArray($fieldsForSearch))
+                'q' => '*'
             ];
+            if($queryBy !== '') {
+                $searchParameters['query_by'] = $queryBy;
+            }
             $filterBy = [];
             foreach($searchQuery as $field => $value) {
                 //TODO escaping
@@ -127,8 +161,6 @@ class SearchHandler {
             }
         }
 
-
-
         // pagination parameters
         // items per page
         $perPage = $this->setPerPage($perPage);
@@ -139,8 +171,8 @@ class SearchHandler {
             'per_page' => $perPage
         ];
 
-        // allow custom argument setting
-        $searchParameters = array_merge($searchParameters, $paginationParameters, $typesenseArgs);
+        // construct search parameters using the searchScope, allow derived parameters to override
+        $searchParameters = array_merge($searchScope, $searchParameters, $paginationParameters);
 
         $this->logQuery($searchParameters, $collectionName);
         $search = $client->collections[$collectionName]->documents->search($searchParameters);
@@ -184,8 +216,9 @@ class SearchHandler {
 
     /**
      * Perform a multisearch in the single given collection
+     * @TODO this implementation needs work
      */
-    public function doMultiSearch(string $collectionName, array $searchQuery, array $typesenseArgs = []): array {
+    public function doMultiSearch(string $collectionName, array $searchQuery, array $searchScope = [], string $searchOnlyApiKey = ''): array {
         // an array, do a multisearch on each column using the term from each field
         $searches = [];
         foreach($searchQuery as $field => $value) {
@@ -203,9 +236,9 @@ class SearchHandler {
                 'searches' => $searches
             ];
             // allow custom argument setting
-            $searchRequests = array_merge($searchRequests, $typesenseArgs);
+            $searchRequests = array_merge($searchRequests, $searchScope);
             $commonSearchParams = [];
-            $client = Typesense::client();
+            $client = static::getClient($searchScope, $searchOnlyApiKey);
             $this->logQuery($searchRequests);
             $search = $client->multiSearch->perform($searchRequests, $commonSearchParams);
         }
@@ -216,10 +249,10 @@ class SearchHandler {
      * Log queries, if enabled
      */
     protected function logQuery(array $query, string $collectionName = ''): bool {
-        if(!self::config()->get('log_queries')) {
+        if(!static::config()->get('log_queries')) {
             return false;
         } else {
-            Logger::log("Query:" . json_encode($query) . " Collection:" . $collectionName, self::config()->get('log_level'));
+            Logger::log("Typesense Query=" . json_encode(["query" => $query, "collection" => $collectionName]), static::config()->get('log_level'));
             return true;
         }
     }
@@ -285,7 +318,7 @@ class SearchHandler {
         if(!$viaQueuedJob) {
             // Direct upsert .. UpsertJob process calls this.
             $success = 0;
-            $client = Typesense::client();
+            $client = static::getClient();
             foreach($collections as $collection) {
                 try {
                     if ($collection && $collection->checkExistance()) {
@@ -325,7 +358,7 @@ class SearchHandler {
         if(!$viaQueuedJob) {
             // Direct delete .. DeleteJob process calls this.
             $success = 0;
-            $client = Typesense::client();
+            $client = static::getClient();
             foreach($collections as $collection) {
                 try {
                     if ($collection && $collection->checkExistance()) {
@@ -350,4 +383,5 @@ class SearchHandler {
             return DeleteJob::queueMyself($record);
         }
     }
+
 }

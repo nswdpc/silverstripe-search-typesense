@@ -4,6 +4,7 @@ namespace NSWDPC\Search\Typesense\Jobs;
 
 use ElliotSawyer\SilverstripeTypesense\Collection;
 use ElliotSawyer\SilverstripeTypesense\Typesense;
+use NSWDPC\Search\Typesense\Services\ClientManager;
 use NSWDPC\Search\Typesense\Services\Logger;
 use SilverStripe\ORM\DataList;
 use SilverStripe\Core\Injector\Injector;
@@ -17,19 +18,23 @@ use Symbiote\QueuedJobs\Services\QueuedJobService;
 class SyncJob extends AbstractQueuedJob
 {
 
-    public function __construct(string $collectionName = '', int $repeatHours = 0)
+    public function __construct(string $collectionName = '', int $repeatHours = 0, int $batchLimit = 100, int $batchStart = 0)
     {
         $this->collectionName = trim($collectionName);
         $this->repeatHours = abs($repeatHours);
+        $this->batchLimit = $batchLimit;
+        $this->batchStart = $batchStart;
     }
 
     public function getTitle()
     {
         return _t(
             self::class . ".JOB_TITLE",
-            "Sync collection to Typesense. Collection={collection}, Repeat={repeat}h",
+            "Sync collection to Typesense. Collection={collection} Batch={limit},{start} Repeat={repeat}h",
             [
                 'collection' => $this->collectionName,
+                'limit' => $this->batchLimit,
+                'start' => $this->batchStart,
                 'repeat' => $this->repeatHours
             ]
         );
@@ -70,20 +75,40 @@ class SyncJob extends AbstractQueuedJob
                 throw new \Exception("The collection '{$this->collectionName}' could not be found or created, maybe it is not enabled?");
             }
 
-            $client = Typesense::client();
-            $exists = $client->collections[$collection->Name]->exists();
-            $this->addMessage("Collection '{$collection->Name}' sync (exists=" . (int)$exists . ")");
-            $response = $collection->syncWithTypesenseServer();
-            $this->addMessage($response);
-            $this->addMessage("Collection '{$collection->Name}' import");
-            $collection->import();
-            $this->addMessage("Collection '{$collection->Name}' import complete");
+            $manager = new ClientManager();
+            $client = $manager->getConfiguredClient();
 
+            // check if collection exists
+            $exists = $client->collections[$collection->Name]->exists();
+            if(!$exists) {
+                // if it doesn't, create it
+                $this->addMessage("Collection '{$collection->Name}' does not exist");
+                $response = $collection->syncWithTypesenseServer();
+                $this->addMessage($response);
+            }
+
+            $this->addMessage("Collection '{$collection->Name}' batch import {$this->batchLimit} from {$this->batchStart}");
+            $this->lastBatchCount = $collection->batchedImport(
+                ['ID' => 'DESC'],
+                $this->batchLimit,
+                $this->batchStart
+            );
+
+            if($this->lastBatchCount == 0) {
+                // if there are no more records..
+                $this->addMessage("Collection '{$collection->Name}' batch import complete");
+            } else {
+                // start at the next page
+                $this->addMessage("Collection '{$collection->Name}' batch import next");
+            }
+            $this->isComplete = true;
         } catch (\UnexpectedValueException $unexpectedValueException) {
             $this->addMessage("Failed to run: " . $unexpectedValueException->getMessage());
+            // on error mark as complete
+            $this->isComplete = true;
         } catch (\Exception $exception) {
             $this->addMessage("ERROR: " . $exception->getMessage());
-        } finally {
+            // on error mark as complete
             $this->isComplete = true;
         }
     }
@@ -92,15 +117,31 @@ class SyncJob extends AbstractQueuedJob
      * Requeue job if configured
      */
     public function afterComplete() {
-        if($this->repeatHours > 0) {
-            $job = new SyncJob($this->collectionName, $this->repeatHours);
+        $job = null;
+        if($this->lastBatchCount === 0 && $this->repeatHours > 0) {
+            // complete and repeating
+            $job = new SyncJob(
+                $this->collectionName,
+                $this->repeatHours,
+                $this->batchLimit,// re-use batch limit
+                0,// start again
+            );
             $rdt = DBDatetime::now();
             $rdt->modify("+{$this->repeatHours} hours");
-            QueuedJobService::singleton()->queueJob($job);
-            Injector::inst()->get(QueuedJobService::class)->queueJob(
-                $job,
-                $rdt->Format(DBDatetime::ISO_DATETIME)
+            $startAt = $rdt->Format(DBDatetime::ISO_DATETIME);
+        } else if($this->lastBatchCount > 0) {
+            $startAt = null;
+            $batchStart = $this->batchStart + $this->batchLimit;
+            $job = new SyncJob(
+                $this->collectionName,
+                $this->repeatHours,
+                $this->batchLimit,// re-use batch limit
+                $batchStart,// start at this page
             );
+        }
+
+        if($job) {
+            Injector::inst()->get(QueuedJobService::class)->queueJob($job, $startAt);
         }
     }
 }

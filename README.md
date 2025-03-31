@@ -1,26 +1,56 @@
 # Typesense Silverstripe integration
 
-Provides a level of automation to create forms and carry out Typesense searches based on a selected Collection
+This module:
++ allows programmatic creation of search forms to query a Typesense collection
++ carrying out of Typesense searches on a selected collection
++ provides a consistent data structure for indexing and rendering results
++ allows adding of support Typesense instantsearch to your data models, with configuration within the administration area
++ provides an extension to handle upsert and removal of documents that are marked for indexing
 
-### Usage
+This module does not provide any implementations for searching in your Typesense collections. Use the following modules to implement this:
 
++ nswdpc/silverstripe-typesense-cms - provides a Typesense page to search and display results from collections
++ nswdpc/silverstripe-typesense-elemental - provides Elemental content blocks to search collections
+
+For NSW users wanting to integrate with the NSW Design System, the module nswdpc/waratah-typesense will assist.
+
+## Documentation
+
+* [Start at the index](./docs/en/001_index.md)
 
 ## Requirements
 
++ a Typesense server or servers
 
 ## Installation
 
+The only supported way of installing this module is via composer. Ensure you have a repo entry until this module is added to packagist:
+
+
+```json
+{
+    "type": "vcs",
+    "url": "git@github.com:nswdpc/silverstripe-search-typesense.git"
+}
+```
+
+```sh
+composer require nswdpc/silverstripe-search-typesense
+```
 
 ## License
 
 [BSD-3-Clause](./LICENSE.md)
 
-## Documentation
-
-* [Documentation](./docs/en/001_index.md)
-
 ## Configuration
 
+Environment:
+
+```sh
+TYPESENSE_API_KEY="API key that can read and write"
+TYPESENSE_SERVER="https://host:port"
+TYPESENSE_SEARCH_KEY='Optional search only key for creating scoped API keys for Instantsearch'
+```
 
 ## Maintainers
 

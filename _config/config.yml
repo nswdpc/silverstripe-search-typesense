@@ -12,3 +12,11 @@ ElliotSawyer\SilverstripeTypesense\Collection:
   default_collection_fields:
     # an object of all data that can be displayed in a search result
     - { name: TypesenseSearchResultData, type: 'object[]', index: false }
+SilverStripe\SiteConfig\SiteConfig:
+  extensions:
+    # global search instantsearch support
+    - 'NSWDPC\Search\Typesense\Extensions\InstantSearchExtension'
+NSWDPC\Search\Typesense\Models\InstantSearch:
+  extensions:
+    # scoped search support
+    - 'NSWDPC\Search\Typesense\Extensions\ScopedSearchExtension'
