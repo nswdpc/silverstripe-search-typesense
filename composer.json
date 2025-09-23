@@ -32,7 +32,7 @@
         "phpstan/phpstan": "^2",
         "rector/rector": "^2",
         "codem/silverstripe-html5-inputs": "^1",
-        "elliotsawyer/silverstripe-typesense": "^0.0.7",
+        "elliotsawyer/silverstripe-typesense": "dev-feat-batched-import as 0.0.7",
         "typesense/typesense-php": "^4.9",
         "nswdpc/silverstripe-search-forms": "*",
         "silverstripe/siteconfig": "^5",
