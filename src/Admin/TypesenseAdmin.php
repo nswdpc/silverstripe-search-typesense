@@ -1,6 +1,6 @@
 <?php
 
-namespace NSWDPC\Search\Typesense\Admin\TypesenseAdmin;
+namespace NSWDPC\Search\Typesense\Admin;
 
 use NSWDPC\Search\Typesense\Models\InstantSearch;
 use SilverStripe\Admin\ModelAdmin;
