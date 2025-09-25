@@ -41,7 +41,7 @@ class UpsertJob extends AbstractQueuedJob
      * Queue job immediately
      */
     public static function queueMyself(DataObject $record) {
-        $job = new self($record->ID, get_class($record));
+        $job = new self($record->ID, $record::class);
         Logger::log("Queued UpsertJob for record #{$record->ID}", "DEBUG");
         return QueuedJobService::singleton()->queueJob($job);
     }
@@ -56,13 +56,14 @@ class UpsertJob extends AbstractQueuedJob
             if(!$record || !$record->exists()) {
                 throw new \RuntimeException("The record {$this->RecordID}/{$this->RecordType} does not exist");
             }
+
             if(SearchHandler::upsertToTypesense($record, false)) {
                 $this->addMessage('Upserted OK');
             } else {
                 $this->addMessage('Upsert failure or partial success - record might not be linked to any collections, check logs');
             }
-        } catch (\Exception $e) {
-            Logger::log("Failed: " . $e->getMessage(), "NOTICE");
+        } catch (\Exception $exception) {
+            Logger::log("Failed: " . $exception->getMessage(), "NOTICE");
         }
 
         // job is complete regardless of outcome, no point in hammering the Typesense server

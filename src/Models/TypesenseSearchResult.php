@@ -30,20 +30,19 @@ class TypesenseSearchResult extends ViewableData {
 
     use Injectable;
 
-    protected array $data = [];
-
     protected string $highlight = '';
 
     /**
      * Store data in this object
      */
-    public function  __construct(array $data = []) {
-        $this->data = $data;
+    public function __construct(protected array $data = [])
+    {
     }
 
     /**
      * Set custom data value
      */
+    #[\Override]
     public function __set($name, $value) {
         $this->data[$name] = $value;
     }
@@ -51,15 +50,17 @@ class TypesenseSearchResult extends ViewableData {
     /**
      * Allows templates to request values from this instance's data
      */
+    #[\Override]
     public function __get($name) {
         return $this->data[$name] ?? null;
     }
 
+    #[\Override]
     public function __isset($name) {
         return array_key_exists($name, $this->data);
     }
 
-    public function toArray() {
+    public function toArray(): array {
         return $this->data;
     }
 
@@ -81,12 +82,12 @@ class TypesenseSearchResult extends ViewableData {
             $labels = array_filter($labels);
             $list = ArrayList::create();
             foreach($labels as $label) {
-                if(is_string($label) && $label !== "") {
+                if (is_string($label) && $label !== "") {
                     $list->push(ArrayData::create([
                         'Name' => $label,
                         'Title' => $label
                     ]));
-                } else if(is_array($label)) {
+                } elseif (is_array($label)) {
                     // label has some metadata like name, link, title
                     $list->push(ArrayData::create([
                         'Name' => $label['Name'] ?? '',
@@ -95,6 +96,7 @@ class TypesenseSearchResult extends ViewableData {
                     ]));
                 }
             }
+
             return $list;
         } else {
             return null;

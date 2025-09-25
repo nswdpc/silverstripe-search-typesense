@@ -45,6 +45,7 @@ class SearchHandler {
         if($startVarName === '') {
             throw new \InvalidArgumentException('Start var name cannot be an empty string');
         }
+
         $this->startVarName = $startVarName;
     }
 
@@ -67,8 +68,10 @@ class SearchHandler {
             if(!is_string($string)) {
                 continue;
             }
+
             $result[] = self::escapeString($string);
         }
+
         return $result;
     }
 
@@ -81,19 +84,18 @@ class SearchHandler {
      */
     protected static function getClient(array $searchScope = [], string $searchOnlyApiKey = ''): TypesenseClient {
         $manager = new ClientManager();
-        if($searchOnlyApiKey) {
+        if($searchOnlyApiKey !== '') {
             $scopedApiKey = ScopedSearch::getScopedApiKey($searchOnlyApiKey, $searchScope);
             $client = $manager->getConfiguredClientForApiKey($scopedApiKey);
         } else {
             $client = $manager->getConfiguredClient();
         }
+
         return $client;
     }
 
     /**
      * do a search using the input values from a form and the model used for configuration
-     * @param Collection $collection
-     * @param array|string $searchQuery
      * @param int $pageStart the start offset for the results, e.g 0, 10, 20 for 10 results per page
      * @param int $perPage the number of items per page, cannot be more than 250. If <= 0 the default of 10 is used
      * @param array $searchScope a Typesense search scope to be merged into the search parameters. The scope is an array of search parameters
@@ -102,11 +104,8 @@ class SearchHandler {
      */
     public function doSearch(Collection $collection, array|string $searchQuery, int $pageStart = 0, int $perPage = 10, array $searchScope = [], string $searchOnlyApiKey = ''): ?SearchResults {
 
-        // Collection
-        $collectionName = '';
-        if($collection instanceof Collection) {
-            $collectionName = trim((string)$collection->Name);
-        }
+        $collectionName = trim((string)$collection->Name);
+
         if($collectionName === '') {
             return null;
         }
@@ -116,7 +115,7 @@ class SearchHandler {
 
         // query by handling
         $queryBy = '';
-        if(!isset($searchScope['query_by'])) {
+        if (!isset($searchScope['query_by'])) {
             // TODO nested object, object[] search
             $fieldsForSearch = $collection->Fields()
                 ->filter([
@@ -125,7 +124,7 @@ class SearchHandler {
                 ])
                 ->column('name');
             $queryBy = implode(",", self::escapeArray($fieldsForSearch));
-        } else if(is_string($searchScope['query_by'])) {
+        } elseif (is_string($searchScope['query_by'])) {
             $queryBy = trim($searchScope['query_by']);
         }
 
@@ -150,12 +149,14 @@ class SearchHandler {
             if($queryBy !== '') {
                 $searchParameters['query_by'] = $queryBy;
             }
+
             $filterBy = [];
             foreach($searchQuery as $field => $value) {
                 //TODO escaping
                 //TODO operations
                 $filterBy[] = "{$field}:*{$value}*";
             }
+
             if($filterBy !== []) {
                 $searchParameters['filter_by'] = implode(" || ", $filterBy);
             }
@@ -187,6 +188,7 @@ class SearchHandler {
                     // skip if no result returned
                     continue;
                 }
+
                 $list->push(
                     Result::create(
                         $hit['document'],
@@ -230,6 +232,7 @@ class SearchHandler {
                 ];
             }
         }
+
         $search = [];
         if($searches !== []) {
             $searchRequests = [
@@ -242,6 +245,7 @@ class SearchHandler {
             $this->logQuery($searchRequests);
             $search = $client->multiSearch->perform($searchRequests, $commonSearchParams);
         }
+
         return $search;
     }
 
@@ -258,11 +262,13 @@ class SearchHandler {
     }
 
     public function setPerPage(int $perPage): int {
-        if($perPage > 250) {
+        if ($perPage > 250) {
             $perPage = static::MAX_PER_PAGE;
-        } else if($perPage <= 0) {
-            $perPage = static::DEFAULT_PER_PAGE;// default used
+        } elseif ($perPage <= 0) {
+            $perPage = static::DEFAULT_PER_PAGE;
+            // default used
         }
+
         return $perPage;
     }
 
@@ -278,9 +284,7 @@ class SearchHandler {
         $ancestry = ClassInfo::ancestry($record, false);
         $ancestry = array_filter(
             $ancestry,
-            function($k,$v) {
-                return $v !== DataObject::class && $v != ViewableData::class;
-            },
+            fn($k, $v): true => $v !== DataObject::class && $v != ViewableData::class,
             ARRAY_FILTER_USE_BOTH
         );
 
@@ -310,7 +314,7 @@ class SearchHandler {
     public static function upsertToTypesense(DataObject $record, bool $viaQueuedJob = false): bool {
 
         // Check if this record is linked to any collections
-        if(!($collections = static::isLinkedToCollections($record))) {
+        if(!($collections = static::isLinkedToCollections($record)) instanceof \SilverStripe\ORM\DataList) {
             Logger::log("Attempt to upsert record #{$record->ID}/{$record->ClassName} not linked to any collections", "INFO");
             return false;
         }
@@ -329,14 +333,16 @@ class SearchHandler {
                         } else {
                             $data = $collection->getTypesenseDocument($record, $fieldsArray);
                         }
+
                         $upsert = $client->collections[$collection->Name]->documents->upsert($data);
                         Logger::log("Upserted record #{$record->ID}/{$record->ClassName} to collection {$collection->Name}", "INFO");
                         $success++;
                     }
                 } catch (\Exception $exception) {
-                    Logger::log(get_class($exception) . ": failed to upsert #{$record->ID}/{$record->ClassName} to collection {$collection->Name}: " . $exception->getMessage(), "NOTICE");
+                    Logger::log($exception::class . ": failed to upsert #{$record->ID}/{$record->ClassName} to collection {$collection->Name}: " . $exception->getMessage(), "NOTICE");
                 }
             }
+
             return $success == $collections->count();
         } else {
             // Upsert via job
@@ -350,7 +356,7 @@ class SearchHandler {
     public static function deleteFromTypesense(DataObject $record, bool $viaQueuedJob = false): bool {
 
         // Check if this record is linked to any collections
-        if(!($collections = static::isLinkedToCollections($record))) {
+        if(!($collections = static::isLinkedToCollections($record)) instanceof \SilverStripe\ORM\DataList) {
             Logger::log("Attempt to delete record #{$record->ID}/{$record->ClassName} not linked to any collections", "INFO");
             return false;
         }
@@ -369,14 +375,16 @@ class SearchHandler {
                         } else {
                             $data = $collection->getTypesenseDocument($record, $fieldsArray);
                         }
+
                         $client->collections[$collection->Name]->documents[(string) $record->ID]->delete();
                         Logger::log("Delete record #{$record->ID}/{$record->ClassName} from collection {$collection->Name}", "INFO");
                         $success++;
                     }
-                } catch (\Exception $e) {
-                    Logger::log(get_class($exception) . ": failed to delete #{$record->ID}/{$record->ClassName} from collection {$collection->Name}: " . $exception->getMessage(), "NOTICE");
+                } catch (\Exception) {
+                    Logger::log($exception::class . ": failed to delete #{$record->ID}/{$record->ClassName} from collection {$collection->Name}: " . $exception->getMessage(), "NOTICE");
                 }
             }
+
             return $success == $collections->count();
         } else {
             // delete via job

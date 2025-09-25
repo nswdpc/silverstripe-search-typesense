@@ -60,13 +60,14 @@ abstract class ScopedSearch
             if($searchKey === '') {
                 throw new \InvalidArgumentException("Empty key provided");
             }
+
             $manager = new ClientManager();
             $client = $manager->getConfiguredClient();
             $results = $client->keys->retrieve();
             $keyFound = false;
             // print_r($results);
             foreach($results['keys'] as $key) {
-                if(!str_starts_with($searchKey, $key['value_prefix'])) {
+                if(!str_starts_with($searchKey, (string) $key['value_prefix'])) {
                     // ignore this key returned
                     continue;
                 }
@@ -86,7 +87,7 @@ abstract class ScopedSearch
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return false;
         }
     }
@@ -110,18 +111,19 @@ abstract class ScopedSearch
      */
     public static function validateSearchScope(string $searchScope): bool {
         try {
-            if($searchScope == '') {
+            if($searchScope === '') {
                 // empty scope is valid
                 return true;
             }
+
             $scope = static::getDecodedSearchScope($searchScope);
             if(is_array($scope)) {
                 return true;
             } else {
                 return false;
             }
-        } catch (\Exception $e) {
-            Logger::log("Error: " . $e->getMessage(), "INFO");
+        } catch (\Exception $exception) {
+            Logger::log("Error: " . $exception->getMessage(), "INFO");
             return false;
         }
     }

@@ -61,7 +61,7 @@ class SyncJob extends AbstractQueuedJob
                 }
             }
 
-            if(!$collection) {
+            if(!$collection instanceof \ElliotSawyer\SilverstripeTypesense\Collection) {
                 // no configured collection in YML.. try to get one from
                 $this->addMessage("No configured collection found for '{$this->collectionName}', trying to find the collection in the DB only");
                 $collection = Collection::get()
@@ -80,7 +80,7 @@ class SyncJob extends AbstractQueuedJob
 
             // check if collection exists
             $exists = $client->collections[$collection->Name]->exists();
-            if(!$exists) {
+            if($exists !== true) {
                 // if it doesn't, create it
                 $this->addMessage("Collection '{$collection->Name}' does not exist");
                 $response = $collection->syncWithTypesenseServer();
@@ -101,6 +101,7 @@ class SyncJob extends AbstractQueuedJob
                 // start at the next page
                 $this->addMessage("Collection '{$collection->Name}' batch import next");
             }
+
             $this->isComplete = true;
         } catch (\UnexpectedValueException $unexpectedValueException) {
             $this->addMessage("Failed to run: " . $unexpectedValueException->getMessage());
@@ -119,7 +120,7 @@ class SyncJob extends AbstractQueuedJob
     public function afterComplete() {
         $job = null;
         $startAt = null;
-        if($this->lastBatchCount === 0 && $this->repeatHours > 0) {
+        if ($this->lastBatchCount === 0 && $this->repeatHours > 0) {
             // complete and repeating
             $job = new SyncJob(
                 $this->collectionName,
@@ -130,7 +131,7 @@ class SyncJob extends AbstractQueuedJob
             $rdt = DBDatetime::now();
             $rdt->modify("+{$this->repeatHours} hours");
             $startAt = $rdt->Format(DBDatetime::ISO_DATETIME);
-        } else if($this->lastBatchCount > 0) {
+        } elseif ($this->lastBatchCount > 0) {
             $startAt = null;
             $batchStart = $this->batchStart + $this->batchLimit;
             $job = new SyncJob(
@@ -141,7 +142,7 @@ class SyncJob extends AbstractQueuedJob
             );
         }
 
-        if($job) {
+        if($job instanceof \NSWDPC\Search\Typesense\Jobs\SyncJob) {
             Injector::inst()->get(QueuedJobService::class)->queueJob($job, $startAt);
         }
     }

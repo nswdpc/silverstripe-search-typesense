@@ -11,6 +11,9 @@ use SilverStripe\ORM\ValidationResult;
 /**
  * Extension applied to models that can apply a search scope and/or scoped API
  * key for searching
+ * @property ?string $SearchKey
+ * @property ?string $SearchScope
+ * @extends \SilverStripe\ORM\DataExtension<(\NSWDPC\Search\Typesense\Models\InstantSearch & static)>
  */
 class ScopedSearchExtension extends DataExtension {
 
@@ -80,8 +83,8 @@ class ScopedSearchExtension extends DataExtension {
 
         try {
             return ScopedSearch::getScopedApiKey($searchKey, ScopedSearch::getDecodedSearchScope($searchScope));
-        } catch (\Exception $e) {
-            Logger::log("Scope provided is invalid: " . $e->getMessage(), "NOTICE");
+        } catch (\Exception $exception) {
+            Logger::log("Scope provided is invalid: " . $exception->getMessage(), "NOTICE");
             return null;
         }
     }

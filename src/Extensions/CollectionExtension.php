@@ -10,6 +10,7 @@ use SilverStripe\ORM\DataExtension;
  * Extensions for Collection data model
  *
  * @property Collection|CollectionExtension $owner
+ * @extends \SilverStripe\ORM\DataExtension<static>
  */
 class CollectionExtension extends DataExtension {
 

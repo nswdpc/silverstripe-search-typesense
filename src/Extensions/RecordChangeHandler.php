@@ -18,6 +18,7 @@ use Typesense\Exceptions\ObjectNotFound;
  * onAfterPublishRecursive: upsert document to Typesense for unversioned records
  * onBeforeDelete: delete document from Typesense for unversioned records, noop for versioned records
  * onAfterUpublish: delete document from Typesense for versioned records
+ * @extends \SilverStripe\ORM\DataExtension<static>
  */
 class RecordChangeHandler extends DataExtension {
 

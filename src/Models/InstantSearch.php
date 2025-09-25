@@ -20,6 +20,21 @@ use SilverStripe\Security\PermissionProvider;
 
 /**
  * Configuration model for instantsearch
+ * @property string $Title
+ * @property bool $Enabled
+ * @property ?string $Prompt
+ * @property ?string $AriaLabel
+ * @property ?string $Nodes
+ * @property ?string $QueryBy
+ * @property string $CollectionName
+ * @property ?string $InputElementId
+ * @property ?string $ContainerElementId
+ * @property ?string $HitLinkField
+ * @property ?string $HitTitleField
+ * @property ?string $HitAbstractField
+ * @property int $CollectionID
+ * @method \ElliotSawyer\SilverstripeTypesense\Collection Collection()
+ * @mixin \NSWDPC\Search\Typesense\Extensions\ScopedSearchExtension
  */
 class InstantSearch extends DataObject implements PermissionProvider {
 
@@ -66,6 +81,7 @@ class InstantSearch extends DataObject implements PermissionProvider {
         'Enabled' => 0
     ];
 
+    #[\Override]
     public function getCMSFields() {
         $fields = parent::getCMSFields();
         $fields->removeByName(array_merge(['CollectionID'], array_keys(static::config()->get('db'))));
@@ -172,6 +188,7 @@ class InstantSearch extends DataObject implements PermissionProvider {
     /**
      * Validate the model
      */
+    #[\Override]
     public function validate() {
         $result = parent::validate();
 
@@ -187,11 +204,11 @@ class InstantSearch extends DataObject implements PermissionProvider {
         return $result;
     }
 
-    public function validateTypesenseNodes() {
+    public function validateTypesenseNodes(): bool {
         try {
             $this->getTypesenseNodes();
             return true;
-        } catch (\Exception $exception) {
+        } catch (\Exception) {
             return false;
         }
     }
@@ -211,13 +228,16 @@ class InstantSearch extends DataObject implements PermissionProvider {
                 if(!$port) {
                     $port = ($scheme == "https" ? 443 : 80);
                 }
+
                 $path = $url['path'] ?? '';
                 if(!isset($scheme)) {
                     throw ValidationException::create(_t(static::class . '.INSTANT_SEARCH_INVALID_URL_SCHEME', 'URL {url} does not include a scheme', ['url' => $searchNode]));
                 }
+
                 if(!isset($host)) {
                     throw ValidationException::create(_t(static::class . '.INSTANT_SEARCH_INVALID_URL_HOST', 'URL {url} does not include a host', ['url' => $searchNode]));
                 }
+
                 $nodes[] = [
                     'host' => $host,
                     'port' => $port,
@@ -226,6 +246,7 @@ class InstantSearch extends DataObject implements PermissionProvider {
                 ];
             }
         }
+
         return $nodes;
     }
 
@@ -236,26 +257,32 @@ class InstantSearch extends DataObject implements PermissionProvider {
         if($collection && $collection->isInDB()) {
             $collectionName = $collection->Name;
         }
+
         if(!$collectionName) {
             // a static name provided in the field overrules
             $collectionName = $this->getField('CollectionName');
         }
+
         return (string)$collectionName;
     }
 
 
+    #[\Override]
     public function canEdit($member = null) {
         return Permission::checkMember($member, 'INSTANTSEARCH_CONFIG_EDIT');
     }
 
+    #[\Override]
     public function canView($member = null) {
         return Permission::checkMember($member, 'INSTANTSEARCH_CONFIG_VIEW');
     }
 
+    #[\Override]
     public function canCreate($member = null, $context = []) {
         return Permission::checkMember($member, 'INSTANTSEARCH_CONFIG_CREATE');
     }
 
+    #[\Override]
     public function canDelete($member = null) {
         return Permission::checkMember($member, 'INSTANTSEARCH_CONFIG_DELETE');
     }
@@ -290,7 +317,7 @@ class InstantSearch extends DataObject implements PermissionProvider {
      * using the configuration set in this model
      * The model can provide overrides to the general config if required
      */
-    public function provideInstantSearchFor(DataObject $model) {
+    public function provideInstantSearchFor(DataObject $model): ?\SilverStripe\ORM\FieldType\DBHTMLText {
         // @phpstan-ignore method.notFound (extension method provided by InstantSearchExtension)
         $collectionName = $model->getCollectionName();
         if($collectionName === '') {
@@ -319,7 +346,7 @@ class InstantSearch extends DataObject implements PermissionProvider {
 
         try {
             $nodes = $this->getTypesenseNodes();
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $nodes = null; // If exception thrown, node is undefined
         }
 

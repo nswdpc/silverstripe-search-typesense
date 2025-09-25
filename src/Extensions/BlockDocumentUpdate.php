@@ -9,13 +9,13 @@ use ElliotSawyer\SilverstripeTypesense\DocumentUpdate;
  */
 class BlockDocumentUpdate extends DocumentUpdate {
 
+    #[\Override]
     public function onAfterWrite()
     {
-        return;
     }
 
+    #[\Override]
     public function onBeforeDelete()
     {
-        return;
     }
 }

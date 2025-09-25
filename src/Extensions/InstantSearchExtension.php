@@ -17,6 +17,9 @@ use SilverStripe\ORM\ValidationException;
 /**
  * Extension applied to models that can provide instantsearch interface
  * e.g elemental content blocks providing a search interface
+ * @property int $InstantSearchID
+ * @method \NSWDPC\Search\Typesense\Models\InstantSearch InstantSearch()
+ * @extends \SilverStripe\ORM\DataExtension<(\SilverStripe\SiteConfig\SiteConfig & static)>
  */
 class InstantSearchExtension extends DataExtension {
 
@@ -87,7 +90,7 @@ class InstantSearchExtension extends DataExtension {
      */
     public function getCollectionName(): string {
         $instantSearch = $this->getInstantSearch();
-        if(!$instantSearch) {
+        if(!$instantSearch instanceof \NSWDPC\Search\Typesense\Models\InstantSearch) {
             return '';
         }
 
@@ -96,7 +99,7 @@ class InstantSearchExtension extends DataExtension {
         // if not set, try to get from owner model
         /** @var \SilverStripe\ORM\DataObject $owner */
         $owner = $this->getOwner();
-        if(!$collectionName && $owner->hasMethod('getCollection')) {
+        if(($collectionName === '' || $collectionName === '0') && $owner->hasMethod('getCollection')) {
             $collection = $owner->getCollection();
             if($collection && ($collection instanceof Collection)) {
                 $collectionName = $collection->Name;
@@ -115,7 +118,7 @@ class InstantSearchExtension extends DataExtension {
      */
     public function TypesenseInstantSearch(): ?DBHTMLText {
         $instantSearch = $this->getInstantSearch();
-        if($instantSearch) {
+        if($instantSearch instanceof \NSWDPC\Search\Typesense\Models\InstantSearch) {
             return $instantSearch->provideInstantSearchFor($this->getOwner());
         } else {
             return null;

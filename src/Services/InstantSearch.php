@@ -30,8 +30,7 @@ abstract class InstantSearch {
         if(!is_array($nodes) || count($nodes) == 0) {
             $nodes = static::getServerNodes();
         }
-        $tag = static::addLocalRequirement($config);
-        return $tag;
+        return static::addLocalRequirement($config);
     }
 
     /**
@@ -39,11 +38,12 @@ abstract class InstantSearch {
      */
     public static function getServerNodes(): array {
         $server = Typesense::parse_typesense_server();
-        if (!$server) {
+        if ($server === []) {
             throw new \Exception(
                 _t(static::class.'.EXCEPTION_schemeformat', 'TYPESENSE_SERVER must be in scheme://host:port format')
             );
         }
+
         $host = $server['host'] ?? '';
         $port = $server['port'] ?? 8081;
         $scheme = $server['scheme'] ?? 'https';
@@ -55,6 +55,7 @@ abstract class InstantSearch {
                 'protocol' => $scheme,
             ];
         }
+
         return $nodes;
     }
 
@@ -90,7 +91,7 @@ abstract class InstantSearch {
     protected static function addLocalRequirement(array $config): DBHTMLText {
         return DBField::create_field(
             'HTMLFragment',
-            "<div data-instantsearch=\"" . htmlspecialchars(json_encode($config)) . "\"></div>"
+            '<div data-instantsearch="' . htmlspecialchars(json_encode($config)) . '"></div>'
         );
     }
 

@@ -60,6 +60,7 @@ abstract class FormCreator {
             );
             $form = self::getFields($collection, $form);
         }
+
         return $form;
     }
 
@@ -67,10 +68,11 @@ abstract class FormCreator {
         $fields = $collection->Fields();
         $fieldList = FieldList::create();
         foreach($fields as $field) {
-            if($formField = self::getField($field)) {
+            if(($formField = self::getField($field)) instanceof \SilverStripe\Forms\FormField) {
                 $fieldList->push($formField);
             }
         }
+
         $form = $form->setFields($fieldList);
         return $form;
     }
@@ -83,6 +85,7 @@ abstract class FormCreator {
             // do not show unindexed fields
             return null;
         }
+
         return match ($field->type) {
             'string' => self::getTextField($field),
             'int32' => self::getIntField($field),

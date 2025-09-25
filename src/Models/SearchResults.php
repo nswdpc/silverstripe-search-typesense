@@ -24,6 +24,7 @@ class SearchResults extends PaginatedList {
         foreach($removeKeys as $removeKey) {
             unset($resultData[$removeKey]);
         }
+
         $this->resultData = $resultData;
         return $this;
     }
@@ -36,6 +37,7 @@ class SearchResults extends PaginatedList {
         return $this->resultData[$key] ?? null;
     }
 
+    #[\Override]
     public function getLimitItems()
     {
         return false;
@@ -45,6 +47,7 @@ class SearchResults extends PaginatedList {
      * @inheritdoc
      * This value is always false, as Typesense returns pre-paginated results
      */
+    #[\Override]
     public function setLimitItems($limit)
     {
         $this->limitItems = false;

@@ -49,6 +49,7 @@ class ClientManager
                 'protocol' => $scheme,
             ];
         }
+
         return $nodes;
     }
 
