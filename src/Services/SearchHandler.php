@@ -332,12 +332,15 @@ class SearchHandler
             $client = static::getClient();
             foreach ($collections as $collection) {
                 try {
+                    /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
                     if ($collection && $collection->checkExistance()) {
                         $data = [];
+                        /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
                         $fieldsArray = $collection->FieldsArray();
                         if ($record->hasMethod('getTypesenseDocument')) {
                             $data = $record->getTypesenseDocument($fieldsArray);
                         } else {
+                            /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
                             $data = $collection->getTypesenseDocument($record, $fieldsArray);
                         }
 
@@ -375,12 +378,15 @@ class SearchHandler
             $client = static::getClient();
             foreach ($collections as $collection) {
                 try {
+                    /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
                     if ($collection && $collection->checkExistance()) {
                         $data = [];
+                        /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
                         $fieldsArray = $collection->FieldsArray();
                         if ($record->hasMethod('getTypesenseDocument')) {
                             $data = $record->getTypesenseDocument($fieldsArray);
                         } else {
+                            /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
                             $data = $collection->getTypesenseDocument($record, $fieldsArray);
                         }
 
