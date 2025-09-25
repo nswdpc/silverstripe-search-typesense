@@ -68,7 +68,7 @@ class InstantSearch extends DataObject implements PermissionProvider {
 
     public function getCMSFields() {
         $fields = parent::getCMSFields();
-        $fields->removeByName(array_merge(['CollectionID'], array_keys(static::$db)));
+        $fields->removeByName(array_merge(['CollectionID'], array_keys(static::config()->get('db'))));
         $fields->removeByName(['SearchKey','SearchScope']);
         $fields->addFieldsToTab(
             'Root.Main',
@@ -213,10 +213,10 @@ class InstantSearch extends DataObject implements PermissionProvider {
                 }
                 $path = $url['path'] ?? '';
                 if(!isset($scheme)) {
-                    throw new ValidationException(_t(static::class . '.INSTANT_SEARCH_INVALID_URL_SCHEME', 'URL {url} does not include a scheme', ['url' => $searchNode]));
+                    throw ValidationException::create(_t(static::class . '.INSTANT_SEARCH_INVALID_URL_SCHEME', 'URL {url} does not include a scheme', ['url' => $searchNode]));
                 }
                 if(!isset($host)) {
-                    throw new ValidationException(_t(static::class . '.INSTANT_SEARCH_INVALID_URL_HOST', 'URL {url} does not include a host', ['url' => $searchNode]));
+                    throw ValidationException::create(_t(static::class . '.INSTANT_SEARCH_INVALID_URL_HOST', 'URL {url} does not include a host', ['url' => $searchNode]));
                 }
                 $nodes[] = [
                     'host' => $host,
@@ -291,6 +291,7 @@ class InstantSearch extends DataObject implements PermissionProvider {
      * The model can provide overrides to the general config if required
      */
     public function provideInstantSearchFor(DataObject $model) {
+        // @phpstan-ignore method.notFound (extension method provided by InstantSearchExtension)
         $collectionName = $model->getCollectionName();
         if($collectionName === '') {
             return null;
@@ -302,20 +303,24 @@ class InstantSearch extends DataObject implements PermissionProvider {
             return null;
         }
 
+        // @phpstan-ignore method.notFound (extension method provided by InstantSearchExtension)
         $id = $model->getTypesenseUniqID();
         $inputId = $this->InputElementId;
         if(!$inputId) {
+            // @phpstan-ignore method.notFound (extension method provided by InstantSearchExtension)
             $inputId = $model->getTypesenseBindToInputId();
         }
 
         $parentId = $this->ContainerElementId;
         if(!$parentId) {
+            // @phpstan-ignore method.notFound (extension method provided by InstantSearchExtension)
             $model->getTypesenseBindToParentId();
         }
 
         try {
             $nodes = $this->getTypesenseNodes();
         } catch (\Exception $e) {
+            $nodes = null; // If exception thrown, node is undefined
         }
 
         $queryBy = $this->QueryBy;

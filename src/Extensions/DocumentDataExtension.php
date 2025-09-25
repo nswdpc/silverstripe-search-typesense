@@ -18,6 +18,8 @@ class DocumentDataExtension extends DataExtension {
         // \NSWDPC\Search\Typesense\Services\Logger::log("DocumentDataExtension - getTypesenseDocument", "DEBUG");
 
         $data = [];
+        
+        /** @var \SilverStripe\ORM\DataObject $owner */
         $owner = $this->getOwner();
         foreach ($fields as $field) {
 

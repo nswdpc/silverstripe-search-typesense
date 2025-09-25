@@ -6,6 +6,7 @@ use NSWDPC\Search\Typesense\Models\TypesenseSearchResult;
 
 /**
  * Use this trait on classes indexed in Typesense
+ * @phpstan-ignore trait.unused
  */
 trait TypesenseDefaultFields
 {

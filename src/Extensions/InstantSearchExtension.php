@@ -94,8 +94,10 @@ class InstantSearchExtension extends DataExtension {
         // get from chosen config model
         $collectionName = $instantSearch->getCollectionName();
         // if not set, try to get from owner model
-        if(!$collectionName && $this->getOwner()->hasMethod('getCollection')) {
-            $collection = $this->getOwner()->getCollection();
+        /** @var \SilverStripe\ORM\DataObject $owner */
+        $owner = $this->getOwner();
+        if(!$collectionName && $owner->hasMethod('getCollection')) {
+            $collection = $owner->getCollection();
             if($collection && ($collection instanceof Collection)) {
                 $collectionName = $collection->Name;
             }

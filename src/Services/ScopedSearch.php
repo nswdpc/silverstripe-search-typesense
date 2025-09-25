@@ -94,7 +94,7 @@ abstract class ScopedSearch
     /**
      * Get the decoded search scope, null if invalid
      */
-    public static function getDecodedSearchScope(string $searchScope): array {
+    public static function getDecodedSearchScope(string $searchScope): ?array {
         $scope = json_decode($searchScope, true, 512, JSON_THROW_ON_ERROR);
         if(is_array($scope)) {
             return $scope;

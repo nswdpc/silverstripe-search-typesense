@@ -118,6 +118,7 @@ class SyncJob extends AbstractQueuedJob
      */
     public function afterComplete() {
         $job = null;
+        $startAt = null;
         if($this->lastBatchCount === 0 && $this->repeatHours > 0) {
             // complete and repeating
             $job = new SyncJob(

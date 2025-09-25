@@ -46,7 +46,6 @@ class TypesenseSearchResult extends ViewableData {
      */
     public function __set($name, $value) {
         $this->data[$name] = $value;
-        return $this;
     }
 
     /**
@@ -69,6 +68,7 @@ class TypesenseSearchResult extends ViewableData {
      */
     public function setHighlight(string $highlight): static {
         $this->highlight = $highlight;
+        return $this;
     }
 
     /**

@@ -8,6 +8,8 @@ use NSWDPC\Search\Typesense\Services\SearchHandler;
 use SilverStripe\ORM\DataExtension;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Versioned\Versioned;
+use Typesense\Exceptions\RequestMalformed;
+use Typesense\Exceptions\ObjectNotFound;
 
 /**
  * Provide record change handling for versioned and unversioned records
@@ -16,8 +18,6 @@ use SilverStripe\Versioned\Versioned;
  * onAfterPublishRecursive: upsert document to Typesense for unversioned records
  * onBeforeDelete: delete document from Typesense for unversioned records, noop for versioned records
  * onAfterUpublish: delete document from Typesense for versioned records
- *
- * @property DataObject|RecordChangeHandler $owner
  */
 class RecordChangeHandler extends DataExtension {
 
@@ -31,6 +31,7 @@ class RecordChangeHandler extends DataExtension {
     public function onAfterWrite()
     {
         try {
+            /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
             if(!$this->isVersioned($record)) {
                 SearchHandler::upsertToTypesense($record, true);
@@ -45,6 +46,7 @@ class RecordChangeHandler extends DataExtension {
     public function onAfterPublish()
     {
         try {
+            /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
             SearchHandler::upsertToTypesense($record, true);
         } catch (RequestMalformed $e) {
@@ -57,6 +59,7 @@ class RecordChangeHandler extends DataExtension {
     public function onAfterPublishRecursive()
     {
         try {
+            /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
             SearchHandler::upsertToTypesense($record, true);
         } catch (RequestMalformed $e) {
@@ -69,6 +72,7 @@ class RecordChangeHandler extends DataExtension {
     public function onBeforeDelete()
     {
         try {
+            /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
             if(!$this->isVersioned($record)) {
                 SearchHandler::deleteFromTypesense($record, true);
@@ -83,6 +87,7 @@ class RecordChangeHandler extends DataExtension {
     public function onAfterUnpublish()
     {
         try {
+            /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
             SearchHandler::deleteFromTypesense($record, true);
         } catch (ObjectNotFound $e) {

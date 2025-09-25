@@ -44,7 +44,6 @@ class DeleteJob extends AbstractQueuedJob
         $job = new self($record->ID, get_class($record));
         Logger::log("Queued DeleteJob for record #{$record->ID}", "DEBUG");
         return QueuedJobService::singleton()->queueJob($job);
-        return true;
     }
 
     /**

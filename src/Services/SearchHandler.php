@@ -165,7 +165,7 @@ class SearchHandler {
         // items per page
         $perPage = $this->setPerPage($perPage);
         // current page number (if perPage = 10, e.g 0 = 1, 1 = 2)
-        $pageNumber = floor($pageStart / $perPage) + 1;
+        $pageNumber = (int)(floor($pageStart / $perPage)) + 1;
         $paginationParameters = [
             'page' => $pageNumber,
             'per_page' => $perPage

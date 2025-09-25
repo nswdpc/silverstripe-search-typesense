@@ -39,7 +39,6 @@ class Result extends ViewableData {
 
     public function __set($name, $value) {
         $this->result[$name] = $value;
-        return $this;
     }
 
     public function __get($name) {
