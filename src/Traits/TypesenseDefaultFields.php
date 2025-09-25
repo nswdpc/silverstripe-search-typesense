@@ -10,18 +10,19 @@ use NSWDPC\Search\Typesense\Models\TypesenseSearchResult;
  */
 trait TypesenseDefaultFields
 {
-
     /**
      * Classes using this trait should populate TypesenseSearchResult with data required to render a result
      */
-    final public function getTypesenseSearchResultData(): array {
+    final public function getTypesenseSearchResultData(): array
+    {
         return $this->getTypesenseSearchResult()->toArray();
     }
 
     /**
      * Classes using this trait should populate TypesenseSearchResult with data required to render a result
      */
-    public function getTypesenseSearchResult(): TypesenseSearchResult {
+    public function getTypesenseSearchResult(): TypesenseSearchResult
+    {
         return TypesenseSearchResult::create();
     }
 

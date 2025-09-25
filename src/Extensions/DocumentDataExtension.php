@@ -7,8 +7,8 @@ use SilverStripe\ORM\DataExtension;
 /**
  * @extends \SilverStripe\ORM\DataExtension<static>
  */
-class DocumentDataExtension extends DataExtension {
-
+class DocumentDataExtension extends DataExtension
+{
     /**
      * Return appropriate values based on the fields being indexed for Typesense
      * If the method getTypesense{fieldName} exists on the record, use that
@@ -17,17 +17,18 @@ class DocumentDataExtension extends DataExtension {
      * Then, do massaging of data values
      * @return mixed[]
      */
-    public function getTypesenseDocument(array $fields): array {
+    public function getTypesenseDocument(array $fields): array
+    {
 
         // \NSWDPC\Search\Typesense\Services\Logger::log("DocumentDataExtension - getTypesenseDocument", "DEBUG");
 
         $data = [];
-        
+
         /** @var \SilverStripe\ORM\DataObject $owner */
         $owner = $this->getOwner();
         foreach ($fields as $field) {
 
-            if(!isset($field['name'])) {
+            if (!isset($field['name'])) {
                 throw new \RuntimeException("Cannot get a value of a field without a name");
             }
 
@@ -47,7 +48,7 @@ class DocumentDataExtension extends DataExtension {
             }
 
             // handle DB fields
-            if($owner->hasField($field['name'])) {
+            if ($owner->hasField($field['name'])) {
                 // deal with DB fields
                 $dbValue = $owner->dbObject($field['name']);
                 if ($dbValue instanceof \SilverStripe\ORM\FieldType\DBHTMLText || $dbValue instanceof \SilverStripe\ORM\FieldType\DBHTMLVarchar) {
@@ -66,7 +67,7 @@ class DocumentDataExtension extends DataExtension {
             $data[$field['name']] = $value;
         }
 
-        if($data !== []) {
+        if ($data !== []) {
             // each data entry will have an "id" value needs to be a string version of the record ID
             $data['id'] = (string) $owner->ID;
         }

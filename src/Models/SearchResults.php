@@ -8,8 +8,8 @@ use SilverStripe\ORM\PaginatedList;
  * A sub-class of paginated list, with option for storing
  * search result information returned by typesense
  */
-class SearchResults extends PaginatedList {
-
+class SearchResults extends PaginatedList
+{
     /**
      * Typesense results are pre-paginated
      */
@@ -20,8 +20,9 @@ class SearchResults extends PaginatedList {
      */
     protected $resultData = [];
 
-    public function setResultData(array $resultData, array $removeKeys = []): static {
-        foreach($removeKeys as $removeKey) {
+    public function setResultData(array $resultData, array $removeKeys = []): static
+    {
+        foreach ($removeKeys as $removeKey) {
             unset($resultData[$removeKey]);
         }
 
@@ -29,11 +30,13 @@ class SearchResults extends PaginatedList {
         return $this;
     }
 
-    public function getResultData(): array {
+    public function getResultData(): array
+    {
         return $this->resultData;
     }
 
-    public function getResultValue(string $key): mixed {
+    public function getResultValue(string $key): mixed
+    {
         return $this->resultData[$key] ?? null;
     }
 

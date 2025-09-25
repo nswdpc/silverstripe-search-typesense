@@ -4,9 +4,7 @@ namespace NSWDPC\Search\Typesense\Models;
 
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\ORM\ArrayList;
-use SilverStripe\ORM\FieldType\DBDate;
 use SilverStripe\View\ArrayData;
-use SilverStripe\View\SSViewer;
 use SilverStripe\View\ViewableData;
 
 /**
@@ -26,8 +24,8 @@ use SilverStripe\View\ViewableData;
  * Label -  the primary label or category of the result
  * Context -  some extra context for the result, usually a one liner
  */
-class TypesenseSearchResult extends ViewableData {
-
+class TypesenseSearchResult extends ViewableData
+{
     use Injectable;
 
     protected string $highlight = '';
@@ -43,7 +41,8 @@ class TypesenseSearchResult extends ViewableData {
      * Set custom data value
      */
     #[\Override]
-    public function __set($name, $value) {
+    public function __set($name, $value)
+    {
         $this->data[$name] = $value;
     }
 
@@ -51,23 +50,27 @@ class TypesenseSearchResult extends ViewableData {
      * Allows templates to request values from this instance's data
      */
     #[\Override]
-    public function __get($name) {
+    public function __get($name)
+    {
         return $this->data[$name] ?? null;
     }
 
     #[\Override]
-    public function __isset($name) {
+    public function __isset($name)
+    {
         return array_key_exists($name, $this->data);
     }
 
-    public function toArray(): array {
+    public function toArray(): array
+    {
         return $this->data;
     }
 
     /**
      * Set a highlight text for the result
      */
-    public function setHighlight(string $highlight): static {
+    public function setHighlight(string $highlight): static
+    {
         $this->highlight = $highlight;
         return $this;
     }
@@ -75,13 +78,14 @@ class TypesenseSearchResult extends ViewableData {
     /**
      * Helper method to return an array of labels as an ArrayList
      */
-    public function LabelList(): ?ArrayList {
+    public function LabelList(): ?ArrayList
+    {
         $labels = $this->Labels;
-        if(is_array($labels)) {
+        if (is_array($labels)) {
             // remove empty values
             $labels = array_filter($labels);
             $list = ArrayList::create();
-            foreach($labels as $label) {
+            foreach ($labels as $label) {
                 if (is_string($label) && $label !== "") {
                     $list->push(ArrayData::create([
                         'Name' => $label,
@@ -106,7 +110,8 @@ class TypesenseSearchResult extends ViewableData {
     /**
      * Return a highlight text for the result
      */
-    public function Highlight(): string {
+    public function Highlight(): string
+    {
         return $this->highlight;
     }
 

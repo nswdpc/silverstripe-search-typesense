@@ -7,8 +7,8 @@ use ElliotSawyer\SilverstripeTypesense\DocumentUpdate;
 /**
  * Blocks upstream DocumentUpdate actions
  */
-class BlockDocumentUpdate extends DocumentUpdate {
-
+class BlockDocumentUpdate extends DocumentUpdate
+{
     #[\Override]
     public function onAfterWrite()
     {

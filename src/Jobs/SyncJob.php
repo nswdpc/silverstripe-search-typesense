@@ -5,8 +5,6 @@ namespace NSWDPC\Search\Typesense\Jobs;
 use ElliotSawyer\SilverstripeTypesense\Collection;
 use ElliotSawyer\SilverstripeTypesense\Typesense;
 use NSWDPC\Search\Typesense\Services\ClientManager;
-use NSWDPC\Search\Typesense\Services\Logger;
-use SilverStripe\ORM\DataList;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\FieldType\DBDatetime;
 use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
@@ -17,7 +15,6 @@ use Symbiote\QueuedJobs\Services\QueuedJobService;
  */
 class SyncJob extends AbstractQueuedJob
 {
-
     public function __construct(string $collectionName = '', int $repeatHours = 0, int $batchLimit = 100, int $batchStart = 0)
     {
         $this->collectionName = trim($collectionName);
@@ -46,7 +43,7 @@ class SyncJob extends AbstractQueuedJob
     public function process()
     {
         try {
-            if(!$this->collectionName) {
+            if (!$this->collectionName) {
                 throw new \Exception("Please provide a collection name");
             }
 
@@ -55,13 +52,13 @@ class SyncJob extends AbstractQueuedJob
             $collections = Typesense::config()->get('collections') ?? [];
             foreach ($collections as $recordClass => $collectionData) {
                 $collectionName = $collectionData['name'] ?? null;
-                if($collectionName == $this->collectionName) {
+                if ($collectionName == $this->collectionName) {
                     $collection = Collection::find_or_make($collectionName, $recordClass, $collectionData);
                     break;
                 }
             }
 
-            if(!$collection instanceof \ElliotSawyer\SilverstripeTypesense\Collection) {
+            if (!$collection instanceof \ElliotSawyer\SilverstripeTypesense\Collection) {
                 // no configured collection in YML.. try to get one from
                 $this->addMessage("No configured collection found for '{$this->collectionName}', trying to find the collection in the DB only");
                 $collection = Collection::get()
@@ -71,7 +68,7 @@ class SyncJob extends AbstractQueuedJob
                     ])->first();
             }
 
-            if(!$collection || !$collection->isInDB()) {
+            if (!$collection || !$collection->isInDB()) {
                 throw new \Exception("The collection '{$this->collectionName}' could not be found or created, maybe it is not enabled?");
             }
 
@@ -80,7 +77,7 @@ class SyncJob extends AbstractQueuedJob
 
             // check if collection exists
             $exists = $client->collections[$collection->Name]->exists();
-            if($exists !== true) {
+            if ($exists !== true) {
                 // if it doesn't, create it
                 $this->addMessage("Collection '{$collection->Name}' does not exist");
                 $response = $collection->syncWithTypesenseServer();
@@ -94,7 +91,7 @@ class SyncJob extends AbstractQueuedJob
                 $this->batchStart
             );
 
-            if($this->lastBatchCount == 0) {
+            if ($this->lastBatchCount == 0) {
                 // if there are no more records..
                 $this->addMessage("Collection '{$collection->Name}' batch import complete");
             } else {
@@ -117,7 +114,8 @@ class SyncJob extends AbstractQueuedJob
     /**
      * Requeue job if configured
      */
-    public function afterComplete() {
+    public function afterComplete()
+    {
         $job = null;
         $startAt = null;
         if ($this->lastBatchCount === 0 && $this->repeatHours > 0) {
@@ -142,7 +140,7 @@ class SyncJob extends AbstractQueuedJob
             );
         }
 
-        if($job instanceof \NSWDPC\Search\Typesense\Jobs\SyncJob) {
+        if ($job instanceof \NSWDPC\Search\Typesense\Jobs\SyncJob) {
             Injector::inst()->get(QueuedJobService::class)->queueJob($job, $startAt);
         }
     }

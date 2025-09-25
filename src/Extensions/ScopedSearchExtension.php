@@ -15,8 +15,8 @@ use SilverStripe\ORM\ValidationResult;
  * @property ?string $SearchScope
  * @extends \SilverStripe\ORM\DataExtension<(\NSWDPC\Search\Typesense\Models\InstantSearch & static)>
  */
-class ScopedSearchExtension extends DataExtension {
-
+class ScopedSearchExtension extends DataExtension
+{
     /**
      * Provide a search scope + search only key field
      */
@@ -28,11 +28,12 @@ class ScopedSearchExtension extends DataExtension {
     /**
      * Validate the model
      */
-    public function validate(ValidationResult $result) {
+    public function validate(ValidationResult $result)
+    {
 
         // validate the scope
         $searchScope = trim((string)$this->getOwner()->SearchScope);
-        if($searchScope !== '' && !ScopedSearch::validateSearchScope($searchScope)) {
+        if ($searchScope !== '' && !ScopedSearch::validateSearchScope($searchScope)) {
             $result->addError(
                 _t(
                     static::class . ".SEARCH_SCOPE_INVALID_JSON",
@@ -59,24 +60,25 @@ class ScopedSearchExtension extends DataExtension {
     /**
      * Get a scoped search key for the owner dataobject
      */
-    public function getTypesenseScopedSearchKey(): ?string {
+    public function getTypesenseScopedSearchKey(): ?string
+    {
 
         // prefer the stored key
         $searchKey = Environment::getEnv('TYPESENSE_SEARCH_KEY');
-        if(!$searchKey) {
+        if (!$searchKey) {
             // try the one entered in the UI
             $searchKey = $this->getOwner()->SearchKey;
         } else {
         }
 
         // check if valid
-        if(!$searchKey) {
+        if (!$searchKey) {
             Logger::log("No Typesense search or API key defined - cannot create a scoped search key", "NOTICE");
             return null;
         }
 
         $searchScope = trim($this->getOwner()->SearchScope ?? '');
-        if(!ScopedSearch::validateSearchScope($searchScope)) {
+        if (!ScopedSearch::validateSearchScope($searchScope)) {
             // ensure a default scope is set, if invalid
             $searchScope = ScopedSearch::getDefaultScope();
         }

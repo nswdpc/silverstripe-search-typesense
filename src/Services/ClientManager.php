@@ -1,4 +1,5 @@
 <?php
+
 namespace NSWDPC\Search\Typesense\Services;
 
 use SilverStripe\Core\Environment;
@@ -9,7 +10,6 @@ use Typesense\Client as TypesenseClient;
  */
 class ClientManager
 {
-
     /**
      * Get the client based on environment configuration
      */
@@ -34,7 +34,8 @@ class ClientManager
      * Return a Typesense node using the TYPESENSE_SERVER environment value
      * @todo multiple server values
      */
-    protected function getNodesFromConfiguration(): array {
+    protected function getNodesFromConfiguration(): array
+    {
         $nodes = [];
         $url = Environment::getEnv('TYPESENSE_SERVER') ?? '';
         $parts = parse_url($url);
@@ -56,7 +57,8 @@ class ClientManager
     /**
      * Get the Typesense Client instance for the params provided
      */
-    public function getClient(array $params): TypesenseClient {
+    public function getClient(array $params): TypesenseClient
+    {
         return new TypesenseClient($params);
     }
 

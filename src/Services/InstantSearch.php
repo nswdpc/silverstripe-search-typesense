@@ -4,30 +4,27 @@ namespace NSWDPC\Search\Typesense\Services;
 
 use ElliotSawyer\SilverstripeTypesense\Typesense;
 use SilverStripe\Core\Config\Configurable;
-use SilverStripe\Control\Director;
 use SilverStripe\Core\Injector\Injectable;
-use SilverStripe\Core\Manifest\ModuleResourceLoader;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\FieldType\DBHTMLText;
-use SilverStripe\View\ArrayData;
 use SilverStripe\View\Requirements;
-use SilverStripe\View\SSViewer;
 
 /**
  * InstantSearch service
  */
-abstract class InstantSearch {
-
+abstract class InstantSearch
+{
     use Configurable;
     use Injectable;
 
     /**
      * Provide the instant search service
      */
-    public static function provide(array $config): DBHTMLText {
+    public static function provide(array $config): DBHTMLText
+    {
         static::addRequirements();
         $nodes = $config['nodes'] ?? [];
-        if(!is_array($nodes) || count($nodes) == 0) {
+        if (!is_array($nodes) || count($nodes) == 0) {
             $nodes = static::getServerNodes();
         }
         return static::addLocalRequirement($config);
@@ -36,7 +33,8 @@ abstract class InstantSearch {
     /**
      * Get configured server node(s). Used if nodes are not passed to configuration
      */
-    public static function getServerNodes(): array {
+    public static function getServerNodes(): array
+    {
         $server = Typesense::parse_typesense_server();
         if ($server === []) {
             throw new \Exception(
@@ -62,7 +60,8 @@ abstract class InstantSearch {
     /**
      * Add the remote requirement
      */
-    protected static function addRequirements(): void {
+    protected static function addRequirements(): void
+    {
         Requirements::javascript(
             "https://cdn.jsdelivr.net/npm/instantsearch.js@4.78.0/dist/instantsearch.production.min.js",
             [
@@ -88,7 +87,8 @@ abstract class InstantSearch {
     /**
      * Add the local requirement
      */
-    protected static function addLocalRequirement(array $config): DBHTMLText {
+    protected static function addLocalRequirement(array $config): DBHTMLText
+    {
         return DBField::create_field(
             'HTMLFragment',
             '<div data-instantsearch="' . htmlspecialchars(json_encode($config)) . '"></div>'

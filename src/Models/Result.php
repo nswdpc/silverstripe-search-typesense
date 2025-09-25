@@ -4,7 +4,6 @@ namespace NSWDPC\Search\Typesense\Models;
 
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Injector\Injectable;
-use SilverStripe\View\ArrayData;
 use SilverStripe\View\ViewableData;
 
 /**
@@ -12,8 +11,8 @@ use SilverStripe\View\ViewableData;
  * This class can be overridden in your project to provide custom result handling (e.g get values based on property requested)
  * You can specify a template to render the result, or by default it will render into this class' path
  */
-class Result extends ViewableData {
-
+class Result extends ViewableData
+{
     use Configurable;
 
     use Injectable;
@@ -32,26 +31,30 @@ class Result extends ViewableData {
     }
 
     #[\Override]
-    public function __set($name, $value) {
+    public function __set($name, $value)
+    {
         $this->result[$name] = $value;
     }
 
     #[\Override]
-    public function __get($name) {
+    public function __get($name)
+    {
         return $this->result[$name] ?? null;
     }
 
     #[\Override]
-    public function __isset($name) {
+    public function __isset($name)
+    {
         return array_key_exists($name, $this->result);
     }
 
     /**
      * Return a TypesenseSearchResult instance containing the search result data
      */
-    public function TypesenseSearchResult(): ?TypesenseSearchResult {
+    public function TypesenseSearchResult(): ?TypesenseSearchResult
+    {
         $result = null;
-        if(isset($this->result['TypesenseSearchResultData'])) {
+        if (isset($this->result['TypesenseSearchResultData'])) {
             $result = TypesenseSearchResult::create($this->result['TypesenseSearchResultData']);
         }
 
@@ -65,9 +68,10 @@ class Result extends ViewableData {
      * If your class is \My\App\Record the template should be located in a theme or project
      * at /templates/My/App/Record_TypesenseSearchResult.ss
      */
-    public function getTemplateName(): ?string {
+    public function getTemplateName(): ?string
+    {
         $template = $this->ClassName;
-        if(!$template) {
+        if (!$template) {
             return null;
         } else {
             return $template . "_TypesenseSearchResult";
@@ -82,14 +86,15 @@ class Result extends ViewableData {
      *  2. Configured template, if set
      *  3. Template based on this class name
      */
-    public function forTemplate() {
+    public function forTemplate()
+    {
         $templates = [];
-        if(($classBasedTemplate = $this->getTemplateName()) !== null && ($classBasedTemplate = $this->getTemplateName()) !== '') {
+        if (($classBasedTemplate = $this->getTemplateName()) !== null && ($classBasedTemplate = $this->getTemplateName()) !== '') {
             $templates[] = $classBasedTemplate;
         }
 
         $template = self::config()->get('template');
-        if($template !== "") {
+        if ($template !== "") {
             $templates[] = $template;
         }
 

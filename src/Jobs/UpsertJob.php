@@ -2,7 +2,6 @@
 
 namespace NSWDPC\Search\Typesense\Jobs;
 
-use ElliotSawyer\SilverstripeTypesense\Collection;
 use ElliotSawyer\SilverstripeTypesense\Typesense;
 use NSWDPC\Search\Typesense\Services\Logger;
 use NSWDPC\Search\Typesense\Services\SearchHandler;
@@ -15,10 +14,9 @@ use Symbiote\QueuedJobs\Services\QueuedJobService;
  */
 class UpsertJob extends AbstractQueuedJob
 {
-
     public function __construct(int $recordId = 0, string $recordClassName = '')
     {
-        if($recordId > 0 && $recordClassName !== '' && class_exists($recordClassName)) {
+        if ($recordId > 0 && $recordClassName !== '' && class_exists($recordClassName)) {
             // emulate setObject so getObject works
             $this->RecordID = $recordId;
             $this->RecordType = $recordClassName;
@@ -40,7 +38,8 @@ class UpsertJob extends AbstractQueuedJob
     /**
      * Queue job immediately
      */
-    public static function queueMyself(DataObject $record) {
+    public static function queueMyself(DataObject $record)
+    {
         $job = new self($record->ID, $record::class);
         Logger::log("Queued UpsertJob for record #{$record->ID}", "DEBUG");
         return QueuedJobService::singleton()->queueJob($job);
@@ -53,11 +52,11 @@ class UpsertJob extends AbstractQueuedJob
     {
         try {
             $record = $this->getObject('Record');
-            if(!$record || !$record->exists()) {
+            if (!$record || !$record->exists()) {
                 throw new \RuntimeException("The record {$this->RecordID}/{$this->RecordType} does not exist");
             }
 
-            if(SearchHandler::upsertToTypesense($record, false)) {
+            if (SearchHandler::upsertToTypesense($record, false)) {
                 $this->addMessage('Upserted OK');
             } else {
                 $this->addMessage('Upsert failure or partial success - record might not be linked to any collections, check logs');

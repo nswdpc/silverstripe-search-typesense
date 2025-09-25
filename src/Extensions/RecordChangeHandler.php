@@ -2,7 +2,6 @@
 
 namespace NSWDPC\Search\Typesense\Extensions;
 
-use ElliotSawyer\SilverstripeTypesense\DocumentUpdate;
 use NSWDPC\Search\Typesense\Services\Logger;
 use NSWDPC\Search\Typesense\Services\SearchHandler;
 use SilverStripe\ORM\DataExtension;
@@ -20,12 +19,13 @@ use Typesense\Exceptions\ObjectNotFound;
  * onAfterUpublish: delete document from Typesense for versioned records
  * @extends \SilverStripe\ORM\DataExtension<static>
  */
-class RecordChangeHandler extends DataExtension {
-
+class RecordChangeHandler extends DataExtension
+{
     /**
      * Is this record versioned?
      */
-    protected function isVersioned(DataObject $record): bool {
+    protected function isVersioned(DataObject $record): bool
+    {
         return class_exists(Versioned::class) && $record->hasExtension(Versioned::class) && $record->hasStages();
     }
 
@@ -34,7 +34,7 @@ class RecordChangeHandler extends DataExtension {
         try {
             /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
-            if(!$this->isVersioned($record)) {
+            if (!$this->isVersioned($record)) {
                 SearchHandler::upsertToTypesense($record, true);
             }
         } catch (RequestMalformed $e) {
@@ -75,7 +75,7 @@ class RecordChangeHandler extends DataExtension {
         try {
             /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
-            if(!$this->isVersioned($record)) {
+            if (!$this->isVersioned($record)) {
                 SearchHandler::deleteFromTypesense($record, true);
             }
         } catch (ObjectNotFound $e) {

@@ -4,15 +4,10 @@ namespace NSWDPC\Search\Typesense\Extensions;
 
 use ElliotSawyer\SilverstripeTypesense\Collection;
 use NSWDPC\Search\Typesense\Models\InstantSearch;
-use SilverStripe\Forms\CheckboxField;
-use SilverStripe\Forms\CompositeField;
 use SilverStripe\Forms\DropdownField;
-use SilverStripe\Forms\TextField;
-use SilverStripe\Forms\TextareaField;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\ORM\DataExtension;
 use SilverStripe\ORM\FieldType\DBHTMLText;
-use SilverStripe\ORM\ValidationException;
 
 /**
  * Extension applied to models that can provide instantsearch interface
@@ -21,20 +16,21 @@ use SilverStripe\ORM\ValidationException;
  * @method \NSWDPC\Search\Typesense\Models\InstantSearch InstantSearch()
  * @extends \SilverStripe\ORM\DataExtension<(\SilverStripe\SiteConfig\SiteConfig & static)>
  */
-class InstantSearchExtension extends DataExtension {
-
+class InstantSearchExtension extends DataExtension
+{
     private static array $has_one = [
         'InstantSearch' => InstantSearch::class
     ];
 
-    public function updateCMSFields(FieldList $fields) {
+    public function updateCMSFields(FieldList $fields)
+    {
         $fields->addFieldsToTab(
             'Root.InstantSearch',
             [
                 DropdownField::create(
                     'InstantSearchID',
                     _t(static::class . '.INSTANT_SEARCH_CHOOSE', 'Choose an Instant Search configuration to use'),
-                    InstantSearch::get()->filter(['Enabled' => 1])->sort(['Title' => 'ASC'])->map('ID','Title')
+                    InstantSearch::get()->filter(['Enabled' => 1])->sort(['Title' => 'ASC'])->map('ID', 'Title')
                 )->setEmptyString('')
             ]
         );
@@ -45,14 +41,16 @@ class InstantSearchExtension extends DataExtension {
      * Users of this extension can implement their own value
      * E.g elements can use the getAnchor() method return value
      */
-    public function getTypesenseUniqID(): string {
+    public function getTypesenseUniqID(): string
+    {
         return bin2hex(random_bytes(4));
     }
 
     /**
      * The model using this extension needs to provide an input ID to bind to
      */
-    public function getTypesenseBindToInputId(): string {
+    public function getTypesenseBindToInputId(): string
+    {
         return "";
     }
 
@@ -60,23 +58,26 @@ class InstantSearchExtension extends DataExtension {
      * The model using this extension needs to provide the ID of a parent used to locate
      * the hits box
      */
-    public function getTypesenseBindToParentId(): string {
+    public function getTypesenseBindToParentId(): string
+    {
         return "";
     }
 
     /**
      * template method for getting the element's unique ID in the DOM
      */
-    public function TypesenseUniqID(): string {
+    public function TypesenseUniqID(): string
+    {
         return $this->getOwner()->getTypesenseUniqID();
     }
 
     /**
      * Return the chosen InstantSearch config model for this model
      */
-    protected function getInstantSearch(): ?InstantSearch {
+    protected function getInstantSearch(): ?InstantSearch
+    {
         $instantSearch = $this->getOwner()->InstantSearch();
-        if(!$instantSearch || !$instantSearch->isInDB() || !$instantSearch->Enabled) {
+        if (!$instantSearch || !$instantSearch->isInDB() || !$instantSearch->Enabled) {
             return null;
         } else {
             return $instantSearch;
@@ -88,9 +89,10 @@ class InstantSearchExtension extends DataExtension {
      * If the model using this extension has a getCollection method, this can be used to provide
      * the collection name
      */
-    public function getCollectionName(): string {
+    public function getCollectionName(): string
+    {
         $instantSearch = $this->getInstantSearch();
-        if(!$instantSearch instanceof \NSWDPC\Search\Typesense\Models\InstantSearch) {
+        if (!$instantSearch instanceof \NSWDPC\Search\Typesense\Models\InstantSearch) {
             return '';
         }
 
@@ -99,9 +101,9 @@ class InstantSearchExtension extends DataExtension {
         // if not set, try to get from owner model
         /** @var \SilverStripe\ORM\DataObject $owner */
         $owner = $this->getOwner();
-        if(($collectionName === '' || $collectionName === '0') && $owner->hasMethod('getCollection')) {
+        if (($collectionName === '' || $collectionName === '0') && $owner->hasMethod('getCollection')) {
             $collection = $owner->getCollection();
-            if($collection && ($collection instanceof Collection)) {
+            if ($collection && ($collection instanceof Collection)) {
                 $collectionName = $collection->Name;
             }
         }
@@ -116,9 +118,10 @@ class InstantSearchExtension extends DataExtension {
      * <% include NSWDPC/Search/Typesense/InstantSearchResults %>
      * The include will call this method
      */
-    public function TypesenseInstantSearch(): ?DBHTMLText {
+    public function TypesenseInstantSearch(): ?DBHTMLText
+    {
         $instantSearch = $this->getInstantSearch();
-        if($instantSearch instanceof \NSWDPC\Search\Typesense\Models\InstantSearch) {
+        if ($instantSearch instanceof \NSWDPC\Search\Typesense\Models\InstantSearch) {
             return $instantSearch->provideInstantSearchFor($this->getOwner());
         } else {
             return null;

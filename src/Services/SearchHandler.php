@@ -8,32 +8,27 @@ use NSWDPC\Search\Typesense\Jobs\DeleteJob;
 use NSWDPC\Search\Typesense\Jobs\UpsertJob;
 use NSWDPC\Search\Typesense\Models\Result;
 use NSWDPC\Search\Typesense\Models\SearchResults;
-use NSWDPC\Search\Typesense\Services\ClientManager;
-use NSWDPC\Search\Typesense\Services\Logger;
-use NSWDPC\Search\Typesense\Services\ScopedSearch;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Configurable;
-use SilverStripe\Control\Controller;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\ORM\ArrayList;
 use SilverStripe\ORM\DataList;
 use SilverStripe\ORM\PaginatedList;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\View\ArrayData;
 use SilverStripe\View\ViewableData;
 use Typesense\Client as TypesenseClient;
 
 /**
  * Typesense search handler
  */
-class SearchHandler {
-
+class SearchHandler
+{
     use Configurable;
     use Injectable;
 
-    const MAX_PER_PAGE = 250;
+    public const MAX_PER_PAGE = 250;
 
-    const DEFAULT_PER_PAGE = 10;
+    public const DEFAULT_PER_PAGE = 10;
 
     private static bool $log_queries = false;
 
@@ -41,20 +36,23 @@ class SearchHandler {
 
     protected string $startVarName = 'start';
 
-    public function __construct(string $startVarName = 'start') {
-        if($startVarName === '') {
+    public function __construct(string $startVarName = 'start')
+    {
+        if ($startVarName === '') {
             throw new \InvalidArgumentException('Start var name cannot be an empty string');
         }
 
         $this->startVarName = $startVarName;
     }
 
-    public function getStartVarName(): string {
+    public function getStartVarName(): string
+    {
         return $this->startVarName;
     }
 
-    public static function escapeString(string $string): string {
-        if(str_contains($string, "`")) {
+    public static function escapeString(string $string): string
+    {
+        if (str_contains($string, "`")) {
             return "`" . str_replace("`", "\\`", $string) . "`";
         } else {
             return $string;
@@ -62,10 +60,11 @@ class SearchHandler {
     }
 
 
-    public static function escapeArray(array $array): array {
+    public static function escapeArray(array $array): array
+    {
         $result = [];
-        foreach($array as $string) {
-            if(!is_string($string)) {
+        foreach ($array as $string) {
+            if (!is_string($string)) {
                 continue;
             }
 
@@ -82,9 +81,10 @@ class SearchHandler {
      * @param array $searchScope a Typesense scope
      * @param string $searchOnlyApiKey a Typesense search-only API key
      */
-    protected static function getClient(array $searchScope = [], string $searchOnlyApiKey = ''): TypesenseClient {
+    protected static function getClient(array $searchScope = [], string $searchOnlyApiKey = ''): TypesenseClient
+    {
         $manager = new ClientManager();
-        if($searchOnlyApiKey !== '') {
+        if ($searchOnlyApiKey !== '') {
             $scopedApiKey = ScopedSearch::getScopedApiKey($searchOnlyApiKey, $searchScope);
             $client = $manager->getConfiguredClientForApiKey($scopedApiKey);
         } else {
@@ -102,11 +102,12 @@ class SearchHandler {
      * @param string $searchOnlyApiKey an optional search-only API key for this particular search
      * @return PaginatedList|null
      */
-    public function doSearch(Collection $collection, array|string $searchQuery, int $pageStart = 0, int $perPage = 10, array $searchScope = [], string $searchOnlyApiKey = ''): ?SearchResults {
+    public function doSearch(Collection $collection, array|string $searchQuery, int $pageStart = 0, int $perPage = 10, array $searchScope = [], string $searchOnlyApiKey = ''): ?SearchResults
+    {
 
         $collectionName = trim((string)$collection->Name);
 
-        if($collectionName === '') {
+        if ($collectionName === '') {
             return null;
         }
 
@@ -129,12 +130,12 @@ class SearchHandler {
         }
 
         $search = [];
-        if(is_string($searchQuery)) {
+        if (is_string($searchQuery)) {
             // basic string search on multiple fields
             $searchParameters = [
                 'q' => $searchQuery
             ];
-            if($queryBy !== '') {
+            if ($queryBy !== '') {
                 $searchParameters['query_by'] = $queryBy;
             }
         } else {
@@ -146,18 +147,18 @@ class SearchHandler {
             $searchParameters = [
                 'q' => '*'
             ];
-            if($queryBy !== '') {
+            if ($queryBy !== '') {
                 $searchParameters['query_by'] = $queryBy;
             }
 
             $filterBy = [];
-            foreach($searchQuery as $field => $value) {
+            foreach ($searchQuery as $field => $value) {
                 //TODO escaping
                 //TODO operations
                 $filterBy[] = "{$field}:*{$value}*";
             }
 
-            if($filterBy !== []) {
+            if ($filterBy !== []) {
                 $searchParameters['filter_by'] = implode(" || ", $filterBy);
             }
         }
@@ -179,12 +180,12 @@ class SearchHandler {
         $search = $client->collections[$collectionName]->documents->search($searchParameters);
 
         // handle results
-        if(isset($search['hits']) && is_array($search['hits'])) {
+        if (isset($search['hits']) && is_array($search['hits'])) {
 
             $list = ArrayList::create();
-            foreach($search['hits'] as $hit) {
+            foreach ($search['hits'] as $hit) {
 
-                if(!isset($hit['document']) || !is_array($hit['document'])) {
+                if (!isset($hit['document']) || !is_array($hit['document'])) {
                     // skip if no result returned
                     continue;
                 }
@@ -220,11 +221,12 @@ class SearchHandler {
      * Perform a multisearch in the single given collection
      * @TODO this implementation needs work
      */
-    public function doMultiSearch(string $collectionName, array $searchQuery, array $searchScope = [], string $searchOnlyApiKey = ''): array {
+    public function doMultiSearch(string $collectionName, array $searchQuery, array $searchScope = [], string $searchOnlyApiKey = ''): array
+    {
         // an array, do a multisearch on each column using the term from each field
         $searches = [];
-        foreach($searchQuery as $field => $value) {
-            if(is_string($value)) {
+        foreach ($searchQuery as $field => $value) {
+            if (is_string($value)) {
                 $searches[] = [
                     'collection' => $collectionName,
                     'query_by' => $field,
@@ -234,7 +236,7 @@ class SearchHandler {
         }
 
         $search = [];
-        if($searches !== []) {
+        if ($searches !== []) {
             $searchRequests = [
                 'searches' => $searches
             ];
@@ -252,8 +254,9 @@ class SearchHandler {
     /**
      * Log queries, if enabled
      */
-    protected function logQuery(array $query, string $collectionName = ''): bool {
-        if(!static::config()->get('log_queries')) {
+    protected function logQuery(array $query, string $collectionName = ''): bool
+    {
+        if (!static::config()->get('log_queries')) {
             return false;
         } else {
             Logger::log("Typesense Query=" . json_encode(["query" => $query, "collection" => $collectionName]), static::config()->get('log_level'));
@@ -261,7 +264,8 @@ class SearchHandler {
         }
     }
 
-    public function setPerPage(int $perPage): int {
+    public function setPerPage(int $perPage): int
+    {
         if ($perPage > 250) {
             $perPage = static::MAX_PER_PAGE;
         } elseif ($perPage <= 0) {
@@ -272,7 +276,8 @@ class SearchHandler {
         return $perPage;
     }
 
-    public function getPageNumber(): int {
+    public function getPageNumber(): int
+    {
         return $this->pageNumber;
     }
 
@@ -284,11 +289,11 @@ class SearchHandler {
         $ancestry = ClassInfo::ancestry($record, false);
         $ancestry = array_filter(
             $ancestry,
-            fn($k, $v): true => $v !== DataObject::class && $v != ViewableData::class,
+            fn ($k, $v): true => $v !== DataObject::class && $v != ViewableData::class,
             ARRAY_FILTER_USE_BOTH
         );
 
-        if($ancestry === []) {
+        if ($ancestry === []) {
             return null;
         }
 
@@ -299,9 +304,10 @@ class SearchHandler {
     /*
      * Return whether this record is linked to any collections
      */
-    public static function isLinkedToCollections(DataObject $record): ?DataList {
+    public static function isLinkedToCollections(DataObject $record): ?DataList
+    {
         $collections = static::getCollectionsForRecord($record);
-        if(is_null($collections) || $collections->count() == 0) {
+        if (is_null($collections) || $collections->count() == 0) {
             return null;
         } else {
             return $collections;
@@ -311,19 +317,20 @@ class SearchHandler {
     /**
      * Attempt to upsert this record to Typesense collections via a queued job
      */
-    public static function upsertToTypesense(DataObject $record, bool $viaQueuedJob = false): bool {
+    public static function upsertToTypesense(DataObject $record, bool $viaQueuedJob = false): bool
+    {
 
         // Check if this record is linked to any collections
-        if(!($collections = static::isLinkedToCollections($record)) instanceof \SilverStripe\ORM\DataList) {
+        if (!($collections = static::isLinkedToCollections($record)) instanceof \SilverStripe\ORM\DataList) {
             Logger::log("Attempt to upsert record #{$record->ID}/{$record->ClassName} not linked to any collections", "INFO");
             return false;
         }
 
-        if(!$viaQueuedJob) {
+        if (!$viaQueuedJob) {
             // Direct upsert .. UpsertJob process calls this.
             $success = 0;
             $client = static::getClient();
-            foreach($collections as $collection) {
+            foreach ($collections as $collection) {
                 try {
                     if ($collection && $collection->checkExistance()) {
                         $data = [];
@@ -353,19 +360,20 @@ class SearchHandler {
     /**
      * Delete this record from all linked collections via a queued job
      */
-    public static function deleteFromTypesense(DataObject $record, bool $viaQueuedJob = false): bool {
+    public static function deleteFromTypesense(DataObject $record, bool $viaQueuedJob = false): bool
+    {
 
         // Check if this record is linked to any collections
-        if(!($collections = static::isLinkedToCollections($record)) instanceof \SilverStripe\ORM\DataList) {
+        if (!($collections = static::isLinkedToCollections($record)) instanceof \SilverStripe\ORM\DataList) {
             Logger::log("Attempt to delete record #{$record->ID}/{$record->ClassName} not linked to any collections", "INFO");
             return false;
         }
 
-        if(!$viaQueuedJob) {
+        if (!$viaQueuedJob) {
             // Direct delete .. DeleteJob process calls this.
             $success = 0;
             $client = static::getClient();
-            foreach($collections as $collection) {
+            foreach ($collections as $collection) {
                 try {
                     if ($collection && $collection->checkExistance()) {
                         $data = [];
