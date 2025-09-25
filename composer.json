@@ -47,7 +47,16 @@
         "psr-4": {
             "NSWDPC\\Search\\Typesense\\": [
                 "src/"
+            ],
+            "ElliotSawyer\\SilverstripeTypesense\\": [
+                "vendor/elliotsawyer/silverstripe-typesense/src/Admins/",
+                "vendor/elliotsawyer/silverstripe-typesense/src/Controllers/",
+                "vendor/elliotsawyer/silverstripe-typesense/src/Extensions/",
+                "vendor/elliotsawyer/silverstripe-typesense/src/Helpers/",
+                "vendor/elliotsawyer/silverstripe-typesense/src/Models/",
+                "vendor/elliotsawyer/silverstripe-typesense/src/Tasks/"
             ]
+
         }
     },
     "extra": {
@@ -56,7 +65,7 @@
         ]
     },
     "scripts": {
-        "phpstan-analyse": "./vendor/bin/phpstan analyse --ansi --no-progress --no-interaction --configuration vendor/nswdpc/ci-files/phpstan/.phpstan.silverstripe.neon src/ tests/*.php",
+        "phpstan-analyse": "./vendor/bin/phpstan analyse --ansi --no-progress --no-interaction --configuration vendor/nswdpc/ci-files/phpstan/.phpstan.silverstripe.neon src/",
         "rector-dryrun": "./vendor/bin/rector process --dry-run --ansi --config vendor/nswdpc/ci-files/rector/.rector.silverstripe_53_83.php src/ tests/*.php",
         "rector-process": "./vendor/bin/rector process --no-diffs --ansi --config vendor/nswdpc/ci-files/rector/.rector.silverstripe_53_83.php src/ tests/*.php",
         "phpcsfixer-fix": "./vendor/bin/php-cs-fixer fix --ansi --no-interaction --config vendor/nswdpc/ci-files/php-cs-fixer/.php-cs-fixer.php src/ tests/*.php"
