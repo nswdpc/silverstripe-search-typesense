@@ -27,6 +27,7 @@ abstract class InstantSearch
         if (!is_array($nodes) || count($nodes) == 0) {
             $nodes = static::getServerNodes();
         }
+
         return static::addLocalRequirement($config);
     }
 

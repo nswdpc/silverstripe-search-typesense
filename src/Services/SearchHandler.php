@@ -289,7 +289,7 @@ class SearchHandler
         $ancestry = ClassInfo::ancestry($record, false);
         $ancestry = array_filter(
             $ancestry,
-            fn ($k, $v): true => $v !== DataObject::class && $v != ViewableData::class,
+            fn ($k, $v): true => $v !== DataObject::class && $v !== ViewableData::class,
             ARRAY_FILTER_USE_BOTH
         );
 

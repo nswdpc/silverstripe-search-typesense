@@ -221,7 +221,7 @@ class InstantSearch extends DataObject implements PermissionProvider
     public function getTypesenseNodes(): array
     {
         $nodes = [];
-        $searchNodes = preg_split("/[\n\r]+/", $this->Nodes);
+        $searchNodes = preg_split("/[\n\r]+/", (string) $this->Nodes);
         if (is_array($searchNodes)) {
             foreach ($searchNodes as $searchNode) {
                 $url = parse_url($searchNode);
@@ -335,7 +335,7 @@ class InstantSearch extends DataObject implements PermissionProvider
 
         /** getTypesenseScopedSearchKey provided by SearchScope data extension */
         $scopedApiKey = $this->getTypesenseScopedSearchKey();
-        if (!$scopedApiKey) {
+        if ($scopedApiKey === null || $scopedApiKey === '' || $scopedApiKey === '0') {
             return null;
         }
 
