@@ -129,6 +129,17 @@ abstract class FormCreator
     }
 
     /**
+     * Get a field for float
+     */
+    public static function getFloatField(Field $field): NumberField
+    {
+        return NumberField::create(
+            $field->name,
+            $field->name
+        );
+    }
+
+    /**
      * Get a boolean field
      */
     public static function getBoolField(Field $field): DropdownField
