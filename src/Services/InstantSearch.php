@@ -90,6 +90,7 @@ abstract class InstantSearch
      */
     protected static function addLocalRequirement(array $config): DBHTMLText
     {
+        /** @phpstan-ignore return.type */
         return DBField::create_field(
             'HTMLFragment',
             '<div data-instantsearch="' . htmlspecialchars(json_encode($config)) . '"></div>'
