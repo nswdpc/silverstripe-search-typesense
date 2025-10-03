@@ -42,16 +42,7 @@
         "psr-4": {
             "NSWDPC\\Search\\Typesense\\": [
                 "src/"
-            ],
-            "ElliotSawyer\\SilverstripeTypesense\\": [
-                "vendor/elliotsawyer/silverstripe-typesense/src/Admins/",
-                "vendor/elliotsawyer/silverstripe-typesense/src/Controllers/",
-                "vendor/elliotsawyer/silverstripe-typesense/src/Extensions/",
-                "vendor/elliotsawyer/silverstripe-typesense/src/Helpers/",
-                "vendor/elliotsawyer/silverstripe-typesense/src/Models/",
-                "vendor/elliotsawyer/silverstripe-typesense/src/Tasks/"
             ]
-
         }
     },
     "extra": {
