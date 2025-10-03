@@ -97,7 +97,7 @@ abstract class ScopedSearch
     public static function getDecodedSearchScope(string $searchScope): ?array
     {
         $searchScope = trim($searchScope);
-        if($searchScope === '') {
+        if ($searchScope === '') {
             return [];
         }
 
