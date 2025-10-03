@@ -34,7 +34,7 @@ abstract class ScopedSearch
     {
         $searchKey = trim(Environment::getEnv('TYPESENSE_SEARCH_KEY') ?? '');
         $warning = "";
-        if($searchKey !== '') {
+        if ($searchKey !== '') {
             $warning = _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_USING_SYSTEM', "A system provided search-only key is in use and will override the value provided here.");
         }
 
@@ -44,7 +44,7 @@ abstract class ScopedSearch
         )->setDescription(
             _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_WARNING', "Use a Typesense search-only API key with the single action 'documents:search'. This will be checked and validated on save.")
         );
-        if($warning !== '') {
+        if ($warning !== '') {
             $textField = $textField->setRightTitle($warning);
         }
         return ToggleCompositeField::create(
