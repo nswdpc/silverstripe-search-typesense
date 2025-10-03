@@ -97,9 +97,10 @@ abstract class ScopedSearch
     public static function getDecodedSearchScope(string $searchScope): ?array
     {
         $searchScope = trim($searchScope);
-        if($searchScope == '') {
+        if($searchScope === '') {
             return [];
         }
+
         $scope = json_decode($searchScope, true, 512, JSON_THROW_ON_ERROR);
         if (is_array($scope)) {
             return $scope;
