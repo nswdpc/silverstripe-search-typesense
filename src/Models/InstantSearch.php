@@ -122,7 +122,7 @@ class InstantSearch extends DataObject implements PermissionProvider
                         _t(static::class . '.INSTANT_SEARCH_QUERYBY_NOTES', 'You can also add fields via query_by to the search scope field')
                     )
                 )->setTitle(
-                    _t(static::class . '.INSTANT_SEARCH_API_SERVER_DETAILS', 'API server details')
+                    _t(self::class . '.API_CONFIGURATION', 'API configuration')
                 ),
 
                 CompositeField::create(
