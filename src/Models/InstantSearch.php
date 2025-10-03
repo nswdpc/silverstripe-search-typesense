@@ -225,19 +225,19 @@ class InstantSearch extends DataObject implements PermissionProvider
         if (is_array($searchNodes)) {
             foreach ($searchNodes as $searchNode) {
                 $url = parse_url($searchNode);
-                $scheme = $url['scheme'] ?? '';
-                $host = $url['host'] ?? '';
+                $scheme = trim($url['scheme'] ?? '');
+                $host = trim($url['host'] ?? '');
                 $port = $url['port'] ?? '';
                 if (!$port) {
                     $port = ($scheme == "https" ? 443 : 80);
                 }
 
                 $path = $url['path'] ?? '';
-                if (!isset($scheme)) {
+                if ($scheme === '') {
                     throw ValidationException::create(_t(static::class . '.INSTANT_SEARCH_INVALID_URL_SCHEME', 'URL {url} does not include a scheme', ['url' => $searchNode]));
                 }
 
-                if (!isset($host)) {
+                if ($host === '') {
                     throw ValidationException::create(_t(static::class . '.INSTANT_SEARCH_INVALID_URL_HOST', 'URL {url} does not include a host', ['url' => $searchNode]));
                 }
 
