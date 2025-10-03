@@ -37,6 +37,7 @@ abstract class ScopedSearch
         if($searchKey !== '') {
             $warning = _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_USING_SYSTEM', "A system provided search-only key is in use and will override the value provided here.");
         }
+
         $textField = TextField::create(
             'SearchKey',
             _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY', 'Search-only key')
@@ -46,14 +47,13 @@ abstract class ScopedSearch
         if($warning !== '') {
             $textField = $textField->setRightTitle($warning);
         }
-        $field = ToggleCompositeField::create(
+        return ToggleCompositeField::create(
             'SearchKeyToggle',
             _t(static::class . '.SEARCH_KEY', 'Key'),
             [
                 $textField
             ]
         );
-        return $field;
     }
 
     /**

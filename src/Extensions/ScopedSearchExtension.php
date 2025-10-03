@@ -67,6 +67,7 @@ class ScopedSearchExtension extends DataExtension
         } else {
             Logger::log("Using TYPESENSE_SEARCH_KEY value", "INFO");
         }
+
         return $searchKey ?? '';
     }
 
@@ -78,7 +79,7 @@ class ScopedSearchExtension extends DataExtension
 
         $searchKey = $this->getTypesenseSearchOnlyKey();
         // check if valid
-        if (!$searchKey) {
+        if ($searchKey === '' || $searchKey === '0') {
             Logger::log("No Typesense search or API key defined - cannot create a scoped search key", "NOTICE");
             return null;
         }
