@@ -32,9 +32,10 @@ class RecordChangeHandler extends DataExtension
     /**
      * Handle record change handling exception logging
      */
-    final protected function logExceptionError(string $message, ?\SilverStripe\ORM\DataObject $record = null, string $level = "NOTICE") {
+    final protected function logExceptionError(string $message, ?\SilverStripe\ORM\DataObject $record = null, string $level = "NOTICE")
+    {
         $id = "?";
-        if(isset($record->ID)) {
+        if (isset($record->ID)) {
             $id = (string)$record->ID;
         }
 
