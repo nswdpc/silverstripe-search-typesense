@@ -132,15 +132,10 @@ abstract class ScopedSearch
     /**
      * Given a search-only API key and a scope generate a scoped API key
      */
-    public static function getScopedApiKey(string $searchOnlyKey, array $searchScope): ?string
+    public static function getScopedApiKey(string $searchOnlyKey, array $searchScope): string
     {
         $manager = new ClientManager();
         $client = $manager->getConfiguredClient();
-        $scopedKey = $client->keys->generateScopedSearchKey($searchOnlyKey, $searchScope);
-        if (is_string($scopedKey)) {
-            return $scopedKey;
-        } else {
-            return null;
-        }
+        return $client->keys->generateScopedSearchKey($searchOnlyKey, $searchScope);
     }
 }
