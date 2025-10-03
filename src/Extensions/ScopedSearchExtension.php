@@ -57,20 +57,26 @@ class ScopedSearchExtension extends DataExtension
         */
     }
 
-    /**
-     * Get a scoped search key for the owner dataobject
-     */
-    public function getTypesenseScopedSearchKey(): ?string
+    public function getTypesenseSearchOnlyKey(): string
     {
-
         // prefer the stored key
         $searchKey = Environment::getEnv('TYPESENSE_SEARCH_KEY');
         if (!$searchKey) {
             // try the one entered in the UI
             $searchKey = $this->getOwner()->SearchKey;
         } else {
+            Logger::log("Using TYPESENSE_SEARCH_KEY value", "INFO");
         }
+        return $searchKey ?? '';
+    }
 
+    /**
+     * Get a scoped search key for the owner dataobject
+     */
+    public function getTypesenseScopedSearchKey(): ?string
+    {
+
+        $searchKey = $this->getTypesenseSearchOnlyKey();
         // check if valid
         if (!$searchKey) {
             Logger::log("No Typesense search or API key defined - cannot create a scoped search key", "NOTICE");
