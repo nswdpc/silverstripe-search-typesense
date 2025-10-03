@@ -37,13 +37,13 @@ class RecordChangeHandler extends DataExtension
         if(isset($record->ID)) {
             $id = (string)$record->ID;
         }
+
         Logger::log(sprintf($message, $id), $level);
     }
 
     public function onAfterWrite()
     {
         try {
-            $record = null;
             /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
             if (!$this->isVersioned($record)) {
@@ -59,7 +59,6 @@ class RecordChangeHandler extends DataExtension
     public function onAfterPublish()
     {
         try {
-            $record = null;
             /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
             SearchHandler::upsertToTypesense($record, true);
@@ -73,7 +72,6 @@ class RecordChangeHandler extends DataExtension
     public function onAfterPublishRecursive()
     {
         try {
-            $record = null;
             /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
             SearchHandler::upsertToTypesense($record, true);
@@ -87,7 +85,6 @@ class RecordChangeHandler extends DataExtension
     public function onBeforeDelete()
     {
         try {
-            $record = null;
             /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
             if (!$this->isVersioned($record)) {
@@ -103,7 +100,6 @@ class RecordChangeHandler extends DataExtension
     public function onAfterUnpublish()
     {
         try {
-            $record = null;
             /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
             SearchHandler::deleteFromTypesense($record, true);

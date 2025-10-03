@@ -229,7 +229,7 @@ class InstantSearch extends DataObject implements PermissionProvider
                 $host = trim($url['host'] ?? '');
                 $port = $url['port'] ?? '';
                 if (!$port) {
-                    $port = ($scheme == "https" ? 443 : 80);
+                    $port = ($scheme === "https" ? 443 : 80);
                 }
 
                 $path = $url['path'] ?? '';
