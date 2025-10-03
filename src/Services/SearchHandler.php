@@ -96,11 +96,12 @@ class SearchHandler
 
     /**
      * do a search using the input values from a form and the model used for configuration
+     * @param Collection $collection
+     * @param array|string $searchQuery
      * @param int $pageStart the start offset for the results, e.g 0, 10, 20 for 10 results per page
      * @param int $perPage the number of items per page, cannot be more than 250. If <= 0 the default of 10 is used
      * @param array $searchScope a Typesense search scope to be merged into the search parameters. The scope is an array of search parameters
      * @param string $searchOnlyApiKey an optional search-only API key for this particular search
-     * @return PaginatedList|null
      */
     public function doSearch(Collection $collection, array|string $searchQuery, int $pageStart = 0, int $perPage = 10, array $searchScope = [], string $searchOnlyApiKey = ''): ?SearchResults
     {
@@ -276,11 +277,6 @@ class SearchHandler
         return $perPage;
     }
 
-    public function getPageNumber(): int
-    {
-        return $this->pageNumber;
-    }
-
     /**
      * Return all collections for a record, removing certain parent classes
      */
@@ -289,6 +285,7 @@ class SearchHandler
         $ancestry = ClassInfo::ancestry($record, false);
         $ancestry = array_filter(
             $ancestry,
+            // @phpstan-ignore notIdentical.alwaysTrue, notIdentical.alwaysTrue
             fn ($k, $v): true => $v !== DataObject::class && $v !== ViewableData::class,
             ARRAY_FILTER_USE_BOTH
         );
@@ -333,7 +330,7 @@ class SearchHandler
             foreach ($collections as $collection) {
                 try {
                     /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
-                    if ($collection && $collection->checkExistance()) {
+                    if ($collection->checkExistance()) {
                         $data = [];
                         /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
                         $fieldsArray = $collection->FieldsArray();
@@ -379,7 +376,7 @@ class SearchHandler
             foreach ($collections as $collection) {
                 try {
                     /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
-                    if ($collection && $collection->checkExistance()) {
+                    if ($collection->checkExistance()) {
                         $data = [];
                         /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
                         $fieldsArray = $collection->FieldsArray();
@@ -394,7 +391,7 @@ class SearchHandler
                         Logger::log("Delete record #{$record->ID}/{$record->ClassName} from collection {$collection->Name}", "INFO");
                         $success++;
                     }
-                } catch (\Exception) {
+                } catch (\Exception $exception) {
                     Logger::log($exception::class . ": failed to delete #{$record->ID}/{$record->ClassName} from collection {$collection->Name}: " . $exception->getMessage(), "NOTICE");
                 }
             }
