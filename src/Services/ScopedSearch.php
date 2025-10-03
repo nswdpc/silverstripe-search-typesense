@@ -4,6 +4,8 @@ namespace NSWDPC\Search\Typesense\Services;
 
 use ElliotSawyer\SilverstripeTypesense\Typesense;
 use KevinGroeger\CodeEditorField\Forms\CodeEditorField;
+use SilverStripe\Core\Environment;
+use SilverStripe\Forms\ToggleCompositeField;
 use SilverStripe\Forms\TextField;
 
 /**
@@ -28,14 +30,30 @@ abstract class ScopedSearch
     /**
      * Get the search key field
      */
-    public static function getSearchKeyField(): TextField
+    public static function getSearchKeyField(): ToggleCompositeField
     {
-        return TextField::create(
+        $searchKey = trim(Environment::getEnv('TYPESENSE_SEARCH_KEY') ?? '');
+        $warning = "";
+        if($searchKey !== '') {
+            $warning = _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_USING_SYSTEM', "A system provided search-only key is in use and will override the value provided here.");
+        }
+        $textField = TextField::create(
             'SearchKey',
             _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY', 'Search-only key')
         )->setDescription(
             _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_WARNING', "Use a Typesense search-only API key with the single action 'documents:search'. This will be checked and validated on save.")
         );
+        if($warning !== '') {
+            $textField = $textField->setRightTitle($warning);
+        }
+        $field = ToggleCompositeField::create(
+            'SearchKeyToggle',
+            _t(static::class . '.SEARCH_KEY', 'Key'),
+            [
+                $textField
+            ]
+        );
+        return $field;
     }
 
     /**
