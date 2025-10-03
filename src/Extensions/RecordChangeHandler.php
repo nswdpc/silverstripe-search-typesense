@@ -51,8 +51,10 @@ class RecordChangeHandler extends DataExtension
                 SearchHandler::upsertToTypesense($record, true);
             }
         } catch (RequestMalformed $e) {
+            // @phpstan-ignore variable.undefined
             $this->logExceptionError("onAfterWrite RequestMalformed upserting #%s to Typesense: " . $e->getMessage(), $record);
         } catch (\Exception $e) {
+            // @phpstan-ignore variable.undefined
             $this->logExceptionError("onAfterWrite Exception upserting #%s to Typesense: " . $e->getMessage(), $record);
         }
     }
@@ -64,8 +66,10 @@ class RecordChangeHandler extends DataExtension
             $record = $this->getOwner();
             SearchHandler::upsertToTypesense($record, true);
         } catch (RequestMalformed $e) {
+            // @phpstan-ignore variable.undefined
             $this->logExceptionError("onAfterPublish RequestMalformed upserting #%s to Typesense: " . $e->getMessage(), $record);
         } catch (\Exception $e) {
+            // @phpstan-ignore variable.undefined
             $this->logExceptionError("onAfterPublish Exception upserting #%s to Typesense: " . $e->getMessage(), $record);
         }
     }
@@ -77,8 +81,10 @@ class RecordChangeHandler extends DataExtension
             $record = $this->getOwner();
             SearchHandler::upsertToTypesense($record, true);
         } catch (RequestMalformed $e) {
+            // @phpstan-ignore variable.undefined
             $this->logExceptionError("onAfterPublishRecursive RequestMalformed upserting #%s to Typesense: " . $e->getMessage(), $record);
         } catch (\Exception $e) {
+            // @phpstan-ignore variable.undefined
             $this->logExceptionError("onAfterPublishRecursive Exception upserting #%s to Typesense: " . $e->getMessage(), $record);
         }
     }
@@ -92,8 +98,10 @@ class RecordChangeHandler extends DataExtension
                 SearchHandler::deleteFromTypesense($record, true);
             }
         } catch (ObjectNotFound $e) {
+            // @phpstan-ignore variable.undefined
             $this->logExceptionError("onBeforeDelete ObjectNotFound deleting #%s from Typesense: " . $e->getMessage(), $record);
         } catch (\Exception $e) {
+            // @phpstan-ignore variable.undefined
             $this->logExceptionError("onBeforeDelete Exception deleting #%s from Typesense: " . $e->getMessage(), $record);
         }
     }
@@ -105,8 +113,10 @@ class RecordChangeHandler extends DataExtension
             $record = $this->getOwner();
             SearchHandler::deleteFromTypesense($record, true);
         } catch (ObjectNotFound $e) {
+            // @phpstan-ignore variable.undefined
             $this->logExceptionError("onAfterUpublish ObjectNotFound deleting #%s from Typesense: " . $e->getMessage(), $record);
         } catch (\Exception $e) {
+            // @phpstan-ignore variable.undefined
             $this->logExceptionError("onAfterUpublish Exception deleting #%s from Typesense: " . $e->getMessage(), $record);
         }
     }
