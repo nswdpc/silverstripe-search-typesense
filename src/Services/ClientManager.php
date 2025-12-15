@@ -22,12 +22,15 @@ class ClientManager
     /**
      * Get the client based on environment configuration with a specific API key
      */
-    public function getConfiguredClientForApiKey(string $apiKey): TypesenseClient
+    public function getConfiguredClientForApiKey(string $apiKey, array $options = []): TypesenseClient
     {
-        return $this->getClient([
-            'api_key' => $apiKey,
-            'nodes' => $this->getNodesFromConfiguration()
-        ]);
+        return $this->getClient(array_merge(
+            $options,
+            [
+                'api_key' => $apiKey,
+                'nodes' => $this->getNodesFromConfiguration()
+            ]
+        ));
     }
 
     /**
