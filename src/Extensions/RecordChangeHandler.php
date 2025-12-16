@@ -2,12 +2,13 @@
 
 namespace NSWDPC\Search\Typesense\Extensions;
 
-use ElliotSawyer\SilverstripeTypesense\DocumentUpdate;
 use NSWDPC\Search\Typesense\Services\Logger;
 use NSWDPC\Search\Typesense\Services\SearchHandler;
 use SilverStripe\ORM\DataExtension;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Versioned\Versioned;
+use Typesense\Exceptions\RequestMalformed;
+use Typesense\Exceptions\ObjectNotFound;
 
 /**
  * Provide record change handling for versioned and unversioned records
@@ -16,79 +17,107 @@ use SilverStripe\Versioned\Versioned;
  * onAfterPublishRecursive: upsert document to Typesense for unversioned records
  * onBeforeDelete: delete document from Typesense for unversioned records, noop for versioned records
  * onAfterUpublish: delete document from Typesense for versioned records
- *
- * @property DataObject|RecordChangeHandler $owner
+ * @extends \SilverStripe\ORM\DataExtension<static>
  */
-class RecordChangeHandler extends DataExtension {
-
+class RecordChangeHandler extends DataExtension
+{
     /**
      * Is this record versioned?
      */
-    protected function isVersioned(DataObject $record): bool {
+    protected function isVersioned(DataObject $record): bool
+    {
         return class_exists(Versioned::class) && $record->hasExtension(Versioned::class) && $record->hasStages();
+    }
+
+    /**
+     * Handle record change handling exception logging
+     */
+    final protected function logExceptionError(string $message, ?\SilverStripe\ORM\DataObject $record = null, string $level = "NOTICE")
+    {
+        $id = "?";
+        if (isset($record->ID)) {
+            $id = (string)$record->ID;
+        }
+
+        Logger::log(sprintf($message, $id), $level);
     }
 
     public function onAfterWrite()
     {
         try {
+            /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
-            if(!$this->isVersioned($record)) {
+            if (!$this->isVersioned($record)) {
                 SearchHandler::upsertToTypesense($record, true);
             }
         } catch (RequestMalformed $e) {
-            Logger::log("onAfterWrite RequestMalformed upserting {$record->ID} to Typesense: " . $e->getMessage(), "NOTICE");
+            // @phpstan-ignore variable.undefined
+            $this->logExceptionError("onAfterWrite RequestMalformed upserting #%s to Typesense: " . $e->getMessage(), $record);
         } catch (\Exception $e) {
-            Logger::log("onAfterWrite General exception upserting {$record->ID} to Typesense: " . $e->getMessage(), "NOTICE");
+            // @phpstan-ignore variable.undefined
+            $this->logExceptionError("onAfterWrite Exception upserting #%s to Typesense: " . $e->getMessage(), $record);
         }
     }
 
     public function onAfterPublish()
     {
         try {
+            /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
             SearchHandler::upsertToTypesense($record, true);
         } catch (RequestMalformed $e) {
-            Logger::log("onAfterPublish RequestMalformed upserting {$record->ID} to Typesense: " . $e->getMessage(), "NOTICE");
+            // @phpstan-ignore variable.undefined
+            $this->logExceptionError("onAfterPublish RequestMalformed upserting #%s to Typesense: " . $e->getMessage(), $record);
         } catch (\Exception $e) {
-            Logger::log("onAfterPublish general exception upserting {$record->ID} to Typesense: " . $e->getMessage(), "NOTICE");
+            // @phpstan-ignore variable.undefined
+            $this->logExceptionError("onAfterPublish Exception upserting #%s to Typesense: " . $e->getMessage(), $record);
         }
     }
 
     public function onAfterPublishRecursive()
     {
         try {
+            /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
             SearchHandler::upsertToTypesense($record, true);
         } catch (RequestMalformed $e) {
-            Logger::log("onAfterPublishRecursive RequestMalformed upserting {$record->ID} to Typesense: " . $e->getMessage(), "NOTICE");
+            // @phpstan-ignore variable.undefined
+            $this->logExceptionError("onAfterPublishRecursive RequestMalformed upserting #%s to Typesense: " . $e->getMessage(), $record);
         } catch (\Exception $e) {
-            Logger::log("onAfterPublishRecursive general exception upserting {$record->ID} to Typesense: " . $e->getMessage(), "NOTICE");
+            // @phpstan-ignore variable.undefined
+            $this->logExceptionError("onAfterPublishRecursive Exception upserting #%s to Typesense: " . $e->getMessage(), $record);
         }
     }
 
     public function onBeforeDelete()
     {
         try {
+            /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
-            if(!$this->isVersioned($record)) {
+            if (!$this->isVersioned($record)) {
                 SearchHandler::deleteFromTypesense($record, true);
             }
         } catch (ObjectNotFound $e) {
-            Logger::log("onBeforeDelete ObjectNotFound deleting {$record->ID} from Typesense: " . $e->getMessage(), "INFO");
+            // @phpstan-ignore variable.undefined
+            $this->logExceptionError("onBeforeDelete ObjectNotFound deleting #%s from Typesense: " . $e->getMessage(), $record);
         } catch (\Exception $e) {
-            Logger::log("onBeforeDelete general exception deleting {$record->ID} from Typesense: " . $e->getMessage(), "NOTICE");
+            // @phpstan-ignore variable.undefined
+            $this->logExceptionError("onBeforeDelete Exception deleting #%s from Typesense: " . $e->getMessage(), $record);
         }
     }
 
     public function onAfterUnpublish()
     {
         try {
+            /** @var \SilverStripe\ORM\DataObject $record */
             $record = $this->getOwner();
             SearchHandler::deleteFromTypesense($record, true);
         } catch (ObjectNotFound $e) {
-            Logger::log("onAfterUpublish ObjectNotFound deleting {$record->ID} from Typesense: " . $e->getMessage(), "INFO");
+            // @phpstan-ignore variable.undefined
+            $this->logExceptionError("onAfterUpublish ObjectNotFound deleting #%s from Typesense: " . $e->getMessage(), $record);
         } catch (\Exception $e) {
-            Logger::log("onAfterUpublish general exception deleting {$record->ID} from Typesense: " . $e->getMessage(), "NOTICE");
+            // @phpstan-ignore variable.undefined
+            $this->logExceptionError("onAfterUpublish Exception deleting #%s from Typesense: " . $e->getMessage(), $record);
         }
     }
 }

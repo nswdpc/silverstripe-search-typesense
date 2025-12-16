@@ -1,25 +1,23 @@
 <?php
+
 namespace NSWDPC\Search\Typesense\Services;
 
 use ElliotSawyer\SilverstripeTypesense\Typesense;
 use KevinGroeger\CodeEditorField\Forms\CodeEditorField;
-use NSWDPC\Search\Typesense\Services\ClientManager;
-use NSWDPC\Search\Typesense\Services\Logger;
-use NSWDPC\Search\Typesense\Services\SearchHandler;
 use SilverStripe\Core\Environment;
+use SilverStripe\Forms\ToggleCompositeField;
 use SilverStripe\Forms\TextField;
-use SilverStripe\ORM\ValidationResult;
 
 /**
  * Collection of methods to assist with scoped search handling
  */
 abstract class ScopedSearch
 {
-
     /**
      * Get a JSON editor field for editing the scoped search in a nice way
      */
-    public static function getSearchScopeField(): CodeEditorField {
+    public static function getSearchScopeField(): CodeEditorField
+    {
         return CodeEditorField::create(
             'SearchScope',
             _t(static::class . '.INSTANT_SEARCH_SEARCHSCOPE', 'Provide the search scope as JSON'),
@@ -32,19 +30,37 @@ abstract class ScopedSearch
     /**
      * Get the search key field
      */
-    public static function getSearchKeyField(): TextField {
-        return TextField::create(
+    public static function getSearchKeyField(): ToggleCompositeField
+    {
+        $searchKey = trim(Environment::getEnv('TYPESENSE_SEARCH_KEY') ?? '');
+        $warning = "";
+        if ($searchKey !== '') {
+            $warning = _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_USING_SYSTEM', "A system provided search-only key is in use and will override the value provided here.");
+        }
+
+        $textField = TextField::create(
             'SearchKey',
             _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY', 'Search-only key')
         )->setDescription(
             _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_WARNING', "Use a Typesense search-only API key with the single action 'documents:search'. This will be checked and validated on save.")
+        );
+        if ($warning !== '') {
+            $textField = $textField->setRightTitle($warning);
+        }
+        return ToggleCompositeField::create(
+            'SearchKeyToggle',
+            _t(static::class . '.SEARCH_KEY', 'Key'),
+            [
+                $textField
+            ]
         );
     }
 
     /**
      * Get the default scope
      */
-    public static function getDefaultScope(): array {
+    public static function getDefaultScope(): array
+    {
         return [
             'include_fields' => 'Title,TypesenseSearchResultData'
         ];
@@ -55,18 +71,20 @@ abstract class ScopedSearch
      * @note this requires a stored TYPESENSE_API_KEY with keys:list permission
      * @throws \Exception
      */
-    public static function validateSearchOnlyKey(string $searchKey): bool {
+    public static function validateSearchOnlyKey(string $searchKey): bool
+    {
         try {
-            if($searchKey === '') {
+            if ($searchKey === '') {
                 throw new \InvalidArgumentException("Empty key provided");
             }
+
             $manager = new ClientManager();
             $client = $manager->getConfiguredClient();
             $results = $client->keys->retrieve();
             $keyFound = false;
             // print_r($results);
-            foreach($results['keys'] as $key) {
-                if(!str_starts_with($searchKey, $key['value_prefix'])) {
+            foreach ($results['keys'] as $key) {
+                if (!str_starts_with($searchKey, (string) $key['value_prefix'])) {
                     // ignore this key returned
                     continue;
                 }
@@ -75,18 +93,18 @@ abstract class ScopedSearch
                 // check the prefixed key's actions
                 // scoped keys can only contain document:search
                 // https://typesense.org/docs/28.0/api/api-keys.html#generate-scoped-search-key
-                if(!isset($key['actions']) || $key['actions'] != ['documents:search']) {
+                if (!isset($key['actions']) || $key['actions'] != ['documents:search']) {
                     throw new \RuntimeException("Invalid key actions value");
                 }
             }
 
-            if(!$keyFound) {
+            if (!$keyFound) {
                 throw new \RuntimeException("The key entered does not exist");
             }
 
             return true;
 
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return false;
         }
     }
@@ -94,9 +112,15 @@ abstract class ScopedSearch
     /**
      * Get the decoded search scope, null if invalid
      */
-    public static function getDecodedSearchScope(string $searchScope): array {
+    public static function getDecodedSearchScope(string $searchScope): ?array
+    {
+        $searchScope = trim($searchScope);
+        if ($searchScope === '') {
+            return [];
+        }
+
         $scope = json_decode($searchScope, true, 512, JSON_THROW_ON_ERROR);
-        if(is_array($scope)) {
+        if (is_array($scope)) {
             return $scope;
         } else {
             return null;
@@ -108,20 +132,22 @@ abstract class ScopedSearch
      * back into SearchScope value
      * @param string $searchScope a string in JSON format
      */
-    public static function validateSearchScope(string $searchScope): bool {
+    public static function validateSearchScope(string $searchScope): bool
+    {
         try {
-            if($searchScope == '') {
+            if ($searchScope === '') {
                 // empty scope is valid
                 return true;
             }
+
             $scope = static::getDecodedSearchScope($searchScope);
-            if(is_array($scope)) {
+            if (is_array($scope)) {
                 return true;
             } else {
                 return false;
             }
-        } catch (\Exception $e) {
-            Logger::log("Error: " . $e->getMessage(), "INFO");
+        } catch (\Exception $exception) {
+            Logger::log("Error: " . $exception->getMessage(), "INFO");
             return false;
         }
     }
@@ -129,14 +155,10 @@ abstract class ScopedSearch
     /**
      * Given a search-only API key and a scope generate a scoped API key
      */
-    public static function getScopedApiKey(string $searchOnlyKey, array $searchScope): ?string {
+    public static function getScopedApiKey(string $searchOnlyKey, array $searchScope): string
+    {
         $manager = new ClientManager();
         $client = $manager->getConfiguredClient();
-        $scopedKey = $client->keys->generateScopedSearchKey($searchOnlyKey, $searchScope);
-        if(is_string($scopedKey)) {
-            return $scopedKey;
-        } else {
-            return null;
-        }
+        return $client->keys->generateScopedSearchKey($searchOnlyKey, $searchScope);
     }
 }

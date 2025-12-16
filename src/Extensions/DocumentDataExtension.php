@@ -4,24 +4,31 @@ namespace NSWDPC\Search\Typesense\Extensions;
 
 use SilverStripe\ORM\DataExtension;
 
-class DocumentDataExtension extends DataExtension {
-
+/**
+ * @extends \SilverStripe\ORM\DataExtension<static>
+ */
+class DocumentDataExtension extends DataExtension
+{
     /**
      * Return appropriate values based on the fields being indexed for Typesense
      * If the method getTypesense{fieldName} exists on the record, use that
      * If the method get{fieldName} exists on the record, use that
      * Else use getField(fieldName)
      * Then, do massaging of data values
+     * @return mixed[]
      */
-    public function getTypesenseDocument(array $fields) {
+    public function getTypesenseDocument(array $fields): array
+    {
 
         // \NSWDPC\Search\Typesense\Services\Logger::log("DocumentDataExtension - getTypesenseDocument", "DEBUG");
 
         $data = [];
+
+        /** @var \SilverStripe\ORM\DataObject $owner */
         $owner = $this->getOwner();
         foreach ($fields as $field) {
 
-            if(!isset($field['name'])) {
+            if (!isset($field['name'])) {
                 throw new \RuntimeException("Cannot get a value of a field without a name");
             }
 
@@ -29,10 +36,10 @@ class DocumentDataExtension extends DataExtension {
             $typesenseMethodName = "getTypesenseValueFor{$field['name']}";
             $genericMethodName = "get{$field['name']}";
 
-            if(method_exists($owner, $typesenseMethodName)) {
+            if (method_exists($owner, $typesenseMethodName)) {
                 // raw value passed back from getTypesenseValueFor{FieldName}
                 $value = $owner->{$typesenseMethodName}($field);
-            } else if(method_exists($owner, $genericMethodName)) {
+            } elseif (method_exists($owner, $genericMethodName)) {
                 // raw value passed back from get{FieldName}
                 $value = $owner->{$genericMethodName}();
             } else {
@@ -41,22 +48,18 @@ class DocumentDataExtension extends DataExtension {
             }
 
             // handle DB fields
-            if($owner->hasField($field['name'])) {
+            if ($owner->hasField($field['name'])) {
                 // deal with DB fields
                 $dbValue = $owner->dbObject($field['name']);
-                if($dbValue instanceof \SilverStripe\ORM\FieldType\DBHTMLText || $dbValue instanceof \SilverStripe\ORM\FieldType\DBHTMLVarchar) {
+                if ($dbValue instanceof \SilverStripe\ORM\FieldType\DBHTMLText || $dbValue instanceof \SilverStripe\ORM\FieldType\DBHTMLVarchar) {
                     // do not process shortcodes in this field
                     $dbValue->setProcessShortcodes(false);
                     // HTML values are made Plain, so that HTML is not stored in the index
                     $value = $dbValue->Plain();
-                } else if ($field['type'] == 'int64' && ($dbValue instanceof \SilverStripe\ORM\FieldType\DBDate)) {
+                } elseif ($field['type'] == 'int64' && ($dbValue instanceof \SilverStripe\ORM\FieldType\DBDate)) {
                     // coerce Date/Datetime values into unix timestamps for DBDate fields that need to be a timestamp
                     $timestamp = $dbValue->getTimestamp();
-                    if($timestamp > 0) {
-                        $value = $timestamp;
-                    } else {
-                        $value = null;
-                    }
+                    $value = $timestamp > 0 ? $timestamp : null;
                 }
             }
 
@@ -64,7 +67,7 @@ class DocumentDataExtension extends DataExtension {
             $data[$field['name']] = $value;
         }
 
-        if($data !== []) {
+        if ($data !== []) {
             // each data entry will have an "id" value needs to be a string version of the record ID
             $data['id'] = (string) $owner->ID;
         }

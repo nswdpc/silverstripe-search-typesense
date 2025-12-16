@@ -3,16 +3,16 @@
 namespace NSWDPC\Search\Typesense\Extensions;
 
 use ElliotSawyer\SilverstripeTypesense\Collection;
-use NSWDPC\Search\Typesense\Services\Logger;
 use SilverStripe\ORM\DataExtension;
 
 /**
  * Extensions for Collection data model
  *
  * @property Collection|CollectionExtension $owner
+ * @extends \SilverStripe\ORM\DataExtension<(\ElliotSawyer\SilverstripeTypesense\Collection & static)>
  */
-class CollectionExtension extends DataExtension {
-
+class CollectionExtension extends DataExtension
+{
     /**
      * Add indexes to fields that are queried, avoid full table scans
      */
