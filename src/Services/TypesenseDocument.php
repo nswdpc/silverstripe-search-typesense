@@ -1,6 +1,7 @@
 <?php
 namespace NSWDPC\Search\Typesense\Services;
 
+use SilverStripe\Core\Config\Configurable;
 use SilverStripe\ORM\DataObject;
 
 /**
@@ -8,6 +9,53 @@ use SilverStripe\ORM\DataObject;
  */
 abstract class TypesenseDocument
 {
+
+    use Configurable;
+
+    /**
+     * Default fields that are added to every document
+     */
+    private static array $default_fields = [
+        [
+            'name' => 'id',
+            'type' => 'int64'
+        ],
+        [
+            'name' => 'ClassName',
+            'type' => 'string',
+            'facet' => true
+        ],
+        [
+            'name' => 'LastEdited',
+            'type' => 'int64'
+        ],
+        [
+            'name' => 'Created',
+            'type' => 'int64'
+        ],
+        /**
+         * This field can contain the result data needed to
+         * render a result
+         */
+        [
+            'name' => 'TypesenseSearchResultData',
+            'type' => 'object[]',
+            'index' => false
+        ]
+    ];
+
+    /**
+     * Return the default fields from content
+     */
+    public static function getDefaultFields(): array
+    {
+        $defaultFields = static::config()->get('default_fields');
+        if(!is_array($defaultFields)) {
+            return [];
+        } else {
+            return $defaultFields;
+        }
+    }
 
     /**
      * Get a document from a record for indexing by Typesense
@@ -19,6 +67,11 @@ abstract class TypesenseDocument
     public static function get(DataObject $record, array $fields): array
     {
         $document = [];
+
+        // add default fields on
+        $defaultFields = static::getDefaultFields();
+        $fields = array_merge($defaultFields, $fields);
+
         foreach ($fields as $field) {
 
             if (!isset($field['name'])) {

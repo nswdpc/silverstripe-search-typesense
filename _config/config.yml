@@ -1,12 +1,6 @@
 ---
 Name: nswdpc-search-typesense
 ---
-ElliotSawyer\SilverstripeTypesense\Collection:
-  extensions:
-    - NSWDPC\Search\Typesense\Extensions\CollectionExtension
-  default_collection_fields:
-    # an object of all data that can be displayed in a search result
-    - { name: TypesenseSearchResultData, type: 'object[]', index: false }
 SilverStripe\SiteConfig\SiteConfig:
   extensions:
     # global search instantsearch support
