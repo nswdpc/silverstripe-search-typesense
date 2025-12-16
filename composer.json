@@ -21,7 +21,8 @@
         "silverstripe/siteconfig": "^5",
         "symbiote/silverstripe-queuedjobs": "^5",
         "symbiote/silverstripe-multivaluefield": "*",
-        "kevingroeger/codeeditorfield": "^1.3"
+        "kevingroeger/codeeditorfield": "^1.3",
+        "silverstripe/versioned": "^2"
     },
     "require-dev": {
         "cambis/silverstan": "^2",

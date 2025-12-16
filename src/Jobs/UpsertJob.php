@@ -2,7 +2,6 @@
 
 namespace NSWDPC\Search\Typesense\Jobs;
 
-use ElliotSawyer\SilverstripeTypesense\Typesense;
 use NSWDPC\Search\Typesense\Services\Logger;
 use NSWDPC\Search\Typesense\Services\SearchHandler;
 use SilverStripe\ORM\DataObject;

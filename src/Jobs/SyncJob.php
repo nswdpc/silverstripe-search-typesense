@@ -2,8 +2,7 @@
 
 namespace NSWDPC\Search\Typesense\Jobs;
 
-use ElliotSawyer\SilverstripeTypesense\Collection;
-use ElliotSawyer\SilverstripeTypesense\Typesense;
+use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection as Collection;
 use NSWDPC\Search\Typesense\Services\ClientManager;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\FieldType\DBDatetime;
@@ -49,7 +48,7 @@ class SyncJob extends AbstractQueuedJob
 
             // Find or make the collection from configuration
             $collection = null;
-            $collections = Typesense::config()->get('collections') ?? [];
+            $collections = Collection::config()->get('collections') ?? [];
             foreach ($collections as $recordClass => $collectionData) {
                 $collectionName = $collectionData['name'] ?? null;
                 if ($collectionName == $this->collectionName) {
@@ -58,8 +57,8 @@ class SyncJob extends AbstractQueuedJob
                 }
             }
 
-            if (!$collection instanceof \ElliotSawyer\SilverstripeTypesense\Collection) {
-                // no configured collection in YML.. try to get one from
+            if (!$collection instanceof Collection) {
+                // no configured collection in YML.. try to get one from DB
                 $this->addMessage("No configured collection found for '{$this->collectionName}', trying to find the collection in the DB only");
                 $collection = Collection::get()
                     ->filter([
@@ -72,16 +71,15 @@ class SyncJob extends AbstractQueuedJob
                 throw new \Exception("The collection '{$this->collectionName}' could not be found or created, maybe it is not enabled?");
             }
 
-            $manager = new ClientManager();
+            $manager = Injector::inst()->get(ClientManager::class);
             $client = $manager->getConfiguredClient();
 
-            // check if collection exists
-            $exists = $client->collections[$collection->Name]->exists();
-            if ($exists !== true) {
-                // if it doesn't, create it
-                $this->addMessage("Collection '{$collection->Name}' does not exist");
-                $response = $collection->syncWithTypesenseServer();
-                $this->addMessage($response);
+            try {
+                // Attempt to create the collection, it might exist
+                $collection->createAtServer();
+                $this->addMessage("Collection '{$collection->Name}' created at server");
+            } catch (\Typesense\Exceptions\ObjectAlreadyExists $objectAlreadyExists) {
+                $this->addMessage("Collection '{$collection->Name}' exists");
             }
 
             $this->addMessage("Collection '{$collection->Name}' batch import {$this->batchLimit} from {$this->batchStart}");

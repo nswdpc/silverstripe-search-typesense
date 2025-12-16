@@ -2,7 +2,7 @@
 
 namespace NSWDPC\Search\Typesense\Models;
 
-use ElliotSawyer\SilverstripeTypesense\Collection;
+use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection as Collection;
 use NSWDPC\Search\Typesense\Services\InstantSearch as InstantSearchService;
 use NSWDPC\Search\Typesense\Services\ScopedSearch;
 use SilverStripe\Forms\CheckboxField;
@@ -32,7 +32,6 @@ use SilverStripe\Security\PermissionProvider;
  * @property ?string $HitTitleField
  * @property ?string $HitAbstractField
  * @property int $CollectionID
- * @method \ElliotSawyer\SilverstripeTypesense\Collection Collection()
  * @mixin \NSWDPC\Search\Typesense\Extensions\ScopedSearchExtension
  */
 class InstantSearch extends DataObject implements PermissionProvider

@@ -2,15 +2,16 @@
 
 namespace NSWDPC\Search\Typesense\Services;
 
-use ElliotSawyer\SilverstripeTypesense\Collection;
-use ElliotSawyer\SilverstripeTypesense\Typesense;
+use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection as Collection;
 use NSWDPC\Search\Typesense\Jobs\DeleteJob;
 use NSWDPC\Search\Typesense\Jobs\UpsertJob;
 use NSWDPC\Search\Typesense\Models\Result;
 use NSWDPC\Search\Typesense\Models\SearchResults;
+use NSWDPC\Search\Typesense\Services\TypesenseDocument;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Injector\Injectable;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\ArrayList;
 use SilverStripe\ORM\DataList;
 use SilverStripe\ORM\DataObject;
@@ -82,7 +83,7 @@ class SearchHandler
      */
     protected static function getClient(array $searchScope = [], string $searchOnlyApiKey = ''): TypesenseClient
     {
-        $manager = new ClientManager();
+        $manager = Injector::inst()->get(ClientManager::class);
         if ($searchOnlyApiKey !== '') {
             $scopedApiKey = ScopedSearch::getScopedApiKey($searchOnlyApiKey, $searchScope);
             $client = $manager->getConfiguredClientForApiKey($scopedApiKey);
@@ -117,13 +118,7 @@ class SearchHandler
         // query by handling
         $queryBy = '';
         if (!isset($searchScope['query_by'])) {
-            // TODO nested object, object[] search
-            $fieldsForSearch = $collection->Fields()
-                ->filter([
-                    'index' => 1,
-                    'type' => ['string','string[]'] // Only fields that have a datatype of string or string[] in the collection schema can be specified in query_by
-                ])
-                ->column('name');
+            $fieldsForSearch = $collection->getCollectionFieldsForQueryBy();
             $queryBy = implode(",", self::escapeArray($fieldsForSearch));
         } elseif (is_string($searchScope['query_by'])) {
             $queryBy = trim($searchScope['query_by']);
@@ -328,20 +323,24 @@ class SearchHandler
             $client = static::getClient();
             foreach ($collections as $collection) {
                 try {
-                    /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
-                    if ($collection->checkExistance()) {
+                    if ($client->collections[$collection->Name]->exists()) {
                         $data = [];
-                        /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
-                        $fieldsArray = $collection->FieldsArray();
+                        /** @var \NSWDPC\Search\Typesense\Models\TypesenseSearchCollection $collection */
+                        $collectionFields = $collection->getCollectionFields();
                         if ($record->hasMethod('getTypesenseDocument')) {
-                            $data = $record->getTypesenseDocument($fieldsArray);
+                            // See DocumentDataExtension
+                            $data = $record->getTypesenseDocument($collectionFields);
                         } else {
-                            /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
-                            $data = $collection->getTypesenseDocument($record, $fieldsArray);
+                            // Try to get the document directly
+                            $data = TypesenseDocument::get($record, $collectionFields);
                         }
 
-                        $upsert = $client->collections[$collection->Name]->documents->upsert($data);
-                        Logger::log("Upserted record #{$record->ID}/{$record->ClassName} to collection {$collection->Name}", "INFO");
+                        if($data !== []) {
+                            $upsert = $client->collections[$collection->Name]->documents->upsert($data);
+                            Logger::log("Upserted record #{$record->ID}/{$record->ClassName} to collection {$collection->Name}", "INFO");
+                        } else {
+                            Logger::log("The document for #{$record->ID}/{$record->ClassName} is empty and was not upserted", "INFO");
+                        }
                         $success++;
                     }
                 } catch (\Exception $exception) {
@@ -374,18 +373,7 @@ class SearchHandler
             $client = static::getClient();
             foreach ($collections as $collection) {
                 try {
-                    /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
-                    if ($collection->checkExistance()) {
-                        $data = [];
-                        /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
-                        $fieldsArray = $collection->FieldsArray();
-                        if ($record->hasMethod('getTypesenseDocument')) {
-                            $data = $record->getTypesenseDocument($fieldsArray);
-                        } else {
-                            /** @phpstan-ignore method.notFound (method in SilverstripeTypesense\Collection) */
-                            $data = $collection->getTypesenseDocument($record, $fieldsArray);
-                        }
-
+                    if ($client->collections[$collection->Name]->exists()) {
                         $client->collections[$collection->Name]->documents[(string) $record->ID]->delete();
                         Logger::log("Delete record #{$record->ID}/{$record->ClassName} from collection {$collection->Name}", "INFO");
                         $success++;

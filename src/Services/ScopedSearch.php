@@ -2,9 +2,9 @@
 
 namespace NSWDPC\Search\Typesense\Services;
 
-use ElliotSawyer\SilverstripeTypesense\Typesense;
 use KevinGroeger\CodeEditorField\Forms\CodeEditorField;
 use SilverStripe\Core\Environment;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\ToggleCompositeField;
 use SilverStripe\Forms\TextField;
 
@@ -78,7 +78,7 @@ abstract class ScopedSearch
                 throw new \InvalidArgumentException("Empty key provided");
             }
 
-            $manager = new ClientManager();
+            $manager = Injector::inst()->get(ClientManager::class);
             $client = $manager->getConfiguredClient();
             $results = $client->keys->retrieve();
             $keyFound = false;
@@ -157,7 +157,7 @@ abstract class ScopedSearch
      */
     public static function getScopedApiKey(string $searchOnlyKey, array $searchScope): string
     {
-        $manager = new ClientManager();
+        $manager = Injector::inst()->get(ClientManager::class);
         $client = $manager->getConfiguredClient();
         return $client->keys->generateScopedSearchKey($searchOnlyKey, $searchScope);
     }

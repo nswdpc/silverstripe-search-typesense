@@ -3,8 +3,7 @@
 namespace NSWDPC\Search\Typesense\Services;
 
 use Codem\Utilities\HTML5\NumberField;
-use ElliotSawyer\SilverstripeTypesense\Collection;
-use ElliotSawyer\SilverstripeTypesense\Field;
+use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection as Collection;
 use NSWDPC\Search\Forms\Forms\AdvancedSearchForm;
 use NSWDPC\Search\Forms\Forms\SearchForm;
 use SilverStripe\Control\Controller;
@@ -63,9 +62,12 @@ abstract class FormCreator
 
     protected static function getFields(Collection $collection, AdvancedSearchForm $form): AdvancedSearchForm
     {
-        $fields = $collection->Fields();
+        $fields = $collection->getCollectionFields();
         $fieldList = FieldList::create();
         foreach ($fields as $field) {
+            if(!is_object($field)) {
+                continue;
+            }
             if (($formField = self::getField($field)) instanceof \SilverStripe\Forms\FormField) {
                 $fieldList->push($formField);
             }
@@ -76,11 +78,12 @@ abstract class FormCreator
     }
 
     /**
-     * Given a field, return a FormField for the form suitable for that data type
+     * Given a field object, return a FormField for the form suitable for that data type
+     * @param object $field an object representing a  field within the 'fields' configuration of a Typesense Collection
      */
-    protected static function getField(Field $field): ?FormField
+    protected static function getField(object $field): ?FormField
     {
-        if (!$field->index) {
+        if (isset($field->index) && !$field->index) {
             // do not show unindexed fields
             return null;
         }
@@ -98,7 +101,7 @@ abstract class FormCreator
     /**
      * Get a text field
      */
-    public static function getTextField(Field $field): TextField
+    public static function getTextField(object $field): TextField
     {
         return TextField::create(
             $field->name,
@@ -109,7 +112,7 @@ abstract class FormCreator
     /**
      * Get a field for int32
      */
-    public static function getIntField(Field $field): NumberField
+    public static function getIntField(object $field): NumberField
     {
         return NumberField::create(
             $field->name,
@@ -120,7 +123,7 @@ abstract class FormCreator
     /**
      * Get a field for int64
      */
-    public static function getBigIntField(Field $field): NumberField
+    public static function getBigIntField(object $field): NumberField
     {
         return NumberField::create(
             $field->name,
@@ -131,7 +134,7 @@ abstract class FormCreator
     /**
      * Get a field for float
      */
-    public static function getFloatField(Field $field): NumberField
+    public static function getFloatField(object $field): NumberField
     {
         return NumberField::create(
             $field->name,
@@ -142,7 +145,7 @@ abstract class FormCreator
     /**
      * Get a boolean field
      */
-    public static function getBoolField(Field $field): DropdownField
+    public static function getBoolField(object $field): DropdownField
     {
         return DropdownField::create(
             $field->name,
