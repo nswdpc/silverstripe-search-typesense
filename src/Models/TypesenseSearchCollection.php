@@ -22,29 +22,35 @@ class TypesenseSearchCollection extends DataObject
      */
     private static array $collections = [];
 
-    /**
-     * Field to allow administration of the collection within the admin interface
-     */
     private static array $db = [
         'Name' => 'Varchar(255)',
-        'LinkedClass' => 'Text',
+        'RecordClass' => 'Varchar(255)',
         'Enabled' => 'Boolean',
+        'IsCreatedFromConfig' => 'Boolean',
         'Metadata' => 'Text' // applicable metadata for the collection, including fields
     ];
 
-    /**
-     * Add indexes to fields that are queried, avoid full table scans
-     */
+    private static array $summary_fields = [
+        'Name' => 'Name',
+        'RecordClass' => 'Record type',
+        'Enabled.Nice' => 'Enabled?',
+        'IsCreatedFromConfig.Nice' => 'From configuration?'
+    ];
+
     private static array $indexes = [
-        'Name' => true,
+        'Name' =>  [
+            'columns' => ['Name'],
+            'type' => 'unique' // the collection name is unique
+        ],
+        'RecordClass' => true,
         'Enabled' => true
     ];
 
     private static string $table_name = 'TypesenseCollection';
 
-    private static string $singular_name = 'Typesense search collection';
+    private static string $singular_name = 'Collection';
 
-    private static string $plural_names = 'Typesense search collections';
+    private static string $plural_names = 'Collections';
 
     /**
      * Helper function for when ->Title is called
@@ -54,10 +60,39 @@ class TypesenseSearchCollection extends DataObject
         return $this->Name;
     }
 
+    public function requireDefaultRecords()
+    {
+        parent::requireDefaultRecords();
+        $collections = static::getConfiguredCollections();
+        foreach ($collections as $recordClass => $collectionData) {
+            try {
+                $collectionName = trim($collectionData['name'] ?? null);
+                if($collectionName === '') {
+                    throw new \RuntimeException("'name' value is empty");
+                }
+                $collection = static::findOrCreate($collectionName, $recordClass, $collectionData, true);
+                if($collection->isInDB()) {
+                    \SilverStripe\ORM\DB::alteration_message("Local collection '{$collection->Name}' found/created", "info");
+                } else {
+                    \SilverStripe\ORM\DB::alteration_message("Local collection for '{$recordClass}' not found or created", "error");
+                }
+            } catch (\Exception $exception) {
+                \SilverStripe\ORM\DB::alteration_message("Local collection error on find/create {$exception->getMessage()}", "error");
+            }
+        }
+    }
+
     public function getCmsFields()
     {
         $fields = parent::getCmsFields();
-        $fields->makeFieldReadonly(['Name','LinkedClass']);
+
+        $metadataField = CodeEditorField::create(
+            'Metadata',
+            _t(self::class . ".COLLECTION_METADATA", "Collection metadata")
+        )->setMode('ace/mode/json')
+        ->setTheme('ace/theme/dracula')
+        ->setHeight(640);
+
         $fields->addFieldsToTab(
             'Root.Main',
             [
@@ -65,14 +100,31 @@ class TypesenseSearchCollection extends DataObject
                     'Enabled',
                     _t(self::class . ".COLLECTION_ENABLED", "Collection enabled")
                 ),
-                CodeEditorField::create(
-                    'Metadata',
-                    _t(self::class . ".COLLECTION_METADATA", "Collection metadata")
-                )->setMode('ace/mode/json')
-                ->setTheme('ace/theme/dracula')
+                $metadataField
             ]
         );
+        $readonlyFields = ['Name','RecordClass','IsCreatedFromConfig'];
+        if($this->IsCreatedFromConfig) {
+            // TODO: should be stopped from editing?
+            // $readonlyFields[] = 'Metadata';
+        }
+        $fields->makeFieldReadonly($readonlyFields);
+
         return $fields;
+    }
+
+    public function getPrettyMetadata(): ?string
+    {
+        $metadata = $this->Metadata;
+        if(is_null($metadata)) {
+            return null;
+        } else if(is_string($metadata)) {
+            $decoded = json_decode($metadata, true);
+            $result = json_encode($decoded, JSON_PRETTY_PRINT);
+            return $result;
+        } else {
+            return null;
+        }
     }
 
     public function onBeforeWrite()
@@ -83,6 +135,9 @@ class TypesenseSearchCollection extends DataObject
             if($name !== '') {
                 $this->Name = $name;
             }
+            // prettify the configuration stored for viewing
+            // TODO can this be done on the display side?
+            $this->Metadata = $this->getPrettyMetadata();
         } catch (\Exception $exception) {
             // noop
         }
@@ -96,6 +151,16 @@ class TypesenseSearchCollection extends DataObject
         $valid = parent::validate();
         if($this->isInDB()) {
 
+            $exists = $this->collectionExists($this->Name ?? '', true);
+            if($exists) {
+                $valid->addFieldError(
+                    'Name',
+                    _t(
+                        self::class . '.COLLECTION_NAME_EXISTS',
+                        'A collection with this name already exists'
+                    )
+                );
+            }
             try {
                 $metadata = $this->validateMetadata();
             } catch (\Exception $exception) {
@@ -107,47 +172,71 @@ class TypesenseSearchCollection extends DataObject
                     )
                 );
             }
-            $linkedClass = $this->getValidLinkedClass($valid);
+            $recordClass = $this->getValidRecordClass($valid);
+        } else {
+            $exists = $this->collectionExists($this->Name ?? '', false);
+            if($exists) {
+                $valid->addFieldError(
+                    'Name',
+                    _t(
+                        self::class . '.COLLECTION_NAME_EXISTS',
+                        'A collection with this name already exists'
+                    )
+                );
+            }
         }
         return $valid;
     }
 
-    public function getValidLinkedClass(?\SilverStripe\ORM\ValidationResult &$valid = null): string
+    public function collectionExists(string $name, bool $excludeCurrent = false): bool
+    {
+        if($name === '') {
+            return false;
+        }
+        $list = static::get()->filter(['Name' => $name]);
+        if($excludeCurrent) {
+            $list = $list->exclude(['ID' => $this->ID]);
+        }
+        $collection = $list->first();
+        return $collection && $collection->isInDB();
+    }
+
+    public function getValidRecordClass(?\SilverStripe\ORM\ValidationResult &$valid = null): string
     {
         $isValid = false;
-        $linkedClass = trim($this->LinkedClass ?? '');
-        if($linkedClass == '') {
+        $recordClass = trim($this->RecordClass ?? '');
+        if($recordClass == '') {
             if(!is_null($valid)) {
                 $valid->addFieldError(
-                    'LinkedClass',
+                    'RecordClass',
                     _t(
                         self::class . '.COLLECTION_VALIDATE_EMPTY_CLASS',
                         'Please provide a linked class name'
                     )
                 );
             }
-        } else if (!class_exists($linkedClass)) {
+        } else if (!class_exists($recordClass)) {
             if(!is_null($valid)) {
                 $valid->addFieldError(
-                    'LinkedClass',
+                    'RecordClass',
                     _t(
                         self::class . '.COLLECTION_VALIDATE_CLASS_NOT_EXIST',
-                        'The class {linkedClass} does not exist',
+                        'The class {recordClass} does not exist',
                         [
-                            'linkedClass' => $linkedClass
+                            'recordClass' => $recordClass
                         ]
                     )
                 );
             }
-        } else if(!is_subclass_of($linkedClass, DataObject::class)) {
+        } else if(!is_subclass_of($recordClass, DataObject::class)) {
             if(!is_null($valid)) {
                 $valid->addFieldError(
-                    'LinkedClass',
+                    'RecordClass',
                     _t(
                         self::class . '.COLLECTION_VALIDATE_CLASS_NOT_DATAOBJECT',
-                        'The class {linkedClass} is not a DataObject, provide a class that extends DataObject',
+                        'The class {recordClass} is not a DataObject, provide a class that extends DataObject',
                         [
-                            'linkedClass' => $linkedClass
+                            'recordClass' => $recordClass
                         ]
                     )
                 );
@@ -157,7 +246,7 @@ class TypesenseSearchCollection extends DataObject
         }
 
         if($isValid) {
-            return $linkedClass;
+            return $recordClass;
         } else {
             return '';
         }
@@ -166,25 +255,33 @@ class TypesenseSearchCollection extends DataObject
     /**
      * Find or create a collection record locally in the database
      * @param string $name the name of the collection
-     * @param string $linkedClass the classname linked to the collection's data, must be a subclass of DataObject
+     * @param string $recordClass the classname linked to the collection's data, must be a subclass of DataObject
      * @param array $metadata collection metadata
+     * @param bool $isCreatedFromConfig when a record is created from configuration, store this value
      * 
      */
-    public static function find_or_make(string $name, string $linkedClass, array $metadata): static
+    public static function findOrCreate(string $name, string $recordClass, array $metadata, bool $isCreatedFromConfig = false): static
     {
+        // Name is the unique index
         $collection = static::get()->filter([
-            'Name' => $name,
-            'LinkedClass' => $linkedClass
+            'Name' => $name
         ])->first();
         if(!$collection) {
             // Create a new, enabled, collection
             $collection = static::create([
                 'Name' => $name,
-                'LinkedClass' => $linkedClass,
+                'RecordClass' => $recordClass,
                 'Enabled' => true
             ]);
         }
-        $collection->Metadata = json_encode($metadata);
+        if(is_null($collection->Metadata) || $collection->Metadata === '') {
+            $collection->Metadata = trim(json_encode($metadata));
+        }
+        $collection->ClassName = static::class;// ensure class is updated
+        if($isCreatedFromConfig) {
+            // ensure this is set when true
+            $collection->IsCreatedFromConfig = true;
+        }
         $id = $collection->write();
         if(!$id) {
             throw new \RuntimeException("Failed to write collection record locally");
@@ -326,6 +423,16 @@ class TypesenseSearchCollection extends DataObject
 
         // all valid
         return $metadata;
+    }
+
+    public static function getConfiguredCollections(): array
+    {
+        $collections = static::config()->get('collections') ?? [];
+        if(!is_array($collections)) {
+            return [];
+        } else {
+            return $collections;
+        }
     }
 
     /**
@@ -486,8 +593,8 @@ class TypesenseSearchCollection extends DataObject
      */
     protected function getRecords(array $sort = []): ?\SilverStripe\ORM\DataList
     {
-        $linkedClass = $this->getValidLinkedClass();
-        if($linkedClass === '') {
+        $recordClass = $this->getValidRecordClass();
+        if($recordClass === '') {
             throw \SilverStripe\ORM\ValidationException::create(
                 _t(
                     static::class . ' .GETRECORDS_INVALID_LINKED_CLASS',
@@ -498,13 +605,13 @@ class TypesenseSearchCollection extends DataObject
 
         // Get via versioned module and prefer the LIVE stage record if supported by the record
         $records = Versioned::withVersionedMode(
-            function() use ($linkedClass) {
+            function() use ($recordClass) {
                 Versioned::set_stage(Versioned::LIVE);
-                return $linkedClass::get();   
+                return $recordClass::get();   
             }
         );
 
-        $inst = Injector::inst()->get($linkedClass);
+        $inst = Injector::inst()->get($recordClass);
 
         // Exclude records that have the 'ShowInSearch' field e.g. SiteTree, File
         if ($inst->hasField('ShowInSearch')) {

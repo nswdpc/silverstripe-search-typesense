@@ -48,11 +48,11 @@ class SyncJob extends AbstractQueuedJob
 
             // Find or make the collection from configuration
             $collection = null;
-            $collections = Collection::config()->get('collections') ?? [];
+            $collections = Collection::getConfiguredCollections();
             foreach ($collections as $recordClass => $collectionData) {
                 $collectionName = $collectionData['name'] ?? null;
                 if ($collectionName == $this->collectionName) {
-                    $collection = Collection::find_or_make($collectionName, $recordClass, $collectionData);
+                    $collection = Collection::findOrCreate($collectionName, $recordClass, $collectionData, true);
                     break;
                 }
             }
