@@ -373,8 +373,11 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
             $fields = $this->getCollectionFields();
             foreach($fields as $field) {
                 // field must be string and must be index-ed (see 'Declaring a field as un-indexed' in collection docs)
-                if(in_array($field->type, ['string','string[]']) && $field->index) {
-                    $fieldsForSearch[] = $field->name;
+                if(in_array($field['type'], ['string','string[]'])
+                    // index is true by default, it can be not set, or set and true
+                    && (!isset($field['index']) || (isset($field['index']) && $field['index']))
+                ) {
+                    $fieldsForSearch[] = $field['name'];
                 }
             }
             return array_unique($fieldsForSearch);
