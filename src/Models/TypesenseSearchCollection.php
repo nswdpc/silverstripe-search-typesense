@@ -9,6 +9,7 @@ use NSWDPC\Search\Typesense\Services\TypesenseDocument;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\DB;
 use SilverStripe\Versioned\Versioned;
 
 /**
@@ -72,12 +73,12 @@ class TypesenseSearchCollection extends DataObject
                 }
                 $collection = static::findOrCreate($collectionName, $recordClass, $collectionData, true);
                 if($collection->isInDB()) {
-                    \SilverStripe\ORM\DB::alteration_message("Local collection '{$collection->Name}' found/created", "info");
+                    DB::alteration_message("Local collection '{$collection->Name}' found/created", "info");
                 } else {
-                    \SilverStripe\ORM\DB::alteration_message("Local collection for '{$recordClass}' not found or created", "error");
+                    DB::alteration_message("Local collection for '{$recordClass}' not found or created", "error");
                 }
             } catch (\Exception $exception) {
-                \SilverStripe\ORM\DB::alteration_message("Local collection error on find/create {$exception->getMessage()}", "error");
+                DB::alteration_message("Local collection error on find/create {$exception->getMessage()}", "error");
             }
         }
     }
@@ -438,14 +439,26 @@ class TypesenseSearchCollection extends DataObject
     /**
      * Import this collection to the server
      */
-    public function import(int $limit = 100, array $sort = ['ID' => 'ASC']): int
+    public function import(int $limit = 100, array $sort = ['ID' => 'ASC'], bool $verbose = false): int
     {
         $batchCount = 0;
         $total = 0;
+        $start = 0;
+        if($verbose) {
+            DB::alteration_message("Start import limit={$limit}", "changed");
+        }
         do {
-            $batchCount = $this->batchedImport($sort, $limit, 0);
+            $batchCount = $this->batchedImport($sort, $limit, $start);
             $total += $batchCount;
+            $start += $limit;
+            if($verbose) {
+                DB::alteration_message("Batch count={$batchCount} of total={$total}", "changed");
+            }
         } while($batchCount > 0);
+
+        if($verbose) {
+            DB::alteration_message("Import done total={$total}", "changed");
+        }
 
         return $total;
     }
@@ -480,6 +493,13 @@ class TypesenseSearchCollection extends DataObject
         $batchCount = $records->count();
         if($batchCount == 0) {
             // no more records
+            Logger::log(
+                _t(
+                    static::class . ' .BATCHEDIMPORT_NO_MORE_DOCUMENTS_FOUND',
+                    'No more documents found'
+                ),
+                "INFO"
+            );
             return 0;
         }
 

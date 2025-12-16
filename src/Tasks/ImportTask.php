@@ -16,6 +16,12 @@ use SilverStripe\ORM\DB;
 class ImportTask extends BuildTask
 {
 
+    protected $title = 'Typesense collection import';
+
+    protected $description = 'Import a single collection into Typesense';
+
+    private static $segment = "TypesenseCollectionImportTask";
+
     /**
      * Run the import task
      * @inheritdoc
@@ -24,6 +30,8 @@ class ImportTask extends BuildTask
     {
 
         $collectionName = $request->getVar('collection') ?? '';
+        $limit = $request->getVar('limit') ?? 100;
+        $sort = ['ID' => 'ASC'];
         if(!is_string($collectionName) || $collectionName === '') {
             DB::alteration_message(
                 _t(
@@ -61,7 +69,7 @@ class ImportTask extends BuildTask
                     ),
                     "changed"
                 );
-                $recordCount = $collection->import();
+                $recordCount = $collection->import($limit, $sort, true);
                 DB::alteration_message(
                     _t(
                         self::class . ".COLLECTION_IMPORTING",
