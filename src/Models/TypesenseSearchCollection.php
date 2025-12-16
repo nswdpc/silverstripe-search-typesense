@@ -8,14 +8,18 @@ use NSWDPC\Search\Typesense\Services\Logger;
 use NSWDPC\Search\Typesense\Services\TypesenseDocument;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\CheckboxField;
+use SilverStripe\Forms\FormAction;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DB;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
+use SilverStripe\Security\Security;
 use SilverStripe\Versioned\Versioned;
 
 /**
  * Represents a collection, with field metadata being pulled from YML configuration
  */
-class TypesenseSearchCollection extends DataObject
+class TypesenseSearchCollection extends DataObject implements PermissionProvider
 {
 
     /**
@@ -52,6 +56,59 @@ class TypesenseSearchCollection extends DataObject
     private static string $singular_name = 'Collection';
 
     private static string $plural_names = 'Collections';
+
+    /**
+     * @return array
+     */
+    public function providePermissions()
+    {
+        return [
+            'TYPESENSE_COLLECTION_VIEW' => [
+                'name' => _t(static::class . '.PERMISSION_VIEW', 'View Typesense collections'),
+                'category' => 'Typesense InstantSearch',
+            ],
+            'TYPESENSE_COLLECTION_EDIT' => [
+                'name' => _t(static::class . '.PERMISSION_EDIT', 'Edit Typesense collections'),
+                'category' => 'Typesense InstantSearch',
+            ],
+            'TYPESENSE_COLLECTION_CREATE' => [
+                'name' => _t(static::class . '.PERMISSION_CREATE', 'Create Typesense collections'),
+                'category' => 'Typesense InstantSearch',
+            ],
+            'TYPESENSE_COLLECTION_DELETE' => [
+                'name' => _t(static::class . '.PERMISSION_DELETE', 'Delete Typesense collections'),
+                'category' => 'Typesense InstantSearch',
+            ],
+            'TYPESENSE_COLLECTION_REINDEX' => [
+                'name' => _t(static::class . '.PERMISSION_REINDEX', 'Reindex Typesense collections'),
+                'category' => 'Typesense InstantSearch',
+            ],
+        ];
+    }
+
+    #[\Override]
+    public function canEdit($member = null)
+    {
+        return Permission::checkMember($member, 'TYPESENSE_COLLECTION_EDIT');
+    }
+
+    #[\Override]
+    public function canView($member = null)
+    {
+        return Permission::checkMember($member, 'TYPESENSE_COLLECTION_VIEW');
+    }
+
+    #[\Override]
+    public function canCreate($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'TYPESENSE_COLLECTION_CREATE');
+    }
+
+    #[\Override]
+    public function canDelete($member = null)
+    {
+        return Permission::checkMember($member, 'TYPESENSE_COLLECTION_DELETE');
+    }
 
     /**
      * Helper function for when ->Title is called
@@ -698,5 +755,29 @@ class TypesenseSearchCollection extends DataObject
         }
 
     }
+
+    /**
+     * Return CMS actions for this record
+     */
+    #[\Override]
+    public function getCMSActions()
+    {
+        $actions = parent::getCMSActions();
+        $member = Security::getCurrentUser();
+        if ($this->isInDB() && Permission::checkMember($member, 'TYPESENSE_COLLECTION_REINDEX')) {
+            $refreshAction = FormAction::create(
+                'doCollectionSync',
+                _t(
+                    self::class . '.START_COLLECTION_SYNC',
+                    'Refresh the search index'
+                )
+            )->addExtraClass('btn-outline-primary font-icon-sync')
+            ->setUseButtonTag(true);
+            $actions->push($refreshAction);
+        }
+
+        return $actions;
+    }
+
 
 }
