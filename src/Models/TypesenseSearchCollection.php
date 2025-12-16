@@ -40,7 +40,7 @@ class TypesenseSearchCollection extends DataObject
         'Enabled' => true
     ];
 
-    private static string $table_name = 'TypesenseSearchCollection';
+    private static string $table_name = 'TypesenseCollection';
 
     private static string $singular_name = 'Typesense search collection';
 
