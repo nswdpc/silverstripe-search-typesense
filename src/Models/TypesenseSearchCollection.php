@@ -426,7 +426,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
     public function getMetadataAsArray(): array
     {
         try {
-            $metadata = json_decode($this->Metadata, true, 512, JSON_THROW_ON_ERROR);
+            $metadata = json_decode((string) $this->Metadata, true, 512, JSON_THROW_ON_ERROR);
             return is_array($metadata) ? $metadata : [];
         } catch (\JsonException) {
             return [];
