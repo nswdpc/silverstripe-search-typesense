@@ -84,12 +84,12 @@ abstract class FormCreator
      */
     protected static function getField(array $field): ?FormField
     {
-        if(!isset($field['name']) || $field['name'] === '') {
+        if (!isset($field['name']) || $field['name'] === '') {
             // invalid field
             return null;
         }
 
-        if(!isset($field['type'])) {
+        if (!isset($field['type'])) {
             // invalid field
             return null;
         }
