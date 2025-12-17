@@ -7,7 +7,6 @@ use NSWDPC\Search\Typesense\Jobs\DeleteJob;
 use NSWDPC\Search\Typesense\Jobs\UpsertJob;
 use NSWDPC\Search\Typesense\Models\Result;
 use NSWDPC\Search\Typesense\Models\SearchResults;
-use NSWDPC\Search\Typesense\Services\TypesenseDocument;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Injector\Injectable;
@@ -335,7 +334,7 @@ class SearchHandler
                             $data = TypesenseDocument::get($record, $collectionFields);
                         }
 
-                        if($data !== []) {
+                        if ($data !== []) {
                             $upsert = $client->collections[$collection->Name]->documents->upsert($data);
                             Logger::log("Upserted record #{$record->ID}/{$record->ClassName} to collection {$collection->Name}", "INFO");
                         } else {

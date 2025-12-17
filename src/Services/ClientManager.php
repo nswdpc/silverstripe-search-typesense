@@ -11,7 +11,6 @@ use Typesense\Client as TypesenseClient;
  */
 class ClientManager
 {
-
     use Injectable;
 
     protected static array $clients = [];
@@ -46,7 +45,7 @@ class ClientManager
     protected function getNodesFromConfiguration(): array
     {
         $servers = trim(Environment::getEnv('TYPESENSE_SERVER') ?? '');
-        if($servers === '') {
+        if ($servers === '') {
             // none
             return [];
         }
@@ -58,10 +57,11 @@ class ClientManager
      * Given a string of server(s) possibly separated by a "," return the nodes for Typesense
      * @return list<array{host: mixed, port: mixed, protocol: mixed}>
      */
-    protected function getNodesFromServers(string $servers): array {
+    protected function getNodesFromServers(string $servers): array
+    {
         $nodes = [];
         $urls = explode(",", $servers);
-        foreach($urls as $url) {
+        foreach ($urls as $url) {
             $parts = parse_url($url);
             $host = $parts['host'] ?? '';
             $port = $parts['port'] ?? '';
@@ -87,7 +87,7 @@ class ClientManager
     {
         ksort($params);
         $key = hash('sha256', json_encode($params));
-        if(isset(static::$clients[$key]) && (static::$clients[$key] instanceof TypesenseClient)) {
+        if (isset(static::$clients[$key]) && (static::$clients[$key] instanceof TypesenseClient)) {
             Logger::log("Found existing TypesenseClient with these params", "INFO");
             return static::$clients[$key];
         } else {
@@ -102,7 +102,7 @@ class ClientManager
      */
     public function getServerNodes(string $servers = ''): array
     {
-        if($servers !== '') {
+        if ($servers !== '') {
             return $this->getNodesFromServers($servers);
         } else {
             return $this->getNodesFromConfiguration();

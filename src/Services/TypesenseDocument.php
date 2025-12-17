@@ -1,4 +1,5 @@
 <?php
+
 namespace NSWDPC\Search\Typesense\Services;
 
 use SilverStripe\Core\Config\Configurable;
@@ -9,7 +10,6 @@ use SilverStripe\ORM\DataObject;
  */
 abstract class TypesenseDocument
 {
-
     use Configurable;
 
     /**
@@ -50,7 +50,7 @@ abstract class TypesenseDocument
     public static function getDefaultFields(): array
     {
         $defaultFields = static::config()->get('default_fields');
-        if(!is_array($defaultFields)) {
+        if (!is_array($defaultFields)) {
             return [];
         } else {
             return $defaultFields;

@@ -5,10 +5,8 @@ namespace NSWDPC\Search\Typesense\Admin;
 use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection as Collection;
 use NSWDPC\Search\Typesense\Models\InstantSearch;
 use SilverStripe\Admin\ModelAdmin;
-use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\Forms\GridField\GridFieldDetailForm;
-
 
 class TypesenseAdmin extends ModelAdmin
 {

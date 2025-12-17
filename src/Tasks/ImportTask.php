@@ -3,10 +3,8 @@
 namespace NSWDPC\Search\Typesense\Jobs;
 
 use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection as Collection;
-use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DB;
-
 
 /**
  * Build task for importing a collection to the server
@@ -15,7 +13,6 @@ use SilverStripe\ORM\DB;
  */
 class ImportTask extends BuildTask
 {
-
     protected $title = 'Typesense collection import';
 
     protected $description = 'Import a single collection into Typesense';
@@ -32,7 +29,7 @@ class ImportTask extends BuildTask
         $collectionName = $request->getVar('collection') ?? '';
         $limit = $request->getVar('limit') ?? 100;
         $sort = ['ID' => 'ASC'];
-        if(!is_string($collectionName) || $collectionName === '') {
+        if (!is_string($collectionName) || $collectionName === '') {
             DB::alteration_message(
                 _t(
                     self::class . ".COLLECTION_NAME_NOT_PROVIDED",
@@ -44,7 +41,7 @@ class ImportTask extends BuildTask
         }
 
         $collection = Collection::get()->filter(['Name' => $collectionName])->first();
-        if(!$collection || !$collection->isInDB()) {
+        if (!$collection || !$collection->isInDB()) {
             DB::alteration_message(
                 _t(
                     self::class . ".COLLECTION_NOT_FOUND",

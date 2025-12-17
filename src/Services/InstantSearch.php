@@ -45,7 +45,7 @@ abstract class InstantSearch
         }
 
         $nodes = [];
-        foreach($servers as $server) {
+        foreach ($servers as $server) {
             $host = $server['host'] ?? '';
             $port = $server['port'] ?? 8081;
             $scheme = $server['scheme'] ?? 'https';

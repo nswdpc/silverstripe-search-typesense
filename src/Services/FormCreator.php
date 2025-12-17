@@ -65,7 +65,7 @@ abstract class FormCreator
         $fields = $collection->getCollectionFields();
         $fieldList = FieldList::create();
         foreach ($fields as $field) {
-            if(!is_object($field)) {
+            if (!is_object($field)) {
                 continue;
             }
 

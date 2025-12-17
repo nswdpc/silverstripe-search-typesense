@@ -19,7 +19,7 @@ class DocumentDataExtension extends Extension
         // \NSWDPC\Search\Typesense\Services\Logger::log("DocumentDataExtension - getTypesenseDocument", "DEBUG");
         /** @var \SilverStripe\ORM\DataObject $owner */
         $owner = $this->getOwner();
-        if(!$owner instanceof \SilverStripe\ORM\DataObject) {
+        if (!$owner instanceof \SilverStripe\ORM\DataObject) {
             return [];
         } else {
             return TypesenseDocument::get($owner, $fields);
