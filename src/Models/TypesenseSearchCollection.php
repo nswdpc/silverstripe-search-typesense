@@ -592,7 +592,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
 
             $data = [];
             if ($record->hasMethod('getTypesenseDocument')) {
-                // See DocumentDataExtension
+                // e.g. see DocumentDataExtension
                 $data = $record->getTypesenseDocument($collectionFields);
             } else {
                 // Try to get the document directly
