@@ -41,6 +41,7 @@ class TypesenseAdmin extends ModelAdmin
                 }
             }
         }
+
         return $form;
     }
 

@@ -24,7 +24,7 @@ abstract class InstantSearch
     {
         static::addRequirements();
         $nodes = $config['nodes'] ?? [];
-        if (!is_array($nodes) || count($nodes) == 0) {
+        if (!is_array($nodes) || $nodes === []) {
             $nodes = static::getServerNodes();
         }
 
@@ -43,6 +43,7 @@ abstract class InstantSearch
                 _t(static::class.'.EXCEPTION_schemeformat', 'TYPESENSE_SERVER must be in scheme://host:port format')
             );
         }
+
         $nodes = [];
         foreach($servers as $server) {
             $host = $server['host'] ?? '';
@@ -57,6 +58,7 @@ abstract class InstantSearch
                 ];
             }
         }
+
         return $nodes;
     }
 

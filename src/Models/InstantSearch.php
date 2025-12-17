@@ -33,6 +33,7 @@ use SilverStripe\Security\PermissionProvider;
  * @property ?string $HitAbstractField
  * @property int $CollectionID
  * @mixin \NSWDPC\Search\Typesense\Extensions\ScopedSearchExtension
+ * @method \NSWDPC\Search\Typesense\Models\TypesenseSearchCollection Collection()
  */
 class InstantSearch extends DataObject implements PermissionProvider
 {
@@ -334,7 +335,7 @@ class InstantSearch extends DataObject implements PermissionProvider
 
         /** getTypesenseScopedSearchKey provided by SearchScope data extension */
         $scopedApiKey = $this->getTypesenseScopedSearchKey();
-        if ($scopedApiKey === null || $scopedApiKey === '' || $scopedApiKey === '0') {
+        if (in_array($scopedApiKey, [null, '', '0'], true)) {
             return null;
         }
 

@@ -50,13 +50,15 @@ class ClientManager
             // none
             return [];
         }
+
         return $this->getNodesFromServers($servers);
     }
 
     /**
      * Given a string of server(s) possibly separated by a "," return the nodes for Typesense
+     * @return list<array{host: mixed, port: mixed, protocol: mixed}>
      */
-    protected function getNodesFromServers(string $servers) {
+    protected function getNodesFromServers(string $servers): array {
         $nodes = [];
         $urls = explode(",", $servers);
         foreach($urls as $url) {
@@ -73,6 +75,7 @@ class ClientManager
                 ];
             }
         }
+
         return $nodes;
     }
 

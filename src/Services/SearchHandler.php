@@ -298,7 +298,7 @@ class SearchHandler
     public static function isLinkedToCollections(DataObject $record): ?DataList
     {
         $collections = static::getCollectionsForRecord($record);
-        if (is_null($collections) || $collections->count() == 0) {
+        if (is_null($collections) || $collections->count() === 0) {
             return null;
         } else {
             return $collections;
@@ -341,6 +341,7 @@ class SearchHandler
                         } else {
                             Logger::log("The document for #{$record->ID}/{$record->ClassName} is empty and was not upserted", "INFO");
                         }
+
                         $success++;
                     }
                 } catch (\Exception $exception) {
@@ -348,7 +349,7 @@ class SearchHandler
                 }
             }
 
-            return $success == $collections->count();
+            return $success === $collections->count();
         } else {
             // Upsert via job
             return UpsertJob::queueMyself($record);
@@ -383,7 +384,7 @@ class SearchHandler
                 }
             }
 
-            return $success == $collections->count();
+            return $success === $collections->count();
         } else {
             // delete via job
             return DeleteJob::queueMyself($record);

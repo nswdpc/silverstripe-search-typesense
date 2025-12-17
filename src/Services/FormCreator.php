@@ -68,6 +68,7 @@ abstract class FormCreator
             if(!is_object($field)) {
                 continue;
             }
+
             if (($formField = self::getField($field)) instanceof \SilverStripe\Forms\FormField) {
                 $fieldList->push($formField);
             }

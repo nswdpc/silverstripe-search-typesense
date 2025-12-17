@@ -20,7 +20,7 @@ class ImportTask extends BuildTask
 
     protected $description = 'Import a single collection into Typesense';
 
-    private static $segment = "TypesenseCollectionImportTask";
+    private static string $segment = "TypesenseCollectionImportTask";
 
     /**
      * Run the import task

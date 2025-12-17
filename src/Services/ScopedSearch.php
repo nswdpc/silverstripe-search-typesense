@@ -47,6 +47,7 @@ abstract class ScopedSearch
         if ($warning !== '') {
             $textField = $textField->setRightTitle($warning);
         }
+
         return ToggleCompositeField::create(
             'SearchKeyToggle',
             _t(static::class . '.SEARCH_KEY', 'Key'),

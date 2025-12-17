@@ -78,7 +78,7 @@ class SyncJob extends AbstractQueuedJob
                 // Attempt to create the collection, it might exist
                 $collection->createAtServer();
                 $this->addMessage("Collection '{$collection->Name}' created at server");
-            } catch (\Typesense\Exceptions\ObjectAlreadyExists $objectAlreadyExists) {
+            } catch (\Typesense\Exceptions\ObjectAlreadyExists) {
                 $this->addMessage("Collection '{$collection->Name}' exists");
             }
 

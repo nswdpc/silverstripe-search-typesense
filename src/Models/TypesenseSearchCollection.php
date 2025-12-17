@@ -18,6 +18,11 @@ use SilverStripe\Versioned\Versioned;
 
 /**
  * Represents a collection, with field metadata being pulled from YML configuration
+ * @property ?string $Name
+ * @property ?string $RecordClass
+ * @property bool $Enabled
+ * @property bool $IsCreatedFromConfig
+ * @property ?string $Metadata
  */
 class TypesenseSearchCollection extends DataObject implements PermissionProvider
 {
@@ -113,21 +118,24 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
     /**
      * Helper function for when ->Title is called
      */
+    #[\Override]
     public function getTitle(): ?string
     {
         return $this->Name;
     }
 
+    #[\Override]
     public function requireDefaultRecords()
     {
         parent::requireDefaultRecords();
         $collections = static::getConfiguredCollections();
         foreach ($collections as $recordClass => $collectionData) {
             try {
-                $collectionName = trim($collectionData['name'] ?? null);
+                $collectionName = trim((string) ($collectionData['name'] ?? null));
                 if($collectionName === '') {
                     throw new \RuntimeException("'name' value is empty");
                 }
+
                 $collection = static::findOrCreate($collectionName, $recordClass, $collectionData, true);
                 if($collection->isInDB()) {
                     DB::alteration_message("Local collection '{$collection->Name}' found/created", "info");
@@ -140,6 +148,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         }
     }
 
+    #[\Override]
     public function getCmsFields()
     {
         $fields = parent::getCmsFields();
@@ -166,6 +175,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
             // TODO: should be stopped from editing?
             // $readonlyFields[] = 'Metadata';
         }
+
         $fields->makeFieldReadonly($readonlyFields);
 
         return $fields;
@@ -174,17 +184,17 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
     public function getPrettyMetadata(): ?string
     {
         $metadata = $this->Metadata;
-        if(is_null($metadata)) {
+        if (is_null($metadata)) {
             return null;
-        } else if(is_string($metadata)) {
+        } elseif (is_string($metadata)) {
             $decoded = json_decode($metadata, true);
-            $result = json_encode($decoded, JSON_PRETTY_PRINT);
-            return $result;
+            return json_encode($decoded, JSON_PRETTY_PRINT);
         } else {
             return null;
         }
     }
 
+    #[\Override]
     public function onBeforeWrite()
     {
         parent::onBeforeWrite();
@@ -193,10 +203,11 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
             if($name !== '') {
                 $this->Name = $name;
             }
+
             // prettify the configuration stored for viewing
             // TODO can this be done on the display side?
             $this->Metadata = $this->getPrettyMetadata();
-        } catch (\Exception $exception) {
+        } catch (\Exception) {
             // noop
         }
     }
@@ -204,6 +215,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
     /**
      * Validate the record
      */
+    #[\Override]
     public function validate()
     {
         $valid = parent::validate();
@@ -219,9 +231,10 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
                     )
                 );
             }
+
             try {
                 $metadata = $this->validateMetadata();
-            } catch (\Exception $exception) {
+            } catch (\Exception) {
                 $valid->addFieldError(
                     'Metadata',
                     _t(
@@ -230,6 +243,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
                     )
                 );
             }
+
             $recordClass = $this->getValidRecordClass($valid);
         } else {
             $exists = $this->collectionExists($this->Name ?? '', false);
@@ -243,6 +257,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
                 );
             }
         }
+
         return $valid;
     }
 
@@ -251,10 +266,12 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         if($name === '') {
             return false;
         }
+
         $list = static::get()->filter(['Name' => $name]);
         if($excludeCurrent) {
             $list = $list->exclude(['ID' => $this->ID]);
         }
+
         $collection = $list->first();
         return $collection && $collection->isInDB();
     }
@@ -263,7 +280,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
     {
         $isValid = false;
         $recordClass = trim($this->RecordClass ?? '');
-        if($recordClass == '') {
+        if ($recordClass === '') {
             if(!is_null($valid)) {
                 $valid->addFieldError(
                     'RecordClass',
@@ -273,7 +290,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
                     )
                 );
             }
-        } else if (!class_exists($recordClass)) {
+        } elseif (!class_exists($recordClass)) {
             if(!is_null($valid)) {
                 $valid->addFieldError(
                     'RecordClass',
@@ -286,7 +303,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
                     )
                 );
             }
-        } else if(!is_subclass_of($recordClass, DataObject::class)) {
+        } elseif (!is_subclass_of($recordClass, DataObject::class)) {
             if(!is_null($valid)) {
                 $valid->addFieldError(
                     'RecordClass',
@@ -332,18 +349,22 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
                 'Enabled' => true
             ]);
         }
+
         if(is_null($collection->Metadata) || $collection->Metadata === '') {
             $collection->Metadata = trim(json_encode($metadata));
         }
+
         $collection->ClassName = static::class;// ensure class is updated
         if($isCreatedFromConfig) {
             // ensure this is set when true
             $collection->IsCreatedFromConfig = true;
         }
+
         $id = $collection->write();
         if(!$id) {
             throw new \RuntimeException("Failed to write collection record locally");
         }
+
         return $collection;
 
     }
@@ -356,7 +377,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         try {
             $metadata = $this->getMetadataAsArray();
             return isset($metadata['fields']) && is_array($metadata['fields']) ? $metadata['fields'] : [];
-        } catch (\JsonException $jsonException) {
+        } catch (\JsonException) {
             return [];
         }
     }
@@ -380,8 +401,9 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
                     $fieldsForSearch[] = $field['name'];
                 }
             }
+
             return array_unique($fieldsForSearch);
-        } catch (\Exception $exception) {
+        } catch (\Exception) {
             return [];
         }
     }
@@ -394,7 +416,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         try {
             $metadata = $this->getMetadataAsArray();
             return isset($metadata['name']) && is_string($metadata['name']) ? $metadata['name'] : '';
-        } catch (\JsonException $jsonException) {
+        } catch (\JsonException) {
             return '';
         }
     }
@@ -407,7 +429,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         try {
             $metadata = json_decode($this->Metadata, true, 512, JSON_THROW_ON_ERROR);
             return is_array($metadata) ? $metadata : [];
-        } catch (\JsonException $jsonException) {
+        } catch (\JsonException) {
             return [];
         }
     }
@@ -441,21 +463,21 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         $fields = [
             'name' => [
                 // required
-                'validate' => function($value) { return is_string($value) && $value !== ''; },
+                'validate' => fn($value): bool => is_string($value) && $value !== '',
             ],
             'fields' => [
                 // required
-                'validate' => function($value) { return is_array($value) && $value !== []; },
+                'validate' => fn($value): bool => is_array($value) && $value !== [],
             ],
             'token_separators' => [
-                'validate' => function($value) { return is_string($value); },
+                'validate' => is_string(...),
             ],
             'symbols_to_index' => [
-                'validate' => function($value) { return is_string($value); },
+                'validate' => is_string(...),
             ],
             'default_sorting_field' => [
                 // TODO validate the field type, currently up to configuration to have this correct
-                'validate' => function($value) { return is_string($value); },
+                'validate' => is_string(...),
             ]
         ];
 
@@ -468,7 +490,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
             // @phpstan-ignore function.alreadyNarrowedType
             if(is_callable($fields[$key]['validate'])) {
                 $result = $fields[$key]['validate']($value);
-                if($result == false) {
+                if($result === false) {
                     throw \SilverStripe\ORM\ValidationException::create(
                         _t(
                             static::class . ' .VALIDATE_METADATA_INVALID_FIELD_VALUE',
@@ -507,6 +529,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         if($verbose) {
             DB::alteration_message("Start import limit={$limit}", "changed");
         }
+
         do {
             $batchCount = $this->batchedImport($sort, $limit, $start);
             $total += $batchCount;
@@ -551,7 +574,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         // get records based on args
         $records = $this->getRecords($sort)->limit($limit, $start);
         $batchCount = $records->count();
-        if($batchCount == 0) {
+        if($batchCount === 0) {
             // no more records
             Logger::log(
                 _t(
@@ -576,6 +599,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
                 // Try to get the document directly
                 $data = TypesenseDocument::get($record, $collectionFields);
             }
+
             if (is_array($data) && $data !== []) {
                 $docs[] = $data;
             } else {
@@ -596,7 +620,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         Logger::log(
             _t(
                 static::class .'.BATCHEDIMPORT_IMPORTING_STEP',
-                'Batch importing {count} from offset {start} into \'{name}\'',
+                "Batch importing {count} from offset {start} into '{name}'",
                 [
                     'count'=> count($docs),
                     'start' => $start,
@@ -724,6 +748,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
             // this will throw an \Typesense\Exceptions\ObjectAlreadyExists if the collection already exists
             $client->collections->create($metadata, $createOptions);
         }
+
         // created
         return true;
     }
@@ -739,11 +764,12 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
             if($name === '') {
                 throw new \RuntimeException("Cannot delete a collection with an empty name");
             }
+
             $manager = Injector::inst()->get(ClientManager::class);
             $client = $manager->getConfiguredClient($clientOptions);
             $client->collections[$name]->delete();
             return true;
-        } catch (\Exception $exception) {
+        } catch (\Exception) {
             Logger::log(
                 _t(
                     static::class . ' .COLLECTION_DELETE_FAIL',
