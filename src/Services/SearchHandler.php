@@ -316,6 +316,12 @@ class SearchHandler
             return false;
         }
 
+        // Exclude records that have the 'ShowInSearch' field e.g. SiteTree, File
+        if ($record->hasField('ShowInSearch') && !$record->ShowInSearch) {
+            Logger::log("Attempt to upsert record #{$record->ID}/{$record->ClassName} skipping as ShowInSearch=0", "INFO");
+            return false;
+        }
+
         if (!$viaQueuedJob) {
             // Direct upsert .. UpsertJob process calls this.
             $success = 0;
