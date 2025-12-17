@@ -65,7 +65,7 @@ abstract class FormCreator
         $fields = $collection->getCollectionFields();
         $fieldList = FieldList::create();
         foreach ($fields as $field) {
-            if (!is_object($field)) {
+            if (!is_array($field)) {
                 continue;
             }
 
@@ -80,16 +80,26 @@ abstract class FormCreator
 
     /**
      * Given a field object, return a FormField for the form suitable for that data type
-     * @param object $field an object representing a  field within the 'fields' configuration of a Typesense Collection
+     * @param array $field an object representing a  field within the 'fields' configuration of a Typesense Collection
      */
-    protected static function getField(object $field): ?FormField
+    protected static function getField(array $field): ?FormField
     {
-        if (isset($field->index) && !$field->index) {
+        if(!isset($field['name']) || $field['name'] === '') {
+            // invalid field
+            return null;
+        }
+
+        if(!isset($field['type'])) {
+            // invalid field
+            return null;
+        }
+
+        if (isset($field['index']) && !$field['index']) {
             // do not show unindexed fields
             return null;
         }
 
-        return match ($field->type) {
+        return match ($field['type']) {
             'string' => self::getTextField($field),
             'int32' => self::getIntField($field),
             'int64' => self::getBigIntField($field),
@@ -102,55 +112,55 @@ abstract class FormCreator
     /**
      * Get a text field
      */
-    public static function getTextField(object $field): TextField
+    public static function getTextField(array $field): TextField
     {
         return TextField::create(
-            $field->name,
-            $field->name
+            $field['name'],
+            $field['name']
         );
     }
 
     /**
      * Get a field for int32
      */
-    public static function getIntField(object $field): NumberField
+    public static function getIntField(array $field): NumberField
     {
         return NumberField::create(
-            $field->name,
-            $field->name
+            $field['name'],
+            $field['name']
         );
     }
 
     /**
      * Get a field for int64
      */
-    public static function getBigIntField(object $field): NumberField
+    public static function getBigIntField(array $field): NumberField
     {
         return NumberField::create(
-            $field->name,
-            $field->name
+            $field['name'],
+            $field['name']
         );
     }
 
     /**
      * Get a field for float
      */
-    public static function getFloatField(object $field): NumberField
+    public static function getFloatField(array $field): NumberField
     {
         return NumberField::create(
-            $field->name,
-            $field->name
+            $field['name'],
+            $field['name']
         );
     }
 
     /**
      * Get a boolean field
      */
-    public static function getBoolField(object $field): DropdownField
+    public static function getBoolField(array $field): DropdownField
     {
         return DropdownField::create(
-            $field->name,
-            $field->name,
+            $field['name'],
+            $field['name'],
             [
                 'true' => _t(self::class . ".YES", "Yes"),
                 'false' => _t(self::class . ".NO", "No"),
