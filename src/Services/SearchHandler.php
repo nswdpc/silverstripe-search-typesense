@@ -316,9 +316,8 @@ class SearchHandler
             return false;
         }
 
-        // Exclude records that have the 'ShowInSearch' field e.g. SiteTree, File
-        if ($record->hasField('ShowInSearch') && !$record->ShowInSearch) {
-            Logger::log("Attempt to upsert record #{$record->ID}/{$record->ClassName} skipping as ShowInSearch=0", "INFO");
+        if (!IncludeInSearchIndex::check($record)) {
+            Logger::log("Attempt to upsert record #{$record->ID}/{$record->ClassName} skipping as marked excluded", "INFO");
             return false;
         }
 

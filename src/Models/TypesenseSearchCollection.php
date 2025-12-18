@@ -5,6 +5,7 @@ namespace NSWDPC\Search\Typesense\Models;
 use KevinGroeger\CodeEditorField\Forms\CodeEditorField;
 use NSWDPC\Search\Typesense\Services\ClientManager;
 use NSWDPC\Search\Typesense\Services\Logger;
+use NSWDPC\Search\Typesense\Services\IncludeInSearchIndex;
 use NSWDPC\Search\Typesense\Services\TypesenseDocument;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\CheckboxField;
@@ -591,12 +592,14 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         foreach ($records as $record) {
 
             $data = [];
-            if ($record->hasMethod('getTypesenseDocument')) {
-                // e.g. see DocumentDataExtension
-                $data = $record->getTypesenseDocument($collectionFields);
-            } else {
-                // Try to get the document directly
-                $data = TypesenseDocument::get($record, $collectionFields);
+            if(IncludeInSearchIndex::check($record)) {
+                if ($record->hasMethod('getTypesenseDocument')) {
+                    // e.g. see DocumentDataExtension
+                    $data = $record->getTypesenseDocument($collectionFields);
+                } else {
+                    // Try to get the document directly
+                    $data = TypesenseDocument::get($record, $collectionFields);
+                }
             }
 
             if (is_array($data) && $data !== []) {
