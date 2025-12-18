@@ -2,7 +2,11 @@
 
 namespace NSWDPC\Search\Typesense\Services;
 
+use SilverStripe\Core\Config\Configurable;
+use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\Hierarchy\Hierarchy;
+use SilverStripe\Security\InheritedPermissions;
 use SilverStripe\Security\InheritedPermissionsExtension;
 
 /**
@@ -93,11 +97,12 @@ class IncludeInSearchIndex
             if($record->CanViewType === InheritedPermissions::ONLY_THESE_USERS || $record->CanViewType === InheritedPermissions::ONLY_THESE_MEMBERS) {
                 // has a granular view permission set on the record
                 return true;
-            } else if($record->hasMethod('Parent')
-                && $record->CanViewType === InheritedPermissions::INHERIT
+            } else if($record->CanViewType === InheritedPermissions::INHERIT
+                && ($record->hasExtension(Hierarchy::class) || $record->hasMethod('getParent'))
                 && (
-                    ($parent = $record->Parent())
-                    && $parent instanceof DataObject
+                    // @phpstan-ignore method.notFound
+                    ($parent = $record->getParent())
+                    && ($parent instanceof DataObject)
                     && $parent->hasExtension(InheritedPermissionsExtension::class)
                     && ($parent->CanViewType === InheritedPermissions::ONLY_THESE_USERS || $parent->CanViewType === InheritedPermissions::ONLY_THESE_MEMBERS)
                 )
@@ -129,11 +134,12 @@ class IncludeInSearchIndex
             if($record->CanViewType === InheritedPermissions::LOGGED_IN_USERS) {
                 // has a LoggedInUsers view permission set on the record
                 return true;
-            } else if($record->hasMethod('Parent')
-                && $record->CanViewType === InheritedPermissions::INHERIT
+            } else if($record->CanViewType === InheritedPermissions::INHERIT
+                && ($record->hasExtension(Hierarchy::class) || $record->hasMethod('getParent'))
                 && (
-                    ($parent = $record->Parent())
-                    && $parent instanceof DataObject
+                    // @phpstan-ignore method.notFound
+                    ($parent = $record->getParent())
+                    && ($parent instanceof DataObject)
                     && $parent->hasExtension(InheritedPermissionsExtension::class)
                     && $parent->CanViewType === InheritedPermissions::LOGGED_IN_USERS
                 )
