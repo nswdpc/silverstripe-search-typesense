@@ -87,7 +87,7 @@ abstract class TypesenseDocument
             $genericMethodName = "get{$fieldName}";
 
             $value = null;
-            if($fieldName == "id") {
+            if ($fieldName == "id") {
                 // Logger::log("Getting value for {$fieldName} from ID field", "DEBUG");
                 $value = (string)$record->ID;
             } elseif (method_exists($record, $typesenseMethodName)) {
@@ -100,7 +100,7 @@ abstract class TypesenseDocument
                 $value = $record->{$genericMethodName}();
             } else {
                 // Logger::log("Getting value for {$fieldName} from __get()", "DEBUG");
-                // Get value from __get() 
+                // Get value from __get()
                 $value = $record->__get($fieldName);
             }
 

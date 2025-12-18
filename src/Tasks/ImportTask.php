@@ -93,7 +93,7 @@ class ImportTask extends BuildTask
                 );
             }
 
-            foreach($collection->getImportSuccesses() as $success) {
+            foreach ($collection->getImportSuccesses() as $success) {
                 DB::alteration_message(
                     json_encode($success),
                     "changed"
@@ -101,7 +101,7 @@ class ImportTask extends BuildTask
 
             }
 
-            foreach($collection->getImportErrors() as $error) {
+            foreach ($collection->getImportErrors() as $error) {
                 DB::alteration_message(
                     json_encode($error),
                     "error"
