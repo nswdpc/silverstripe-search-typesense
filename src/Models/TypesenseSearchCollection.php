@@ -63,6 +63,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
     private static string $plural_names = 'Collections';
 
     private array $importSuccesses = [];
+
     private array $importErrors = [];
 
     /**
