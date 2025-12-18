@@ -46,10 +46,10 @@ class IncludeInSearchIndex
             return $custom;
         }
         
-        if(self::hasGranularViewPermissions($record)) {
+        if (self::hasGranularViewPermissions($record)) {
             // granular permissions - excluded
             return false;
-        } else if(self::hasLoggedInViewPermission($record)) {
+        } elseif (self::hasLoggedInViewPermission($record)) {
             // logged in user permissions - excluded
             return false;
         } else {
@@ -94,10 +94,10 @@ class IncludeInSearchIndex
 
         if($record->hasExtension(InheritedPermissionsExtension::class)) {
             // check if page has permissions
-            if($record->CanViewType === InheritedPermissions::ONLY_THESE_USERS || $record->CanViewType === InheritedPermissions::ONLY_THESE_MEMBERS) {
+            if ($record->CanViewType === InheritedPermissions::ONLY_THESE_USERS || $record->CanViewType === InheritedPermissions::ONLY_THESE_MEMBERS) {
                 // has a granular view permission set on the record
                 return true;
-            } else if($record->CanViewType === InheritedPermissions::INHERIT
+            } elseif ($record->CanViewType === InheritedPermissions::INHERIT
                 && ($record->hasExtension(Hierarchy::class) || $record->hasMethod('getParent'))
                 && (
                     // @phpstan-ignore method.notFound
@@ -105,8 +105,7 @@ class IncludeInSearchIndex
                     && ($parent instanceof DataObject)
                     && $parent->hasExtension(InheritedPermissionsExtension::class)
                     && ($parent->CanViewType === InheritedPermissions::ONLY_THESE_USERS || $parent->CanViewType === InheritedPermissions::ONLY_THESE_MEMBERS)
-                )
-            ) {
+                )) {
                 // inherited permission, check parent
                 return static::hasGranularViewPermissions($parent);
             } else {
@@ -131,10 +130,10 @@ class IncludeInSearchIndex
 
         if($record->hasExtension(InheritedPermissionsExtension::class)) {
             // check if page has permissions
-            if($record->CanViewType === InheritedPermissions::LOGGED_IN_USERS) {
+            if ($record->CanViewType === InheritedPermissions::LOGGED_IN_USERS) {
                 // has a LoggedInUsers view permission set on the record
                 return true;
-            } else if($record->CanViewType === InheritedPermissions::INHERIT
+            } elseif ($record->CanViewType === InheritedPermissions::INHERIT
                 && ($record->hasExtension(Hierarchy::class) || $record->hasMethod('getParent'))
                 && (
                     // @phpstan-ignore method.notFound
@@ -142,8 +141,7 @@ class IncludeInSearchIndex
                     && ($parent instanceof DataObject)
                     && $parent->hasExtension(InheritedPermissionsExtension::class)
                     && $parent->CanViewType === InheritedPermissions::LOGGED_IN_USERS
-                )
-            ) {
+                )) {
                 // inherited permission, check parent
                 return static::hasLoggedInViewPermission($parent);
             } else {
