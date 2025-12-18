@@ -74,29 +74,40 @@ abstract class TypesenseDocument
 
         foreach ($fields as $field) {
 
-            if (!isset($field['name'])) {
+            if (!isset($field['name']) || $field['name'] === '') {
                 throw new \RuntimeException("Cannot get a value of a field without a name");
             }
 
-            // nominated method names used to get a custom value
-            $typesenseMethodName = "getTypesenseValueFor{$field['name']}";
-            $genericMethodName = "get{$field['name']}";
+            $fieldName = $field['name'];
 
-            if (method_exists($record, $typesenseMethodName)) {
+            // Logger::log("Finding value for field {$fieldName}", "DEBUG");
+
+            // nominated method names used to get a custom value
+            $typesenseMethodName = "getTypesenseValueFor{$fieldName}";
+            $genericMethodName = "get{$fieldName}";
+
+            $value = null;
+            if($fieldName == "id") {
+                // Logger::log("Getting value for {$fieldName} from ID field", "DEBUG");
+                $value = (string)$record->ID;
+            } elseif (method_exists($record, $typesenseMethodName)) {
+                // Logger::log("Getting value for {$fieldName} from direct method {$typesenseMethodName}", "DEBUG");
                 // raw value passed back from getTypesenseValueFor{FieldName}
                 $value = $record->{$typesenseMethodName}($field);
             } elseif (method_exists($record, $genericMethodName)) {
+                // Logger::log("Getting value for {$fieldName} from direct method {$genericMethodName}", "DEBUG");
                 // raw value passed back from get{FieldName}
                 $value = $record->{$genericMethodName}();
             } else {
-                // get value via getField()
-                $value = $record->getField($field['name']);
+                // Logger::log("Getting value for {$fieldName} from __get()", "DEBUG");
+                // Get value from __get() 
+                $value = $record->__get($fieldName);
             }
 
             // handle DB fields
-            if ($record->hasField($field['name'])) {
+            if ($record->hasField($fieldName)) {
                 // deal with DB fields
-                $dbValue = $record->dbObject($field['name']);
+                $dbValue = $record->dbObject($fieldName);
                 if ($dbValue instanceof \SilverStripe\ORM\FieldType\DBHTMLText || $dbValue instanceof \SilverStripe\ORM\FieldType\DBHTMLVarchar) {
                     // do not process shortcodes in this field
                     $dbValue->setProcessShortcodes(false);
@@ -110,7 +121,7 @@ abstract class TypesenseDocument
             }
 
             // add field value into data
-            $document[$field['name']] = $value;
+            $document[$fieldName] = $value;
         }
 
         if ($document !== []) {
