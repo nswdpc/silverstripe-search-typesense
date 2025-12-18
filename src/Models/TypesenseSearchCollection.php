@@ -62,6 +62,9 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
 
     private static string $plural_names = 'Collections';
 
+    private array $importSuccesses = [];
+    private array $importErrors = [];
+
     /**
      * @return array
      */
@@ -261,6 +264,9 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         return $valid;
     }
 
+    /**
+     * Check if local collection exists
+     */
     public function collectionExists(string $name, bool $excludeCurrent = false): bool
     {
         if ($name === '') {
@@ -519,6 +525,26 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
     }
 
     /**
+     * @throws \Throwable
+     */
+    protected function createAtTypesense(): bool
+    {
+        // get metadata
+        $metadata = $this->validateMetadata();
+        $manager = Injector::inst()->get(ClientManager::class);
+        $client = $manager->getConfiguredClient();
+        if ($client->collections[$metadata['name']]->exists()) {
+            // already exists
+            return true;
+        } else {
+            Logger::log("Creating collection {$metadata['name']}", "INFO");
+            $result = $client->collections->create($metadata);
+            Logger::log("Created collection {$metadata['name']}", "INFO");
+            return isset($result['created_at']);
+        }
+    }
+
+    /**
      * Import this collection to the server
      */
     public function import(int $limit = 100, array $sort = ['ID' => 'ASC'], bool $verbose = false): int
@@ -529,6 +555,8 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         if ($verbose) {
             DB::alteration_message("Start import limit={$limit}", "changed");
         }
+
+        $this->resetImportData();
 
         do {
             $batchCount = $this->batchedImport($sort, $limit, $start);
@@ -546,6 +574,22 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         return $total;
     }
 
+    public function resetImportData(): void
+    {
+        $this->importSuccesses = [];
+        $this->importErrors = [];
+    }
+
+    public function getImportSuccesses(): array
+    {
+        return $this->importSuccesses;
+    }
+
+    public function getImportErrors(): array
+    {
+        return $this->importErrors;
+    }
+
     /**
      * This batched import method is taken from a PR created at https://codeberg.org/codemdev/silverstripe-typesense/src/branch/aggregated-updates/src/Models/Collection.php#L438
      *
@@ -558,6 +602,9 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
      */
     public function batchedImport(array $sort, int $limit = 0, $start = 0): int
     {
+
+        // Possible create the collection at the remote
+        $this->createAtTypesense();
 
         // Check total record count
         $recordsCount = $this->getRecordsCount($sort);
@@ -603,6 +650,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
             }
 
             if (is_array($data) && $data !== []) {
+                Logger::log("Adding doc {$data['id']}", "DEBUG");
                 $docs[] = $data;
             } else {
                 Logger::log(
@@ -649,6 +697,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
             foreach ($result as $resultItem) {
                 if ($resultItem['success']) {
                     $success++;
+                    $this->importSuccesses[] = $resultItem;
                 } else {
                     $errorMsg = $resultItem['error'] ?? '(not set)';
                     Logger::log(
@@ -663,6 +712,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
                         ),
                         "NOTICE"
                     );
+                    $this->importErrors[] = $resultItem;
                     $error++;
                 }
             }

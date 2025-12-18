@@ -78,20 +78,35 @@ class ImportTask extends BuildTask
                     ),
                     "changed"
                 );
-                return;
             } catch (\Exception $exception) {
                 DB::alteration_message(
                     _t(
                         self::class . ".COLLECTION_IMPORT_TASK_FAILED",
-                        "The collection '{collectionName}' imported failed with error '{error}'",
+                        "The collection '{collectionName}' import failed with error '{error}' of type '{type}'",
                         [
                             'collectionName' => $collectionName,
-                            'error' => $exception->getMessage()
+                            'error' => $exception->getMessage(),
+                            'type' => $exception::class
                         ]
                     ),
                     "error"
                 );
-                return;
+            }
+
+            foreach($collection->getImportSuccesses() as $success) {
+                DB::alteration_message(
+                    json_encode($success),
+                    "changed"
+                );
+
+            }
+
+            foreach($collection->getImportErrors() as $error) {
+                DB::alteration_message(
+                    json_encode($error),
+                    "error"
+                );
+
             }
         }
 
