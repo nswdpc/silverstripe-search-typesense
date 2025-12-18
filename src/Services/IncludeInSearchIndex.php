@@ -15,7 +15,6 @@ use SilverStripe\Security\InheritedPermissionsExtension;
  */
 class IncludeInSearchIndex
 {
-
     use Configurable;
     use Injectable;
 
@@ -34,7 +33,7 @@ class IncludeInSearchIndex
      */
     public static function check(DataObject $record): bool
     {
-        if(!self::canShowInSearch($record)) {
+        if (!self::canShowInSearch($record)) {
             // overrides all checks
             return false;
         }
@@ -42,10 +41,10 @@ class IncludeInSearchIndex
         // give an injected variant of this class the ability to determine
         // return null to skip
         $custom = self::customIncludeInSearch($record);
-        if(is_bool($custom)) {
+        if (is_bool($custom)) {
             return $custom;
         }
-        
+
         if (self::hasGranularViewPermissions($record)) {
             // granular permissions - excluded
             return false;
@@ -77,22 +76,22 @@ class IncludeInSearchIndex
     /**
      * Granular view permissions are determined by the InheritedPermissions::ONLY_THESE_USERS permission
      * assigned to a record or inherited from a parent
-     * 
+     *
      * If a record has granular view permissions it is excluded from search
-     * 
+     *
      * The options for CanViewType are Anyone, LoggedInUsers, OnlyTheseUsers, OnlyTheseMembers, Inherit
-     * 
-     * LoggedInUsers is a separate check in 
-     * 
+     *
+     * LoggedInUsers is a separate check in
+     *
      */
     public static function hasGranularViewPermissions(DataObject $record): bool
     {
-        if(!self::config()->get('check_granular_view_permission')) {
+        if (!self::config()->get('check_granular_view_permission')) {
             // not checking this
             return false;
         }
 
-        if($record->hasExtension(InheritedPermissionsExtension::class)) {
+        if ($record->hasExtension(InheritedPermissionsExtension::class)) {
             // check if page has permissions
             if ($record->CanViewType === InheritedPermissions::ONLY_THESE_USERS || $record->CanViewType === InheritedPermissions::ONLY_THESE_MEMBERS) {
                 // has a granular view permission set on the record
@@ -123,12 +122,12 @@ class IncludeInSearchIndex
     public static function hasLoggedInViewPermission(DataObject $record): bool
     {
 
-        if(!self::config()->get('check_loggedin_view_permission')) {
+        if (!self::config()->get('check_loggedin_view_permission')) {
             // not checking this
             return false;
         }
 
-        if($record->hasExtension(InheritedPermissionsExtension::class)) {
+        if ($record->hasExtension(InheritedPermissionsExtension::class)) {
             // check if page has permissions
             if ($record->CanViewType === InheritedPermissions::LOGGED_IN_USERS) {
                 // has a LoggedInUsers view permission set on the record

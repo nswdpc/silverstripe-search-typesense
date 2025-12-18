@@ -592,7 +592,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         foreach ($records as $record) {
 
             $data = [];
-            if(IncludeInSearchIndex::check($record)) {
+            if (IncludeInSearchIndex::check($record)) {
                 if ($record->hasMethod('getTypesenseDocument')) {
                     // e.g. see DocumentDataExtension
                     $data = $record->getTypesenseDocument($collectionFields);
