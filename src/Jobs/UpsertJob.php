@@ -40,7 +40,7 @@ class UpsertJob extends AbstractQueuedJob
     public static function queueMyself(DataObject $record)
     {
         $job = new self($record->ID, $record::class);
-        Logger::log("Queued UpsertJob for record #{$record->ID}", "DEBUG");
+        Logger::log("Queued Typesense UpsertJob for record #{$record->ID}", "DEBUG");
         return QueuedJobService::singleton()->queueJob($job);
     }
 
