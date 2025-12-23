@@ -66,6 +66,15 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
 
     private array $importErrors = [];
 
+    private array $importStats = [];
+
+    /**
+     * Whether or not to log stats of docs imported or upserted
+     * Includes classname and size of doc in bytes
+     * Turning this on could slow down indexing.
+     */
+    private static bool $log_import_stats = false;
+
     /**
      * @return array
      */
@@ -579,6 +588,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
     {
         $this->importSuccesses = [];
         $this->importErrors = [];
+        $this->importStats = [];
     }
 
     public function getImportSuccesses(): array
@@ -589,6 +599,11 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
     public function getImportErrors(): array
     {
         return $this->importErrors;
+    }
+
+    public function getImportStats(): array
+    {
+        return $this->importStats;
     }
 
     /**
@@ -613,7 +628,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
             Logger::log(
                 _t(
                     static::class . ' .BATCHEDIMPORT_NO_DOCUMENTS_FOUND',
-                    'No documents found'
+                    'Typesense batch import: no documents found'
                 ),
                 "INFO"
             );
@@ -627,16 +642,29 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
             Logger::log(
                 _t(
                     static::class . ' .BATCHEDIMPORT_NO_MORE_DOCUMENTS_FOUND',
-                    'No more documents found'
+                    'Typesense batch import: no more documents found'
                 ),
                 "INFO"
             );
             return 0;
+        } else {
+            Logger::log(
+                _t(
+                    static::class . ' .BATCHEDIMPORT_MORE_DOCUMENTS_FOUND',
+                    'Typesense batch import: found {count} document(s)',
+                    [
+                        'count' => $batchCount
+                    ]
+                ),
+                "INFO"
+            );
         }
 
         $docs = [];
         $collectionFields = $this->getCollectionFields();
         $collectionName = $this->getCollectionName();
+        $totalSizeBytes = 0;
+        $sizeBytes = 0;
         foreach ($records as $record) {
 
             $data = [];
@@ -651,7 +679,14 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
             }
 
             if (is_array($data) && $data !== []) {
-                Logger::log("Adding doc {$data['id']}", "DEBUG");
+                $className = $data['ClassName'] ?? '?';
+                $sizeBytes = mb_strlen(json_encode($data), 'UTF-8');
+                $totalSizeBytes += $sizeBytes;
+                if(static::config()->get('log_import_stats')) {
+                    Logger::log("Import doc id={$data['id']} type={$className} size={$sizeBytes}", "INFO");
+                } else {
+                    Logger::log("Adding doc {$data['id']}", "DEBUG");
+                }
                 $docs[] = $data;
             } else {
                 Logger::log(
@@ -691,6 +726,18 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         if (is_string($result)) {
             $result = json_decode($result, true);
         }
+
+        /**
+         * log import stats regardless of result
+         */
+        if(static::config()->get('log_import_stats')) {
+            Logger::log("Batch import size={$totalSizeBytes}", "INFO");
+        }
+
+        $this->importStats[] = [
+            'docs' => count($docs),
+            'sizeBytes' => $totalSizeBytes
+        ];
 
         $success = 0;
         $error = 0;

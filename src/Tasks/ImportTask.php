@@ -28,6 +28,7 @@ class ImportTask extends BuildTask
 
         $collectionName = $request->getVar('collection') ?? '';
         $limit = $request->getVar('limit') ?? 100;
+        $verbose = (bool) $request->getVar('verbose');
         $sort = ['ID' => 'ASC'];
         if (!is_string($collectionName) || $collectionName === '') {
             DB::alteration_message(
@@ -66,7 +67,7 @@ class ImportTask extends BuildTask
                     ),
                     "changed"
                 );
-                $recordCount = $collection->import($limit, $sort, true);
+                $recordCount = $collection->import($limit, $sort, $verbose);
                 DB::alteration_message(
                     _t(
                         self::class . ".COLLECTION_IMPORTING",
@@ -93,21 +94,42 @@ class ImportTask extends BuildTask
                 );
             }
 
-            foreach ($collection->getImportSuccesses() as $success) {
-                DB::alteration_message(
-                    json_encode($success),
-                    "changed"
-                );
+            $importSuccesses = $collection->getImportSuccesses();
+            $importErrors = $collection->getImportErrors();
+            $importStats = $collection->getImportStats();
 
+            if($verbose) {
+                foreach ($importSuccesses as $success) {
+                    DB::alteration_message(
+                        json_encode($success),
+                        "changed"
+                    );
+                }
+
+                foreach ($importErrors as $error) {
+                    DB::alteration_message(
+                        json_encode($error),
+                        "error"
+                    );
+                }
+            } else {
+                DB::alteration_message("Success:" . count($importSuccesses), "changed");
+                DB::alteration_message("Error:" . count($importErrors), "error");
             }
 
-            foreach ($collection->getImportErrors() as $error) {
-                DB::alteration_message(
-                    json_encode($error),
-                    "error"
-                );
-
+            $docs = 0;
+            $size = 0;
+            $avgSize = 0;
+            $sizeMB = 0;
+            foreach($importStats as $importStat) {
+                $docs += $importStat['docs'];
+                $size += $importStat['sizeBytes'];
             }
+            if($docs > 0) {
+                $avgSize = round($size / $docs);
+            }
+            $sizeMB = round($size / (1024*1024));
+            DB::alteration_message("Stats: docs={$docs} sizeBytes={$size} sizeMB={$sizeMB} avgSizeBytes={$avgSize}", "changed");
         }
 
     }
