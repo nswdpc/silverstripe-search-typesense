@@ -682,7 +682,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
                 $className = $data['ClassName'] ?? '?';
                 $sizeBytes = mb_strlen(json_encode($data), 'UTF-8');
                 $totalSizeBytes += $sizeBytes;
-                if(static::config()->get('log_import_stats')) {
+                if (static::config()->get('log_import_stats')) {
                     Logger::log("Import doc id={$data['id']} type={$className} size={$sizeBytes}", "INFO");
                 } else {
                     Logger::log("Adding doc {$data['id']}", "DEBUG");
@@ -731,7 +731,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         /**
          * log import stats regardless of result
          */
-        if(static::config()->get('log_import_stats')) {
+        if (static::config()->get('log_import_stats')) {
             Logger::log("Batch import size={$totalSizeBytes}", "INFO");
         }
 

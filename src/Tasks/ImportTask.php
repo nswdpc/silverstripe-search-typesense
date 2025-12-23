@@ -98,7 +98,7 @@ class ImportTask extends BuildTask
             $importErrors = $collection->getImportErrors();
             $importStats = $collection->getImportStats();
 
-            if($verbose) {
+            if ($verbose) {
                 foreach ($importSuccesses as $success) {
                     DB::alteration_message(
                         json_encode($success),
@@ -121,16 +121,16 @@ class ImportTask extends BuildTask
             $size = 0;
             $avgSize = 0;
             $sizeMB = 0;
-            foreach($importStats as $importStat) {
+            foreach ($importStats as $importStat) {
                 $docs += $importStat['docs'];
                 $size += $importStat['sizeBytes'];
             }
 
-            if($docs > 0) {
+            if ($docs > 0) {
                 $avgSize = round($size / $docs);
             }
 
-            $sizeMB = round($size / (1024*1024));
+            $sizeMB = round($size / (1024 * 1024));
             DB::alteration_message("Stats: docs={$docs} sizeBytes={$size} sizeMB={$sizeMB} avgSizeBytes={$avgSize}", "changed");
         }
 
