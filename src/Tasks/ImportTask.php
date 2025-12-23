@@ -125,9 +125,11 @@ class ImportTask extends BuildTask
                 $docs += $importStat['docs'];
                 $size += $importStat['sizeBytes'];
             }
+
             if($docs > 0) {
                 $avgSize = round($size / $docs);
             }
+
             $sizeMB = round($size / (1024*1024));
             DB::alteration_message("Stats: docs={$docs} sizeBytes={$size} sizeMB={$sizeMB} avgSizeBytes={$avgSize}", "changed");
         }

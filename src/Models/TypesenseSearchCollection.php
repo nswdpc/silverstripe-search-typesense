@@ -687,6 +687,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
                 } else {
                     Logger::log("Adding doc {$data['id']}", "DEBUG");
                 }
+
                 $docs[] = $data;
             } else {
                 Logger::log(
