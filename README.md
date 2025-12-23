@@ -1,18 +1,21 @@
 # Typesense Silverstripe integration
 
 This module:
+
 + allows programmatic creation of search forms to query a Typesense collection
 + carrying out of Typesense searches on a selected collection
 + provides a consistent data structure for indexing and rendering results
-+ allows adding of support Typesense instantsearch to your data models, with configuration within the administration area
++ supports adding Typesense instantsearch to your data models, with configuration within the administration area
 + provides an extension to handle upsert and removal of documents that are marked for indexing
++ import records to a Typesense server, via task or queued job
++ remove records from Typesense server
 
 This module does not provide any implementations for searching in your Typesense collections. Use the following modules to implement this:
 
-+ nswdpc/silverstripe-typesense-cms - provides a Typesense page to search and display results from collections
-+ nswdpc/silverstripe-typesense-elemental - provides Elemental content blocks to search collections
++ `nswdpc/silverstripe-typesense-cms` - provides a Typesense page to search and display results from collections
++ `nswdpc/silverstripe-typesense-elemental` - provides Elemental content blocks to search collections
 
-For NSW users wanting to integrate with the NSW Design System, the module nswdpc/waratah-typesense will assist.
+For NSW users wanting to integrate with the NSW Design System, the module `nswdpc/waratah-typesense` will assist.
 
 ## Documentation
 
@@ -23,16 +26,6 @@ For NSW users wanting to integrate with the NSW Design System, the module nswdpc
 + a Typesense server or servers
 
 ## Installation
-
-The only supported way of installing this module is via composer. Ensure you have a repo entry until this module is added to packagist:
-
-
-```json
-{
-    "type": "vcs",
-    "url": "git@github.com:nswdpc/silverstripe-search-typesense.git"
-}
-```
 
 ```sh
 composer require nswdpc/silverstripe-search-typesense

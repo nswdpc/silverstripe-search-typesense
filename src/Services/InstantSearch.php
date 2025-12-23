@@ -2,9 +2,9 @@
 
 namespace NSWDPC\Search\Typesense\Services;
 
-use ElliotSawyer\SilverstripeTypesense\Typesense;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Injector\Injectable;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\View\Requirements;
@@ -24,7 +24,7 @@ abstract class InstantSearch
     {
         static::addRequirements();
         $nodes = $config['nodes'] ?? [];
-        if (!is_array($nodes) || count($nodes) == 0) {
+        if (!is_array($nodes) || $nodes === []) {
             $nodes = static::getServerNodes();
         }
 
@@ -36,23 +36,27 @@ abstract class InstantSearch
      */
     public static function getServerNodes(): array
     {
-        $server = Typesense::parse_typesense_server();
-        if ($server === []) {
+        $manager = Injector::inst()->get(ClientManager::class);
+        $servers = $manager->getServerNodes();
+        if ($servers === []) {
             throw new \Exception(
                 _t(static::class.'.EXCEPTION_schemeformat', 'TYPESENSE_SERVER must be in scheme://host:port format')
             );
         }
 
-        $host = $server['host'] ?? '';
-        $port = $server['port'] ?? 8081;
-        $scheme = $server['scheme'] ?? 'https';
         $nodes = [];
-        if ($host && $port && $scheme) {
-            $nodes[] = [
-                'host' => $host,
-                'port' => $port,
-                'protocol' => $scheme,
-            ];
+        foreach ($servers as $server) {
+            $host = $server['host'] ?? '';
+            $port = $server['port'] ?? 8081;
+            $scheme = $server['scheme'] ?? 'https';
+            $nodes = [];
+            if ($host && $port && $scheme) {
+                $nodes[] = [
+                    'host' => $host,
+                    'port' => $port,
+                    'protocol' => $scheme,
+                ];
+            }
         }
 
         return $nodes;

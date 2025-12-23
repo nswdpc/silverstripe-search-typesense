@@ -3,8 +3,7 @@
 namespace NSWDPC\Search\Typesense\Services;
 
 use Codem\Utilities\HTML5\NumberField;
-use ElliotSawyer\SilverstripeTypesense\Collection;
-use ElliotSawyer\SilverstripeTypesense\Field;
+use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection as Collection;
 use NSWDPC\Search\Forms\Forms\AdvancedSearchForm;
 use NSWDPC\Search\Forms\Forms\SearchForm;
 use SilverStripe\Control\Controller;
@@ -63,9 +62,13 @@ abstract class FormCreator
 
     protected static function getFields(Collection $collection, AdvancedSearchForm $form): AdvancedSearchForm
     {
-        $fields = $collection->Fields();
+        $fields = $collection->getCollectionFields();
         $fieldList = FieldList::create();
         foreach ($fields as $field) {
+            if (!is_array($field)) {
+                continue;
+            }
+
             if (($formField = self::getField($field)) instanceof \SilverStripe\Forms\FormField) {
                 $fieldList->push($formField);
             }
@@ -76,16 +79,27 @@ abstract class FormCreator
     }
 
     /**
-     * Given a field, return a FormField for the form suitable for that data type
+     * Given a field object, return a FormField for the form suitable for that data type
+     * @param array $field an object representing a  field within the 'fields' configuration of a Typesense Collection
      */
-    protected static function getField(Field $field): ?FormField
+    protected static function getField(array $field): ?FormField
     {
-        if (!$field->index) {
+        if (!isset($field['name']) || $field['name'] === '') {
+            // invalid field
+            return null;
+        }
+
+        if (!isset($field['type'])) {
+            // invalid field
+            return null;
+        }
+
+        if (isset($field['index']) && !$field['index']) {
             // do not show unindexed fields
             return null;
         }
 
-        return match ($field->type) {
+        return match ($field['type']) {
             'string' => self::getTextField($field),
             'int32' => self::getIntField($field),
             'int64' => self::getBigIntField($field),
@@ -98,55 +112,55 @@ abstract class FormCreator
     /**
      * Get a text field
      */
-    public static function getTextField(Field $field): TextField
+    public static function getTextField(array $field): TextField
     {
         return TextField::create(
-            $field->name,
-            $field->name
+            $field['name'],
+            $field['name']
         );
     }
 
     /**
      * Get a field for int32
      */
-    public static function getIntField(Field $field): NumberField
+    public static function getIntField(array $field): NumberField
     {
         return NumberField::create(
-            $field->name,
-            $field->name
+            $field['name'],
+            $field['name']
         );
     }
 
     /**
      * Get a field for int64
      */
-    public static function getBigIntField(Field $field): NumberField
+    public static function getBigIntField(array $field): NumberField
     {
         return NumberField::create(
-            $field->name,
-            $field->name
+            $field['name'],
+            $field['name']
         );
     }
 
     /**
      * Get a field for float
      */
-    public static function getFloatField(Field $field): NumberField
+    public static function getFloatField(array $field): NumberField
     {
         return NumberField::create(
-            $field->name,
-            $field->name
+            $field['name'],
+            $field['name']
         );
     }
 
     /**
      * Get a boolean field
      */
-    public static function getBoolField(Field $field): DropdownField
+    public static function getBoolField(array $field): DropdownField
     {
         return DropdownField::create(
-            $field->name,
-            $field->name,
+            $field['name'],
+            $field['name'],
             [
                 'true' => _t(self::class . ".YES", "Yes"),
                 'false' => _t(self::class . ".NO", "No"),
