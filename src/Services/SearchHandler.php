@@ -316,7 +316,8 @@ class SearchHandler
             return false;
         }
 
-        if (!IncludeInSearchIndex::check($record)) {
+        $includeInSearchIndex = Injector::inst()->get(IncludeInSearchIndex::class);
+        if (!$includeInSearchIndex->check($record)) {
             Logger::log("Attempt to upsert record #{$record->ID}/{$record->ClassName} skipping as marked excluded", "INFO");
             return false;
         }

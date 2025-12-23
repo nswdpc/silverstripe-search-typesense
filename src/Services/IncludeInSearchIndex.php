@@ -31,7 +31,7 @@ class IncludeInSearchIndex
     /**
      * Check whether a record can be included in search indexing
      */
-    public static function check(DataObject $record): bool
+    public function check(DataObject $record): bool
     {
         if (!self::canShowInSearch($record)) {
             // overrides all checks
