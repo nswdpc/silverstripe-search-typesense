@@ -607,9 +607,8 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
     }
 
     /**
-     * This batched import method is taken from a PR created at https://codeberg.org/codemdev/silverstripe-typesense/src/branch/aggregated-updates/src/Models/Collection.php#L438
-     *
      * Batched load documents into Typesense, the batching is controlled by an external process
+     * import() calls this method to import a collection of records in batches
      *
      * @param array $sort batch sorting
      * @param int $limit the number of records in the batch
@@ -619,7 +618,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
     public function batchedImport(array $sort, int $limit = 0, $start = 0): int
     {
 
-        // Possible create the collection at the remote
+        // Possibly create the collection at the remote
         $this->createAtTypesense();
 
         // Check total record count
