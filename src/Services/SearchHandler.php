@@ -86,7 +86,7 @@ class SearchHandler
         if ($searchOnlyApiKey !== '' && $searchScope !== []) {
             $scopedApiKey = ScopedSearch::getScopedApiKey($searchOnlyApiKey, $searchScope);
             $client = $manager->getConfiguredClientForApiKey($scopedApiKey);
-        } else if ($searchOnlyApiKey !== '') {
+        } elseif ($searchOnlyApiKey !== '') {
             $client = $manager->getConfiguredClientForApiKey($searchOnlyApiKey);
         } else {
             // Return default client

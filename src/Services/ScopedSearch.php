@@ -162,6 +162,7 @@ abstract class ScopedSearch
         if($searchScope === []) {
             throw new \RuntimeException("A scoped API key requires a non-empty search scope");
         }
+
         $manager = Injector::inst()->get(ClientManager::class);
         $client = $manager->getConfiguredClient();
         return $client->keys->generateScopedSearchKey($searchOnlyKey, $searchScope);

@@ -33,14 +33,14 @@ class ScopedSearchExtension extends DataExtension
 
         // validate the scope
         $searchScope = trim((string)$this->getOwner()->SearchScope);
-        if($searchScope === '') {
+        if ($searchScope === '') {
             $result->addError(
                 _t(
                     static::class . ".SEARCH_SCOPE_INVALID_EMPTY",
                     "Please provide a search scope."
                 )
             );
-        } else if (!ScopedSearch::validateSearchScope($searchScope)) {
+        } elseif (!ScopedSearch::validateSearchScope($searchScope)) {
             $result->addError(
                 _t(
                     static::class . ".SEARCH_SCOPE_INVALID_JSON",
