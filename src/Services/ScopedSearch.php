@@ -159,7 +159,7 @@ abstract class ScopedSearch
      */
     public static function getScopedApiKey(string $searchOnlyKey, array $searchScope): string
     {
-        if($searchScope === []) {
+        if ($searchScope === []) {
             throw new \RuntimeException("A scoped API key requires a non-empty search scope");
         }
 
