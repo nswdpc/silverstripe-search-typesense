@@ -77,8 +77,8 @@ class SearchHandler
      * Get the Typesense client from the Typesense SDK
      * Provide a search scope and search only API key to return a client using that scoped API key
      * If not provided, the default API key will be used
-     * @param array $searchScope a Typesense scope
      * @param string $searchOnlyApiKey a Typesense search-only API key
+     * @param array $searchScope a Typesense scope
      */
     protected static function getClient(string $searchOnlyApiKey = '', array $searchScope = []): TypesenseClient
     {
@@ -115,7 +115,7 @@ class SearchHandler
         }
 
         // Client
-        $client = static::getClient($searchScope, $searchOnlyApiKey);
+        $client = static::getClient($searchOnlyApiKey, $searchScope);
 
         // query by handling
         $queryBy = '';
@@ -240,7 +240,7 @@ class SearchHandler
             // allow custom argument setting
             $searchRequests = array_merge($searchRequests, $searchScope);
             $commonSearchParams = [];
-            $client = static::getClient($searchScope, $searchOnlyApiKey);
+            $client = static::getClient($searchOnlyApiKey, $searchScope);
             $this->logQuery($searchRequests);
             $search = $client->multiSearch->perform($searchRequests, $commonSearchParams);
         }
