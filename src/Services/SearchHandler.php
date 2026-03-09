@@ -80,13 +80,16 @@ class SearchHandler
      * @param array $searchScope a Typesense scope
      * @param string $searchOnlyApiKey a Typesense search-only API key
      */
-    protected static function getClient(array $searchScope = [], string $searchOnlyApiKey = ''): TypesenseClient
+    protected static function getClient(string $searchOnlyApiKey = '', array $searchScope = []): TypesenseClient
     {
         $manager = Injector::inst()->get(ClientManager::class);
-        if ($searchOnlyApiKey !== '') {
+        if ($searchOnlyApiKey !== '' && $searchScope !== []) {
             $scopedApiKey = ScopedSearch::getScopedApiKey($searchOnlyApiKey, $searchScope);
             $client = $manager->getConfiguredClientForApiKey($scopedApiKey);
+        } else if ($searchOnlyApiKey !== '') {
+            $client = $manager->getConfiguredClientForApiKey($searchOnlyApiKey);
         } else {
+            // Return default client
             $client = $manager->getConfiguredClient();
         }
 

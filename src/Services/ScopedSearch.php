@@ -129,16 +129,15 @@ abstract class ScopedSearch
     }
 
     /**
-     * Validate and return the search scope, if valid will pretty print the JSON value
-     * back into SearchScope value
+     * Return whether the passed search scope is valid. An empty search scope is not valid
      * @param string $searchScope a string in JSON format
      */
     public static function validateSearchScope(string $searchScope): bool
     {
         try {
             if ($searchScope === '') {
-                // empty scope is valid
-                return true;
+                // empty scope is NOT valid
+                return false;
             }
 
             $scope = static::getDecodedSearchScope($searchScope);
