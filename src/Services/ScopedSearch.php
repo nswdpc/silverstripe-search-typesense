@@ -155,9 +155,14 @@ abstract class ScopedSearch
 
     /**
      * Given a search-only API key and a scope generate a scoped API key
+     * @param string $searchOnlyKey a key with no other permissions besides `documents:search`
+     * @param array $searchScope a non empty scope for the scoped API key.
      */
     public static function getScopedApiKey(string $searchOnlyKey, array $searchScope): string
     {
+        if($searchScope === []) {
+            throw new \RuntimeException("A scoped API key requires a non-empty search scope");
+        }
         $manager = Injector::inst()->get(ClientManager::class);
         $client = $manager->getConfiguredClient();
         return $client->keys->generateScopedSearchKey($searchOnlyKey, $searchScope);
