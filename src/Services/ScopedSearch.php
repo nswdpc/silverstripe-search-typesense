@@ -2,9 +2,9 @@
 
 namespace NSWDPC\Search\Typesense\Services;
 
-use ElliotSawyer\SilverstripeTypesense\Typesense;
 use KevinGroeger\CodeEditorField\Forms\CodeEditorField;
 use SilverStripe\Core\Environment;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\ToggleCompositeField;
 use SilverStripe\Forms\TextField;
 
@@ -47,6 +47,7 @@ abstract class ScopedSearch
         if ($warning !== '') {
             $textField = $textField->setRightTitle($warning);
         }
+
         return ToggleCompositeField::create(
             'SearchKeyToggle',
             _t(static::class . '.SEARCH_KEY', 'Key'),
@@ -78,7 +79,7 @@ abstract class ScopedSearch
                 throw new \InvalidArgumentException("Empty key provided");
             }
 
-            $manager = new ClientManager();
+            $manager = Injector::inst()->get(ClientManager::class);
             $client = $manager->getConfiguredClient();
             $results = $client->keys->retrieve();
             $keyFound = false;
@@ -128,16 +129,15 @@ abstract class ScopedSearch
     }
 
     /**
-     * Validate and return the search scope, if valid will pretty print the JSON value
-     * back into SearchScope value
+     * Return whether the passed search scope is valid. An empty search scope is not valid
      * @param string $searchScope a string in JSON format
      */
     public static function validateSearchScope(string $searchScope): bool
     {
         try {
             if ($searchScope === '') {
-                // empty scope is valid
-                return true;
+                // empty scope is NOT valid
+                return false;
             }
 
             $scope = static::getDecodedSearchScope($searchScope);
@@ -154,10 +154,16 @@ abstract class ScopedSearch
 
     /**
      * Given a search-only API key and a scope generate a scoped API key
+     * @param string $searchOnlyKey a key with no other permissions besides `documents:search`
+     * @param array $searchScope a non empty scope for the scoped API key.
      */
     public static function getScopedApiKey(string $searchOnlyKey, array $searchScope): string
     {
-        $manager = new ClientManager();
+        if ($searchScope === []) {
+            throw new \RuntimeException("A scoped API key requires a non-empty search scope");
+        }
+
+        $manager = Injector::inst()->get(ClientManager::class);
         $client = $manager->getConfiguredClient();
         return $client->keys->generateScopedSearchKey($searchOnlyKey, $searchScope);
     }

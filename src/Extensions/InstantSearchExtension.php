@@ -2,7 +2,7 @@
 
 namespace NSWDPC\Search\Typesense\Extensions;
 
-use ElliotSawyer\SilverstripeTypesense\Collection;
+use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection as Collection;
 use NSWDPC\Search\Typesense\Models\InstantSearch;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\FieldList;

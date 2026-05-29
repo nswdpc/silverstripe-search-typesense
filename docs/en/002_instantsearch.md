@@ -1,10 +1,20 @@
+# Documentation
+
++ [Index](./001_index.md)
+
 ## InstantSearch
+
+### About
 
 This module implements instant search using the Typesense InstantSearch Adapter. The implementation binds to a current search field in a website and renders a hitbox containing results based on the configuration set.
 
-The idea being that you have a search form already in your website pulling results from a collection in Typesense, and that instantsearch decorates the form to provide results in-situ.
+> The current implentation requires a site administrator to have an understanding of the HTML elements on their site.
+> To create Instantsearch configurations, your site administrator should understand the concepts of Search-only API keys, search scopes and have a working Typesense search server set up.
 
-PRs welcome.
+#### Examples
+
+1. You have search form in your website pulling results from a collection in Typesense. You can create an Instantsearch configuration and attach it to the form to provide results in-situ.
+1. You have an input field, and an Instantsearch configuration is created and references this field.
 
 ### Implementation
 
@@ -29,43 +39,50 @@ Template e.g. templates/My/App/SearchFormModel.ss:
 5. If successful, typing a query into the relevant search field will return results.
 6. The data being indexed should use the trait TypesenseDefaultFields and return values for the result in the method `getTypesenseSearchResult`
 
-Remember to re-index your data using the dev task `TypesenseSyncTask` if required.
+Remember to re-index your data either via the import task or the the synchronisation job.
 
 ### Configuring a model
 
-Provided you have the relevant permissions, navigate to 'Typesense search' in the administration area of your website. Add a configuration or edit a current one.
+Provided you have the relevant permissions, navigate to 'Typesense Search' in the administration area of your website. If you cannot see this but require access, an administrator can set up access.
 
-If you edit a current one, be aware that changes may make your search inoperable. It is better to create a new one, test it, and when working as expected enable it and point the relevant search elements at it.
+Add a configuration or edit a current one.
+
+If you edit a current one, be aware that changes **may make your search inoperable**. It is better to create a new configuration, test it, and when working as expected enable it and point the relevant search elements at it.
+
+Testing on a hidden page on your site is a useful method.
 
 ### Search scope
 
-A search scope is a powerful way of limiting what a scoped API key can access. You can add any search parameters listed in the Typesense document (https://typesense.org/docs/28.0/api/search.html#search-parameters) to a scope.
-Add a search scope using the "Search scope" field in configuration.
+A search scope is a powerful way of limiting what a scoped API key can access. You can add any search parameters listed in the Typesense document (https://typesense.org/docs/29.0/api/search.html#search-parameters) to a scope.
+
+Add a search scope using the "Search scope" field in configuration. The search scope must be provided as a valid JSON-formatted value.
 
 #### Fields
 
 ##### General
-+ Title: an internal value used by CMS Editors to pick the relevant search configuration. Be descriptive to help them.
-+ Enabled: whether to enable this configuration or not
++ **Title**: an internal value used by CMS Editors to pick the relevant search configuration. Be descriptive to help them.
++ **Enabled**: whether to enable this configuration or not
 
 ##### API/Server
-+ Search-only key: your search-only API key with a single aciton of 'documents:search'. A scoped API key will be created from this using the scope you set. If you do not provide one, the value of the environment variable `TYPESENSE_SEARCH_KEY` will be used to create a Scoped search API key using the search scope provided (see below). The scoped API key is added to your HTML source.
-+ Search scope (JSON): enter JSON values for a search scope. This is advanced configuration and requires knowledge of search scopes.
-+ Server nodes: your Typesense server nodes.Add the full URL of each server node, one per line, including the port.
-+ Fields to query: query these fields in your search. Relevant to the collection chosen
++ **Search-only key**: your search-only API key with a single aciton of 'documents:search'. A scoped API key will be created from this using the scope you set. If you do not provide one, the value of the environment variable `TYPESENSE_SEARCH_KEY` will be used to create a Scoped search API key using the search scope provided (see below). The scoped API key is added to your HTML source.
++ **Search scope (JSON)**: enter JSON values for a search scope. This is advanced configuration and requires knowledge of search scopes.
++ **Server nodes**: your Typesense server nodes.Add the full URL of each server node, one per line, including the port.
++ **Fields to query**: query these fields in your search. Relevant to the collection chosen
 
 ##### Searchbox
-+ Id attribute of the field: in your page, the search input should have an "id" attribute. Enter this value in this field to bind the configuration to the search field on your webpage.
-+ Field prompt: the placeholder value for the search input, optional
-+ Instructions for screen readers: provide instructions for people using screen readers.
++ **Id attribute of the field**: in your page, the search input should have an "id" attribute. Enter this value in this field to bind the configuration to the search field on your webpage.
++ **Field prompt**: the placeholder value for the search input, optional
++ **Instructions for screen readers**: provide instructions for people using screen readers.
 
 ##### Hitbox
-+ Id attribute of the parent container: the hitbox containing results will be appended to this element
-+ The property on the 'hit' that holds the link to the result: enter a property on the hit e.g. TypesenseSearchResultData.Link, without this a link to a result cannot be created. If your hit holds the value for the link to the result in the "ResultLink" property, enter "ResultLink" here.
-+ The property on the 'hit' that holds the title of the result: ditto as above, but for the title of the result.
-+ The property on the 'hit' that holds the abstract of the result: ditto, but not yet implemented
++ **Id attribute of the parent container**: the hitbox containing results will be appended to this element
++ **The property on the 'hit' that holds the link to the result**: enter a property on the hit e.g. TypesenseSearchResultData.Link, without this a link to a result cannot be created. Example: If a search hit holds the value for the link to the result in the "ResultLink" property, enter "ResultLink" here.
++ **The property on the 'hit' that holds the title of the result**: ditto as above, but for the title of the result.
++ **The property on the 'hit' that holds the abstract of the result**: ditto, but not yet implemented
 
-Once configured, find your model in the CMS that references the search form in question, navigate to its "Instant search" tab and choose  the configuration you have just created.
+Once configured, find your model in the CMS that references the search form in question, navigate to its "Instant search" tab and choose  the configuration you have just created. Authors can also choose enabled Instantsearch configurations.
+
+### Verifying
 
 Test out your search, and if all goes well you will see results. If not, observe errors in the browser console as you search.
 
@@ -84,12 +101,12 @@ In your site settings, on the "Instant search" tab, choose a configuration that 
 
 ### Elemental example
 
-Have a look at the nswdpc/silverstripe-typesense-elemental module, specifically the  TypesenseSearchElement model which has the InstantSearchExtension applied and its corresponding template.
+Have a look at the `nswdpc/silverstripe-typesense-elemental` module, specifically the TypesenseSearchElement model which has the `InstantSearchExtension` applied and its corresponding template.
 
 
 ### Troubleshooting
 
-> The browser console will generally show errors that assist in determing issues.
+> The browser console will generally show errors that assist in determining issues.
 
 #### Results are not showing
 1. By default the hitbox relies on there being a "TypesenseSearchResultData" and "Title" property in the hits returned from Typesense multi-search. If this is not the case, results will not show.
