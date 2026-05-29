@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NSWDPC\Search\Typesense\Extensions;
 
 use NSWDPC\Search\Typesense\Services\TypesenseDocument;
