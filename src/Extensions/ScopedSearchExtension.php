@@ -28,7 +28,7 @@ class ScopedSearchExtension extends Extension
     /**
      * Validate the model
      */
-    public function validate(ValidationResult $result)
+    public function updateValidate(ValidationResult $result)
     {
 
         // validate the scope

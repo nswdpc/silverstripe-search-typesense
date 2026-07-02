@@ -86,6 +86,7 @@ class Result extends ModelData
      *  2. Configured template, if set
      *  3. Template based on this class name
      */
+    #[\Override]
     public function forTemplate(): string
     {
         $templates = [];

@@ -23,6 +23,7 @@ class ImportTask extends BuildTask
 
     protected static string $commandName = "TypesenseCollectionImportTask";
 
+    #[\Override]
     public function getOptions(): array
     {
         return [
