@@ -5,17 +5,17 @@ namespace NSWDPC\Search\Typesense\Extensions;
 use NSWDPC\Search\Typesense\Services\Logger;
 use NSWDPC\Search\Typesense\Services\ScopedSearch;
 use SilverStripe\Core\Environment;
-use SilverStripe\ORM\DataExtension;
-use SilverStripe\ORM\ValidationResult;
+use SilverStripe\Core\Extension;
+use SilverStripe\Core\Validation\ValidationResult;
 
 /**
  * Extension applied to models that can apply a search scope and/or scoped API
  * key for searching
  * @property ?string $SearchKey
  * @property ?string $SearchScope
- * @extends \SilverStripe\ORM\DataExtension<(\NSWDPC\Search\Typesense\Models\InstantSearch & static)>
+ * @extends \SilverStripe\Core\Extension<(\NSWDPC\Search\Typesense\Models\InstantSearch & static)>
  */
-class ScopedSearchExtension extends DataExtension
+class ScopedSearchExtension extends Extension
 {
     /**
      * Provide a search scope + search only key field

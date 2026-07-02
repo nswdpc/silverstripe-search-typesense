@@ -8,7 +8,7 @@ use NSWDPC\Search\Typesense\Services\Logger;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\GridField\GridFieldDetailForm_ItemRequest;
-use SilverStripe\ORM\ValidationResult;
+use SilverStripe\Core\Validation\ValidationResult;
 use SilverStripe\Security\Permission;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 

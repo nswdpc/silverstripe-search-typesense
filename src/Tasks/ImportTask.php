@@ -5,6 +5,10 @@ namespace NSWDPC\Search\Typesense\Jobs;
 use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection as Collection;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DB;
+use SilverStripe\PolyExecution\PolyOutput;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Build task for importing a collection to the server
@@ -13,62 +17,68 @@ use SilverStripe\ORM\DB;
  */
 class ImportTask extends BuildTask
 {
-    protected $title = 'Typesense collection import';
+    protected string $title = 'Typesense collection import';
 
-    protected $description = 'Import a single collection into Typesense';
+    protected static string $description = 'Import a single collection into Typesense';
 
-    private static string $segment = "TypesenseCollectionImportTask";
+    protected static string $commandName = "TypesenseCollectionImportTask";
+
+    public function getOptions(): array
+    {
+        return [
+            new InputOption('collection', null, InputOption::VALUE_NONE, 'Typesense collection name'),
+            new InputOption('limit', null, InputOption::VALUE_NONE, 'Batched record import limit'),
+            new InputOption('verbose', null, InputOption::VALUE_NONE, 'Verbose output')
+        ];
+    }
 
     /**
      * Run the import task
      * @inheritdoc
      */
-    public function run($request)
+    protected function execute(InputInterface $input, PolyOutput $output): int
     {
 
-        $collectionName = $request->getVar('collection') ?? '';
-        $limit = $request->getVar('limit') ?? 100;
-        $verbose = (bool) $request->getVar('verbose');
+        $collectionName = $input->getOption('collection') ?? '';
+        $limit = $input->getOption('limit') ?? 100;
+        $verbose = (bool) $input->getOption('verbose');
         $sort = ['ID' => 'ASC'];
         if (!is_string($collectionName) || $collectionName === '') {
-            DB::alteration_message(
+            $output->writeln(
                 _t(
                     self::class . ".COLLECTION_NAME_NOT_PROVIDED",
                     "Provide a collection parameter, being the collection name"
-                ),
-                "error"
+                )
             );
-            return;
+            return Command::FAILURE;
         }
 
         $collection = Collection::get()->filter(['Name' => $collectionName])->first();
         if (!$collection || !$collection->isInDB()) {
-            DB::alteration_message(
+            $output->writeln(
                 _t(
                     self::class . ".COLLECTION_NOT_FOUND",
                     "The collection '{collectionName}' cannot be found",
                     [
                         'collectionName' => $collectionName
                     ]
-                ),
-                "error"
+                )
             );
-            return;
+            return Command::FAILURE;
         } else {
 
             try {
-                DB::alteration_message(
+                $output->writeln(
                     _t(
                         self::class . ".COLLECTION_IMPORTING",
                         "The collection '{collectionName}' is importing",
                         [
                             'collectionName' => $collectionName
                         ]
-                    ),
-                    "changed"
+                    )
                 );
                 $recordCount = $collection->import($limit, $sort, $verbose);
-                DB::alteration_message(
+                $output->writeln(
                     _t(
                         self::class . ".COLLECTION_IMPORTING",
                         "The collection '{collectionName}' imported {recordCount} records",
@@ -76,11 +86,10 @@ class ImportTask extends BuildTask
                             'collectionName' => $collectionName,
                             'recordCount' => $recordCount
                         ]
-                    ),
-                    "changed"
+                    )
                 );
             } catch (\Exception $exception) {
-                DB::alteration_message(
+                $output->writeln(
                     _t(
                         self::class . ".COLLECTION_IMPORT_TASK_FAILED",
                         "The collection '{collectionName}' import failed with error '{error}' of type '{type}'",
@@ -89,9 +98,9 @@ class ImportTask extends BuildTask
                             'error' => $exception->getMessage(),
                             'type' => $exception::class
                         ]
-                    ),
-                    "error"
+                    )
                 );
+                return Command::FAILURE;
             }
 
             $importSuccesses = $collection->getImportSuccesses();
@@ -100,21 +109,19 @@ class ImportTask extends BuildTask
 
             if ($verbose) {
                 foreach ($importSuccesses as $success) {
-                    DB::alteration_message(
-                        json_encode($success),
-                        "changed"
+                    $output->writeln(
+                        json_encode($success)
                     );
                 }
 
                 foreach ($importErrors as $error) {
-                    DB::alteration_message(
-                        json_encode($error),
-                        "error"
+                    $output->writeln(
+                        json_encode($error)
                     );
                 }
             } else {
-                DB::alteration_message("Success:" . count($importSuccesses), "changed");
-                DB::alteration_message("Error:" . count($importErrors), "error");
+                $output->writeln("Success:" . count($importSuccesses));
+                $output->writeln("Error:" . count($importErrors));
             }
 
             $docs = 0;
@@ -131,8 +138,10 @@ class ImportTask extends BuildTask
             }
 
             $sizeMB = round($size / (1024 * 1024));
-            DB::alteration_message("Stats: docs={$docs} sizeBytes={$size} sizeMB={$sizeMB} avgSizeBytes={$avgSize}", "changed");
+            $output->writeln("Stats: docs={$docs} sizeBytes={$size} sizeMB={$sizeMB} avgSizeBytes={$avgSize}");
         }
+
+        return Command::SUCCESS;
 
     }
 

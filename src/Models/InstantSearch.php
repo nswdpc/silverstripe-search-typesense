@@ -5,13 +5,14 @@ namespace NSWDPC\Search\Typesense\Models;
 use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection as Collection;
 use NSWDPC\Search\Typesense\Services\InstantSearch as InstantSearchService;
 use NSWDPC\Search\Typesense\Services\ScopedSearch;
+use SilverStripe\Core\Validation\ValidationResult;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\CompositeField;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\TextField;
 use SilverStripe\Forms\TextareaField;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\ORM\ValidationException;
+use SilverStripe\Core\Validation\ValidationException;
 use SilverStripe\ORM\Filters\ExactMatchFilter;
 use SilverStripe\ORM\Filters\PartialMatchFilter;
 use SilverStripe\Security\Permission;
@@ -189,7 +190,7 @@ class InstantSearch extends DataObject implements PermissionProvider
      * Validate the model
      */
     #[\Override]
-    public function validate()
+    public function validate(): ValidationResult
     {
         $result = parent::validate();
 

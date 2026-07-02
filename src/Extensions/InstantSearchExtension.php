@@ -6,7 +6,7 @@ use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection as Collection;
 use NSWDPC\Search\Typesense\Models\InstantSearch;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\FieldList;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 use SilverStripe\ORM\FieldType\DBHTMLText;
 
 /**
@@ -14,9 +14,9 @@ use SilverStripe\ORM\FieldType\DBHTMLText;
  * e.g elemental content blocks providing a search interface
  * @property int $InstantSearchID
  * @method \NSWDPC\Search\Typesense\Models\InstantSearch InstantSearch()
- * @extends \SilverStripe\ORM\DataExtension<(\SilverStripe\SiteConfig\SiteConfig & static)>
+ * @extends \SilverStripe\Core\Extension<(\SilverStripe\SiteConfig\SiteConfig & static)>
  */
-class InstantSearchExtension extends DataExtension
+class InstantSearchExtension extends Extension
 {
     private static array $has_one = [
         'InstantSearch' => InstantSearch::class

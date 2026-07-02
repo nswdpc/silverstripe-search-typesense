@@ -8,6 +8,8 @@ use NSWDPC\Search\Typesense\Services\Logger;
 use NSWDPC\Search\Typesense\Services\IncludeInSearchIndex;
 use NSWDPC\Search\Typesense\Services\TypesenseDocument;
 use SilverStripe\Core\Injector\Injector;
+use SilverStripe\Core\Validation\ValidationResult;
+use SilverStripe\Core\Validation\ValidationException;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\FormAction;
 use SilverStripe\ORM\DataObject;
@@ -229,7 +231,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
      * Validate the record
      */
     #[\Override]
-    public function validate()
+    public function validate(): ValidationResult
     {
         $valid = parent::validate();
         if ($this->isInDB()) {
@@ -292,7 +294,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         return $collection && $collection->isInDB();
     }
 
-    public function getValidRecordClass(?\SilverStripe\ORM\ValidationResult &$valid = null): string
+    public function getValidRecordClass(?ValidationResult &$valid = null): string
     {
         $isValid = false;
         $recordClass = trim($this->RecordClass ?? '');
@@ -452,7 +454,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
 
     /**
      * Validate configured metadata
-     * @throws \OutOfRangeException|\SilverStripe\ORM\ValidationException
+     * @throws \OutOfRangeException|ValidationException
      * @return array the valid metadata
      */
     public function validateMetadata(): array
@@ -463,7 +465,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         $required = ['name','fields'];
         foreach ($required as $requiredField) {
             if (!isset($metadata[$requiredField])) {
-                throw \SilverStripe\ORM\ValidationException::create(
+                throw ValidationException::create(
                     _t(
                         static::class . ' .VALIDATE_METADATA_MISSING_REQUIRED_FIELD',
                         "The metadata entry '{requiredField}' is required",
@@ -507,7 +509,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
             if (is_callable($fields[$key]['validate'])) {
                 $result = $fields[$key]['validate']($value);
                 if ($result === false) {
-                    throw \SilverStripe\ORM\ValidationException::create(
+                    throw ValidationException::create(
                         _t(
                             static::class . ' .VALIDATE_METADATA_INVALID_FIELD_VALUE',
                             "The metadata entry '{key}' is not valid",
@@ -800,7 +802,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
     {
         $recordClass = $this->getValidRecordClass();
         if ($recordClass === '') {
-            throw \SilverStripe\ORM\ValidationException::create(
+            throw ValidationException::create(
                 _t(
                     static::class . ' .GETRECORDS_INVALID_LINKED_CLASS',
                     'The linked class is invalid'

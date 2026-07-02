@@ -4,7 +4,7 @@ namespace NSWDPC\Search\Typesense\Extensions;
 
 use NSWDPC\Search\Typesense\Services\Logger;
 use NSWDPC\Search\Typesense\Services\SearchHandler;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Versioned\Versioned;
 use Typesense\Exceptions\RequestMalformed;
@@ -17,9 +17,9 @@ use Typesense\Exceptions\ObjectNotFound;
  * onAfterPublishRecursive: upsert document to Typesense for unversioned records
  * onBeforeDelete: delete document from Typesense for unversioned records, noop for versioned records
  * onAfterUpublish: delete document from Typesense for versioned records
- * @extends \SilverStripe\ORM\DataExtension<static>
+ * @extends \SilverStripe\Core\Extension<static>
  */
-class RecordChangeHandler extends DataExtension
+class RecordChangeHandler extends Extension
 {
     /**
      * Is this record versioned?

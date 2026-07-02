@@ -4,14 +4,14 @@ namespace NSWDPC\Search\Typesense\Models;
 
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Injector\Injectable;
-use SilverStripe\View\ViewableData;
+use SilverStripe\Model\ModelData;
 
 /**
  * Represents a single result.
  * This class can be overridden in your project to provide custom result handling (e.g get values based on property requested)
  * You can specify a template to render the result, or by default it will render into this class' path
  */
-class Result extends ViewableData
+class Result extends ModelData
 {
     use Configurable;
 
@@ -31,21 +31,21 @@ class Result extends ViewableData
     }
 
     #[\Override]
-    public function __set($name, $value)
+    public function __set(string $property, mixed $value): void
     {
-        $this->result[$name] = $value;
+        $this->result[$property] = $value;
     }
 
     #[\Override]
-    public function __get($name)
+    public function __get(string $property): mixed
     {
-        return $this->result[$name] ?? null;
+        return $this->result[$property] ?? null;
     }
 
     #[\Override]
-    public function __isset($name)
+    public function __isset(string $property): bool
     {
-        return array_key_exists($name, $this->result);
+        return array_key_exists($property, $this->result);
     }
 
     /**
@@ -86,7 +86,7 @@ class Result extends ViewableData
      *  2. Configured template, if set
      *  3. Template based on this class name
      */
-    public function forTemplate()
+    public function forTemplate(): string
     {
         $templates = [];
         if (($classBasedTemplate = $this->getTemplateName()) !== null && ($classBasedTemplate = $this->getTemplateName()) !== '') {
