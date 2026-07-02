@@ -26,8 +26,8 @@ class ImportTask extends BuildTask
     public function getOptions(): array
     {
         return [
-            new InputOption('collection', null, InputOption::VALUE_NONE, 'Typesense collection name'),
-            new InputOption('limit', null, InputOption::VALUE_NONE, 'Batched record import limit')
+            new InputOption('collection', null, InputOption::VALUE_REQUIRED, 'Typesense collection name'),
+            new InputOption('limit', null, InputOption::VALUE_OPTIONAL, 'Batched record import limit')
         ];
     }
 
