@@ -27,8 +27,7 @@ class ImportTask extends BuildTask
     {
         return [
             new InputOption('collection', null, InputOption::VALUE_NONE, 'Typesense collection name'),
-            new InputOption('limit', null, InputOption::VALUE_NONE, 'Batched record import limit'),
-            new InputOption('verbose', null, InputOption::VALUE_NONE, 'Verbose output')
+            new InputOption('limit', null, InputOption::VALUE_NONE, 'Batched record import limit')
         ];
     }
 
