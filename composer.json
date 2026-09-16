@@ -17,7 +17,7 @@
     "require": {
         "codem/silverstripe-html5-inputs": "^1",
         "typesense/typesense-php": "^5",
-        "nswdpc/silverstripe-search-forms": "*",
+        "nswdpc/silverstripe-search-forms": "~0.2",
         "silverstripe/siteconfig": "^5",
         "symbiote/silverstripe-queuedjobs": "^5",
         "symbiote/silverstripe-multivaluefield": "*",
