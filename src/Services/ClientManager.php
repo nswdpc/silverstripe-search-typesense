@@ -90,11 +90,10 @@ class ClientManager
         if (isset(static::$clients[$key]) && (static::$clients[$key] instanceof TypesenseClient)) {
             Logger::log("Found existing TypesenseClient with these params", "INFO");
             return static::$clients[$key];
-        } else {
-            Logger::log("Create a new TypesenseClient with these params", "INFO");
-            static::$clients[$key] = new TypesenseClient($params);
-            return static::$clients[$key];
         }
+        Logger::log("Create a new TypesenseClient with these params", "INFO");
+        static::$clients[$key] = new TypesenseClient($params);
+        return static::$clients[$key];
     }
 
     /**
@@ -104,9 +103,8 @@ class ClientManager
     {
         if ($servers !== '') {
             return $this->getNodesFromServers($servers);
-        } else {
-            return $this->getNodesFromConfiguration();
         }
+        return $this->getNodesFromConfiguration();
     }
 
 }

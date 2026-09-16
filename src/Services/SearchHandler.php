@@ -53,9 +53,8 @@ class SearchHandler
     {
         if (str_contains($string, "`")) {
             return "`" . str_replace("`", "\\`", $string) . "`";
-        } else {
-            return $string;
         }
+        return $string;
     }
 
 
@@ -209,9 +208,8 @@ class SearchHandler
             $results->setTotalItems($search['found']);
 
             return $results;
-        } else {
-            return null;
         }
+        return null;
     }
 
     /**
@@ -255,10 +253,9 @@ class SearchHandler
     {
         if (!static::config()->get('log_queries')) {
             return false;
-        } else {
-            Logger::log("Typesense Query=" . json_encode(["query" => $query, "collection" => $collectionName]), static::config()->get('log_level'));
-            return true;
         }
+        Logger::log("Typesense Query=" . json_encode(["query" => $query, "collection" => $collectionName]), static::config()->get('log_level'));
+        return true;
     }
 
     public function setPerPage(int $perPage): int
@@ -302,9 +299,8 @@ class SearchHandler
         $collections = static::getCollectionsForRecord($record);
         if (is_null($collections) || $collections->count() === 0) {
             return null;
-        } else {
-            return $collections;
         }
+        return $collections;
     }
 
     /**
@@ -358,10 +354,9 @@ class SearchHandler
             }
 
             return $success === $collections->count();
-        } else {
-            // Upsert via job
-            return UpsertJob::queueMyself($record);
         }
+        // Upsert via job
+        return UpsertJob::queueMyself($record);
     }
 
     /**
@@ -393,10 +388,9 @@ class SearchHandler
             }
 
             return $success === $collections->count();
-        } else {
-            // delete via job
-            return DeleteJob::queueMyself($record);
         }
+        // delete via job
+        return DeleteJob::queueMyself($record);
     }
 
 }

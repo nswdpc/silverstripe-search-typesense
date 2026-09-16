@@ -79,9 +79,8 @@ class InstantSearchExtension extends DataExtension
         $instantSearch = $this->getOwner()->InstantSearch();
         if (!$instantSearch || !$instantSearch->isInDB() || !$instantSearch->Enabled) {
             return null;
-        } else {
-            return $instantSearch;
         }
+        return $instantSearch;
     }
 
     /**
@@ -123,8 +122,7 @@ class InstantSearchExtension extends DataExtension
         $instantSearch = $this->getInstantSearch();
         if ($instantSearch instanceof \NSWDPC\Search\Typesense\Models\InstantSearch) {
             return $instantSearch->provideInstantSearchFor($this->getOwner());
-        } else {
-            return null;
         }
+        return null;
     }
 }

@@ -44,17 +44,13 @@ class IncludeInSearchIndex
         if (is_bool($custom)) {
             return $custom;
         }
-
         if (self::hasGranularViewPermissions($record)) {
             // granular permissions - excluded
             return false;
-        } elseif (self::hasLoggedInViewPermission($record)) {
-            // logged in user permissions - excluded
-            return false;
-        } else {
-            // default allow
-            return true;
         }
+        // default allow
+        // logged in user permissions - excluded
+        return !self::hasLoggedInViewPermission($record);
     }
 
     /**
@@ -96,7 +92,9 @@ class IncludeInSearchIndex
             if ($record->CanViewType === InheritedPermissions::ONLY_THESE_USERS || $record->CanViewType === InheritedPermissions::ONLY_THESE_MEMBERS) {
                 // has a granular view permission set on the record
                 return true;
-            } elseif ($record->CanViewType === InheritedPermissions::INHERIT
+            }
+            // check if page has permissions
+            if ($record->CanViewType === InheritedPermissions::INHERIT
                 && ($record->hasExtension(Hierarchy::class) || $record->hasMethod('getParent'))
                 && (
                     // @phpstan-ignore method.notFound
@@ -107,12 +105,10 @@ class IncludeInSearchIndex
                 )) {
                 // inherited permission, check parent
                 return static::hasGranularViewPermissions($parent);
-            } else {
-                return false;
             }
-        } else {
             return false;
         }
+        return false;
     }
 
     /**
@@ -132,7 +128,9 @@ class IncludeInSearchIndex
             if ($record->CanViewType === InheritedPermissions::LOGGED_IN_USERS) {
                 // has a LoggedInUsers view permission set on the record
                 return true;
-            } elseif ($record->CanViewType === InheritedPermissions::INHERIT
+            }
+            // check if page has permissions
+            if ($record->CanViewType === InheritedPermissions::INHERIT
                 && ($record->hasExtension(Hierarchy::class) || $record->hasMethod('getParent'))
                 && (
                     // @phpstan-ignore method.notFound
@@ -143,12 +141,10 @@ class IncludeInSearchIndex
                 )) {
                 // inherited permission, check parent
                 return static::hasLoggedInViewPermission($parent);
-            } else {
-                return false;
             }
-        } else {
             return false;
         }
+        return false;
     }
 
 

@@ -54,85 +54,78 @@ class ImportTask extends BuildTask
                 "error"
             );
             return;
-        } else {
+        }
+        try {
+            DB::alteration_message(
+                _t(
+                    self::class . ".COLLECTION_IMPORTING",
+                    "The collection '{collectionName}' is importing",
+                    [
+                        'collectionName' => $collectionName
+                    ]
+                ),
+                "changed"
+            );
+            $recordCount = $collection->import($limit, $sort, $verbose);
+            DB::alteration_message(
+                _t(
+                    self::class . ".COLLECTION_IMPORTING",
+                    "The collection '{collectionName}' imported {recordCount} records",
+                    [
+                        'collectionName' => $collectionName,
+                        'recordCount' => $recordCount
+                    ]
+                ),
+                "changed"
+            );
+        } catch (\Exception $exception) {
+            DB::alteration_message(
+                _t(
+                    self::class . ".COLLECTION_IMPORT_TASK_FAILED",
+                    "The collection '{collectionName}' import failed with error '{error}' of type '{type}'",
+                    [
+                        'collectionName' => $collectionName,
+                        'error' => $exception->getMessage(),
+                        'type' => $exception::class
+                    ]
+                ),
+                "error"
+            );
+        }
+        $importSuccesses = $collection->getImportSuccesses();
+        $importErrors = $collection->getImportErrors();
+        $importStats = $collection->getImportStats();
+        if ($verbose) {
+            foreach ($importSuccesses as $success) {
+                DB::alteration_message(
+                    json_encode($success),
+                    "changed"
+                );
+            }
 
-            try {
+            foreach ($importErrors as $error) {
                 DB::alteration_message(
-                    _t(
-                        self::class . ".COLLECTION_IMPORTING",
-                        "The collection '{collectionName}' is importing",
-                        [
-                            'collectionName' => $collectionName
-                        ]
-                    ),
-                    "changed"
-                );
-                $recordCount = $collection->import($limit, $sort, $verbose);
-                DB::alteration_message(
-                    _t(
-                        self::class . ".COLLECTION_IMPORTING",
-                        "The collection '{collectionName}' imported {recordCount} records",
-                        [
-                            'collectionName' => $collectionName,
-                            'recordCount' => $recordCount
-                        ]
-                    ),
-                    "changed"
-                );
-            } catch (\Exception $exception) {
-                DB::alteration_message(
-                    _t(
-                        self::class . ".COLLECTION_IMPORT_TASK_FAILED",
-                        "The collection '{collectionName}' import failed with error '{error}' of type '{type}'",
-                        [
-                            'collectionName' => $collectionName,
-                            'error' => $exception->getMessage(),
-                            'type' => $exception::class
-                        ]
-                    ),
+                    json_encode($error),
                     "error"
                 );
             }
-
-            $importSuccesses = $collection->getImportSuccesses();
-            $importErrors = $collection->getImportErrors();
-            $importStats = $collection->getImportStats();
-
-            if ($verbose) {
-                foreach ($importSuccesses as $success) {
-                    DB::alteration_message(
-                        json_encode($success),
-                        "changed"
-                    );
-                }
-
-                foreach ($importErrors as $error) {
-                    DB::alteration_message(
-                        json_encode($error),
-                        "error"
-                    );
-                }
-            } else {
-                DB::alteration_message("Success:" . count($importSuccesses), "changed");
-                DB::alteration_message("Error:" . count($importErrors), "error");
-            }
-
-            $docs = 0;
-            $size = 0;
-            $avgSize = 0;
-            $sizeMB = 0;
-            foreach ($importStats as $importStat) {
-                $docs += $importStat['docs'];
-                $size += $importStat['sizeBytes'];
-            }
-
-            if ($docs > 0) {
-                $avgSize = round($size / $docs);
-            }
-
-            $sizeMB = round($size / (1024 * 1024));
-            DB::alteration_message("Stats: docs={$docs} sizeBytes={$size} sizeMB={$sizeMB} avgSizeBytes={$avgSize}", "changed");
+        } else {
+            DB::alteration_message("Success:" . count($importSuccesses), "changed");
+            DB::alteration_message("Error:" . count($importErrors), "error");
         }
+        $docs = 0;
+        $size = 0;
+        $avgSize = 0;
+        $sizeMB = 0;
+        foreach ($importStats as $importStat) {
+            $docs += $importStat['docs'];
+            $size += $importStat['sizeBytes'];
+        }
+        if ($docs > 0) {
+            $avgSize = round($size / $docs);
+        }
+        $sizeMB = round($size / (1024 * 1024));
+        DB::alteration_message("Stats: docs={$docs} sizeBytes={$size} sizeMB={$sizeMB} avgSizeBytes={$avgSize}", "changed");
 
     }
 

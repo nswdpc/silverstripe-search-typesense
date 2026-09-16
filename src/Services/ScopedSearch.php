@@ -123,9 +123,8 @@ abstract class ScopedSearch
         $scope = json_decode($searchScope, true, 512, JSON_THROW_ON_ERROR);
         if (is_array($scope)) {
             return $scope;
-        } else {
-            return null;
         }
+        return null;
     }
 
     /**
@@ -141,11 +140,7 @@ abstract class ScopedSearch
             }
 
             $scope = static::getDecodedSearchScope($searchScope);
-            if (is_array($scope)) {
-                return true;
-            } else {
-                return false;
-            }
+            return is_array($scope);
         } catch (\Exception $exception) {
             Logger::log("Error: " . $exception->getMessage(), "INFO");
             return false;

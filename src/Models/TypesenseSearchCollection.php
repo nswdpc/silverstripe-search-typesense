@@ -199,12 +199,12 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         $metadata = $this->Metadata;
         if (is_null($metadata)) {
             return null;
-        } elseif (is_string($metadata)) {
+        }
+        if (is_string($metadata)) {
             $decoded = json_decode($metadata, true);
             return json_encode($decoded, JSON_PRETTY_PRINT);
-        } else {
-            return null;
         }
+        return null;
     }
 
     #[\Override]
@@ -338,9 +338,8 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
 
         if ($isValid) {
             return $recordClass;
-        } else {
-            return '';
         }
+        return '';
     }
 
     /**
@@ -529,9 +528,8 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         $collections = static::config()->get('collections') ?? [];
         if (!is_array($collections)) {
             return [];
-        } else {
-            return $collections;
         }
+        return $collections;
     }
 
     /**
@@ -546,12 +544,11 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         if ($client->collections[$metadata['name']]->exists()) {
             // already exists
             return true;
-        } else {
-            Logger::log("Creating collection {$metadata['name']}", "INFO");
-            $result = $client->collections->create($metadata);
-            Logger::log("Created collection {$metadata['name']}", "INFO");
-            return isset($result['created_at']);
         }
+        Logger::log("Creating collection {$metadata['name']}", "INFO");
+        $result = $client->collections->create($metadata);
+        Logger::log("Created collection {$metadata['name']}", "INFO");
+        return isset($result['created_at']);
     }
 
     /**
@@ -646,18 +643,17 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
                 "INFO"
             );
             return 0;
-        } else {
-            Logger::log(
-                _t(
-                    static::class . ' .BATCHEDIMPORT_MORE_DOCUMENTS_FOUND',
-                    'Typesense batch import: found {count} document(s)',
-                    [
-                        'count' => $batchCount
-                    ]
-                ),
-                "INFO"
-            );
         }
+        Logger::log(
+            _t(
+                static::class . ' .BATCHEDIMPORT_MORE_DOCUMENTS_FOUND',
+                'Typesense batch import: found {count} document(s)',
+                [
+                    'count' => $batchCount
+                ]
+            ),
+            "INFO"
+        );
 
         $docs = [];
         $collectionFields = $this->getCollectionFields();

@@ -102,9 +102,8 @@ class TypesenseSearchResult extends ViewableData
             }
 
             return $list;
-        } else {
-            return null;
         }
+        return null;
     }
 
     /**

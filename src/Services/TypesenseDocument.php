@@ -52,9 +52,8 @@ abstract class TypesenseDocument
         $defaultFields = static::config()->get('default_fields');
         if (!is_array($defaultFields)) {
             return [];
-        } else {
-            return $defaultFields;
         }
+        return $defaultFields;
     }
 
     /**
