@@ -49,7 +49,6 @@ abstract class InstantSearch
             $host = $server['host'] ?? '';
             $port = $server['port'] ?? 8081;
             $scheme = $server['scheme'] ?? 'https';
-            $nodes = [];
             if ($host && $port && $scheme) {
                 $nodes[] = [
                     'host' => $host,
