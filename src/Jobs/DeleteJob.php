@@ -4,21 +4,30 @@ namespace NSWDPC\Search\Typesense\Jobs;
 
 use NSWDPC\Search\Typesense\Services\Logger;
 use NSWDPC\Search\Typesense\Services\SearchHandler;
-use SilverStripe\ORM\DataObject;
 use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 
 /**
  * Queued job for deleting a record from its Typesense collections
+ *
+ * The collections to delete from are resolved and captured at queue time
+ * (while the record still exists) rather than at process time, since by the
+ * time this job actually runs the local record will usually have already
+ * been deleted (it is queued from onBeforeDelete/onAfterUnpublish).
+ * @property string[] $CollectionNames
  */
 class DeleteJob extends AbstractQueuedJob
 {
-    public function __construct(int $recordId = 0, string $recordClassName = '')
+    /**
+     * @param string[] $collectionNames
+     */
+    public function __construct(int $recordId = 0, string $recordClassName = '', array $collectionNames = [])
     {
         if ($recordId > 0 && $recordClassName !== '' && class_exists($recordClassName)) {
             // emulate setObject so getObject works
             $this->RecordID = $recordId;
             $this->RecordType = $recordClassName;
+            $this->CollectionNames = $collectionNames;
         }
     }
 
@@ -36,11 +45,12 @@ class DeleteJob extends AbstractQueuedJob
 
     /**
      * Queue job immediately
+     * @param string[] $collectionNames the Typesense collection names to delete the record from
      */
-    public static function queueMyself(DataObject $record)
+    public static function queueMyself(int $recordId, string $recordClassName, array $collectionNames)
     {
-        $job = new self($record->ID, $record::class);
-        Logger::log("Queued Typesense DeleteJob for record #{$record->ID}", "DEBUG");
+        $job = new self($recordId, $recordClassName, $collectionNames);
+        Logger::log("Queued Typesense DeleteJob for record #{$recordId}", "DEBUG");
         return QueuedJobService::singleton()->queueJob($job);
     }
 
@@ -50,12 +60,8 @@ class DeleteJob extends AbstractQueuedJob
     public function process()
     {
         try {
-            $record = $this->getObject('Record');
-            if (!$record || !$record->exists()) {
-                throw new \RuntimeException("The record {$this->RecordID}/{$this->RecordType} does not exist");
-            }
-
-            if (SearchHandler::deleteFromTypesense($record, false)) {
+            $collectionNames = $this->CollectionNames ?? [];
+            if (SearchHandler::deleteDocumentFromCollections((int) $this->RecordID, $collectionNames)) {
                 $this->addMessage('Deleted OK');
             } else {
                 $this->addMessage('Delete failure or partial success - record might not be linked to any collections, check logs');
