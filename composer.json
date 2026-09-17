@@ -40,6 +40,13 @@
             ]
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "NSWDPC\\Search\\Typesense\\Tests\\": [
+                "tests/"
+            ]
+        }
+    },
     "extra": {
         "expose": [
             "client/static"
