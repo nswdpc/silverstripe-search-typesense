@@ -68,7 +68,7 @@ class FakeTypesenseHttpClient implements ClientInterface
         if (!$response instanceof ResponseInterface) {
             throw new \RuntimeException(
                 'FakeTypesenseHttpClient received a request with no response queued: '
-                . $request->getMethod() . ' ' . (string) $request->getUri()
+                . $request->getMethod() . ' ' . $request->getUri()
             );
         }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NSWDPC\Search\Typesense\Tests\Fixtures;
 
 use NSWDPC\Search\Typesense\Extensions\RecordChangeHandler;

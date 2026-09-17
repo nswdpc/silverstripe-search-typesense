@@ -24,6 +24,7 @@ class DocumentDataExtension extends Extension
         if (!$owner instanceof \SilverStripe\ORM\DataObject) {
             return [];
         }
+
         return TypesenseDocument::get($owner, $fields);
     }
 

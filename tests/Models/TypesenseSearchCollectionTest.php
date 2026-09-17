@@ -86,6 +86,7 @@ class TypesenseSearchCollectionTest extends SapphireTest
 
         // mutate in-memory (do not re-write) to exercise the isInDB() validate() branch
         $collection->Metadata = json_encode(['unexpected_key' => true]);
+
         $result = $collection->validate();
         $this->assertFalse($result->isValid());
     }

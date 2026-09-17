@@ -24,7 +24,7 @@ class FakeQueuedJobService
      */
     public array $queued = [];
 
-    public function queueJob(QueuedJob $job, $startAfter = null, $userId = null, $queueName = null)
+    public function queueJob(QueuedJob $job, $startAfter = null, $userId = null, $queueName = null): int
     {
         $this->queued[] = [
             'job' => $job,

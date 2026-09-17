@@ -57,6 +57,7 @@ class RecordChangeHandlerTest extends SapphireTest
     {
         $record = TypesenseTestRecord::create(['Title' => 'A title', 'ShowInSearch' => true]);
         $record->write();
+
         $this->fakeQueue->queued = [];
 
         $record->delete();
@@ -76,6 +77,7 @@ class RecordChangeHandlerTest extends SapphireTest
     {
         $record = TypesenseVersionedTestRecord::create(['Title' => 'A title', 'ShowInSearch' => true]);
         $record->write();
+
         $this->fakeQueue->queued = [];
 
         $record->delete();
@@ -92,6 +94,7 @@ class RecordChangeHandlerTest extends SapphireTest
     {
         $record = TypesenseVersionedTestRecord::create(['Title' => 'A title', 'ShowInSearch' => true]);
         $record->write();
+
         $this->fakeQueue->queued = [];
 
         $record->onAfterPublish();
@@ -103,6 +106,7 @@ class RecordChangeHandlerTest extends SapphireTest
     {
         $record = TypesenseVersionedTestRecord::create(['Title' => 'A title', 'ShowInSearch' => true]);
         $record->write();
+
         $this->fakeQueue->queued = [];
 
         $record->onAfterPublishRecursive();
@@ -114,6 +118,7 @@ class RecordChangeHandlerTest extends SapphireTest
     {
         $record = TypesenseVersionedTestRecord::create(['Title' => 'A title', 'ShowInSearch' => true]);
         $record->write();
+
         $this->fakeQueue->queued = [];
 
         $record->onAfterUnpublish();

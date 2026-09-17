@@ -124,6 +124,7 @@ abstract class ScopedSearch
         if (is_array($scope)) {
             return $scope;
         }
+
         return null;
     }
 

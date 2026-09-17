@@ -55,6 +55,7 @@ class ImportTask extends BuildTask
             );
             return;
         }
+
         try {
             DB::alteration_message(
                 _t(
@@ -92,6 +93,7 @@ class ImportTask extends BuildTask
                 "error"
             );
         }
+
         $importSuccesses = $collection->getImportSuccesses();
         $importErrors = $collection->getImportErrors();
         $importStats = $collection->getImportStats();
@@ -113,6 +115,7 @@ class ImportTask extends BuildTask
             DB::alteration_message("Success:" . count($importSuccesses), "changed");
             DB::alteration_message("Error:" . count($importErrors), "error");
         }
+
         $docs = 0;
         $size = 0;
         $avgSize = 0;
@@ -121,9 +124,11 @@ class ImportTask extends BuildTask
             $docs += $importStat['docs'];
             $size += $importStat['sizeBytes'];
         }
+
         if ($docs > 0) {
             $avgSize = round($size / $docs);
         }
+
         $sizeMB = round($size / (1024 * 1024));
         DB::alteration_message("Stats: docs={$docs} sizeBytes={$size} sizeMB={$sizeMB} avgSizeBytes={$avgSize}", "changed");
 

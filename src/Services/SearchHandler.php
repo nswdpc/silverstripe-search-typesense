@@ -54,6 +54,7 @@ class SearchHandler
         if (str_contains($string, "`")) {
             return "`" . str_replace("`", "\\`", $string) . "`";
         }
+
         return $string;
     }
 
@@ -209,6 +210,7 @@ class SearchHandler
 
             return $results;
         }
+
         return null;
     }
 
@@ -254,6 +256,7 @@ class SearchHandler
         if (!static::config()->get('log_queries')) {
             return false;
         }
+
         Logger::log("Typesense Query=" . json_encode(["query" => $query, "collection" => $collectionName]), static::config()->get('log_level'));
         return true;
     }
@@ -300,6 +303,7 @@ class SearchHandler
         if (is_null($collections) || $collections->count() === 0) {
             return null;
         }
+
         return $collections;
     }
 
@@ -355,6 +359,7 @@ class SearchHandler
 
             return $success === $collections->count();
         }
+
         // Upsert via job
         return UpsertJob::queueMyself($record);
     }
@@ -389,6 +394,7 @@ class SearchHandler
 
             return $success === $collections->count();
         }
+
         // delete via job
         return DeleteJob::queueMyself($record);
     }

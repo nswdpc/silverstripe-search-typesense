@@ -53,6 +53,7 @@ abstract class TypesenseDocument
         if (!is_array($defaultFields)) {
             return [];
         }
+
         return $defaultFields;
     }
 

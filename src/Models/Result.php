@@ -73,6 +73,7 @@ class Result extends ViewableData
         if (!$template) {
             return null;
         }
+
         return $template . "_TypesenseSearchResult";
     }
 

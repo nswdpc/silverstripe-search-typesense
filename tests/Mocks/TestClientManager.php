@@ -28,7 +28,6 @@ class TestClientManager extends ClientManager
     {
         $reflection = new \ReflectionClass(ClientManager::class);
         $property = $reflection->getProperty('clients');
-        $property->setAccessible(true);
         $property->setValue(null, []);
 
         static::$httpClient = new FakeTypesenseHttpClient();

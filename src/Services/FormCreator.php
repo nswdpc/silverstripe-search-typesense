@@ -43,6 +43,7 @@ abstract class FormCreator
                 ])
             );
         }
+
         $form = AdvancedSearchForm::create(
             $controller,
             'SearchForm',

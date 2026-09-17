@@ -44,10 +44,12 @@ class IncludeInSearchIndex
         if (is_bool($custom)) {
             return $custom;
         }
+
         if (self::hasGranularViewPermissions($record)) {
             // granular permissions - excluded
             return false;
         }
+
         // default allow
         // logged in user permissions - excluded
         return !self::hasLoggedInViewPermission($record);
@@ -93,6 +95,7 @@ class IncludeInSearchIndex
                 // has a granular view permission set on the record
                 return true;
             }
+
             // check if page has permissions
             if ($record->CanViewType === InheritedPermissions::INHERIT
                 && ($record->hasExtension(Hierarchy::class) || $record->hasMethod('getParent'))
@@ -106,8 +109,10 @@ class IncludeInSearchIndex
                 // inherited permission, check parent
                 return static::hasGranularViewPermissions($parent);
             }
+
             return false;
         }
+
         return false;
     }
 
@@ -129,6 +134,7 @@ class IncludeInSearchIndex
                 // has a LoggedInUsers view permission set on the record
                 return true;
             }
+
             // check if page has permissions
             if ($record->CanViewType === InheritedPermissions::INHERIT
                 && ($record->hasExtension(Hierarchy::class) || $record->hasMethod('getParent'))
@@ -142,8 +148,10 @@ class IncludeInSearchIndex
                 // inherited permission, check parent
                 return static::hasLoggedInViewPermission($parent);
             }
+
             return false;
         }
+
         return false;
     }
 

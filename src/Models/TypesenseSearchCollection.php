@@ -200,10 +200,12 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         if (is_null($metadata)) {
             return null;
         }
+
         if (is_string($metadata)) {
             $decoded = json_decode($metadata, true);
             return json_encode($decoded, JSON_PRETTY_PRINT);
         }
+
         return null;
     }
 
@@ -339,6 +341,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         if ($isValid) {
             return $recordClass;
         }
+
         return '';
     }
 
@@ -529,6 +532,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
         if (!is_array($collections)) {
             return [];
         }
+
         return $collections;
     }
 
@@ -545,6 +549,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
             // already exists
             return true;
         }
+
         Logger::log("Creating collection {$metadata['name']}", "INFO");
         $result = $client->collections->create($metadata);
         Logger::log("Created collection {$metadata['name']}", "INFO");
@@ -644,6 +649,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
             );
             return 0;
         }
+
         Logger::log(
             _t(
                 static::class . ' .BATCHEDIMPORT_MORE_DOCUMENTS_FOUND',
