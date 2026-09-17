@@ -65,7 +65,7 @@ class CollectionItemRequest extends GridFieldDetailForm_ItemRequest
                 throw new \RuntimeException("Attempted reindex but doesn't exist in DB");
             }
 
-            if (!Permission::check('EDITYPESENSE_COLLECTION_REINDEX')) {
+            if (!Permission::check('TYPESENSE_COLLECTION_REINDEX')) {
                 throw new \RuntimeException("User attempting reindex does not have that permission");
             }
 

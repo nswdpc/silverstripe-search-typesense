@@ -66,7 +66,6 @@ class ClientManager
             $host = $parts['host'] ?? '';
             $port = $parts['port'] ?? '';
             $scheme = $parts['scheme'] ?? 'https';
-            $nodes = [];
             if ($host && $port && $scheme) {
                 $nodes[] = [
                     'host' => $host,
