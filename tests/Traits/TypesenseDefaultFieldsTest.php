@@ -10,7 +10,7 @@ class TypesenseDefaultFieldsTest extends SapphireTest
 {
     public function testDefaultResultIsEmpty(): void
     {
-        $user = new class {
+        $user = new class () {
             use TypesenseDefaultFields;
         };
 
@@ -21,7 +21,7 @@ class TypesenseDefaultFieldsTest extends SapphireTest
 
     public function testGetTypesenseSearchResultDataReturnsResultAsArray(): void
     {
-        $user = new class {
+        $user = new class () {
             use TypesenseDefaultFields;
 
             public function getTypesenseSearchResult(): TypesenseSearchResult
