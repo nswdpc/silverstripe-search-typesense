@@ -11,6 +11,8 @@ use SilverStripe\Security\InheritedPermissions;
 
 class IncludeInSearchIndexTest extends SapphireTest
 {
+    protected $usesDatabase = true;
+
     protected static $extra_dataobjects = [
         TypesenseTestRecord::class,
         TypesensePermissionTestRecord::class,

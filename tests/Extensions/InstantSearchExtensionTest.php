@@ -12,6 +12,8 @@ use SilverStripe\SiteConfig\SiteConfig;
 
 class InstantSearchExtensionTest extends SapphireTest
 {
+    protected $usesDatabase = true;
+
     #[\Override]
     protected function setUp(): void
     {

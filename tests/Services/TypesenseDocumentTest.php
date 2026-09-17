@@ -8,6 +8,8 @@ use SilverStripe\Dev\SapphireTest;
 
 class TypesenseDocumentTest extends SapphireTest
 {
+    protected $usesDatabase = true;
+
     protected static $extra_dataobjects = [
         TypesenseTestRecord::class,
     ];

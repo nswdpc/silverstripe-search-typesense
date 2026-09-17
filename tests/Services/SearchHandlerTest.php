@@ -13,6 +13,8 @@ use SilverStripe\Dev\SapphireTest;
 
 class SearchHandlerTest extends SapphireTest
 {
+    protected $usesDatabase = true;
+
     protected static $extra_dataobjects = [
         TypesenseTestRecord::class,
     ];

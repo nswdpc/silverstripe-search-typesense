@@ -17,6 +17,8 @@ class TypesenseSearchCollectionTest extends SapphireTest
 {
     use ResetsTypesenseFixtureData;
 
+    protected $usesDatabase = true;
+
     protected static $extra_dataobjects = [
         TypesenseTestRecord::class,
         TypesensePermissionTestRecord::class,
@@ -231,6 +233,9 @@ class TypesenseSearchCollectionTest extends SapphireTest
 
     public function testCanEditRequiresPermission(): void
     {
+        // ensure no member from an earlier test is still logged in
+        $this->logOut();
+
         $collection = TypesenseSearchCollection::create();
         $this->assertFalse($collection->canEdit());
 

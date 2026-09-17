@@ -14,6 +14,8 @@ use SilverStripe\ORM\DB;
 
 class ImportTaskTest extends SapphireTest
 {
+    protected $usesDatabase = true;
+
     protected static $extra_dataobjects = [
         TypesenseTestRecord::class,
     ];

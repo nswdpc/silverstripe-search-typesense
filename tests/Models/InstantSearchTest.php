@@ -8,6 +8,8 @@ use SilverStripe\Dev\SapphireTest;
 
 class InstantSearchTest extends SapphireTest
 {
+    protected $usesDatabase = true;
+
     public function testGetTypesenseNodesParsesOneNodePerLine(): void
     {
         $instantSearch = InstantSearch::create([
@@ -67,6 +69,9 @@ class InstantSearchTest extends SapphireTest
 
     public function testCanEditRequiresPermission(): void
     {
+        // ensure no member from an earlier test is still logged in
+        $this->logOut();
+
         $instantSearch = InstantSearch::create();
         $this->assertFalse($instantSearch->canEdit());
 
