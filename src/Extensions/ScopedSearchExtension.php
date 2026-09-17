@@ -94,7 +94,7 @@ class ScopedSearchExtension extends DataExtension
         $searchScope = trim($this->getOwner()->SearchScope ?? '');
         if (!ScopedSearch::validateSearchScope($searchScope)) {
             // ensure a default scope is set, if invalid
-            $searchScope = ScopedSearch::getDefaultScope();
+            $searchScope = json_encode(ScopedSearch::getDefaultScope());
         }
 
         try {
