@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NSWDPC\Search\Typesense\Services;
 
 use Psr\Log\LoggerInterface;

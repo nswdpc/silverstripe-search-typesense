@@ -53,12 +53,11 @@ class Result extends ViewableData
      */
     public function TypesenseSearchResult(): ?TypesenseSearchResult
     {
-        $result = null;
         if (isset($this->result['TypesenseSearchResultData'])) {
-            $result = TypesenseSearchResult::create($this->result['TypesenseSearchResultData']);
+            return TypesenseSearchResult::create($this->result['TypesenseSearchResultData']);
         }
 
-        return $result;
+        return null;
     }
 
     /**
@@ -73,9 +72,9 @@ class Result extends ViewableData
         $template = $this->ClassName;
         if (!$template) {
             return null;
-        } else {
-            return $template . "_TypesenseSearchResult";
         }
+
+        return $template . "_TypesenseSearchResult";
     }
 
     /**

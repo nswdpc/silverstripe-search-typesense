@@ -22,7 +22,7 @@ class ScopedSearchExtension extends DataExtension
      */
     private static array $db = [
         'SearchKey' => 'Varchar(255)',// search-only API key
-        'SearchScope' => 'Text'
+        'SearchScope' => 'Text'// JSON text of search scope
     ];
 
     /**
@@ -33,7 +33,14 @@ class ScopedSearchExtension extends DataExtension
 
         // validate the scope
         $searchScope = trim((string)$this->getOwner()->SearchScope);
-        if ($searchScope !== '' && !ScopedSearch::validateSearchScope($searchScope)) {
+        if ($searchScope === '') {
+            $result->addError(
+                _t(
+                    static::class . ".SEARCH_SCOPE_INVALID_EMPTY",
+                    "Please provide a search scope."
+                )
+            );
+        } elseif (!ScopedSearch::validateSearchScope($searchScope)) {
             $result->addError(
                 _t(
                     static::class . ".SEARCH_SCOPE_INVALID_JSON",
@@ -87,7 +94,7 @@ class ScopedSearchExtension extends DataExtension
         $searchScope = trim($this->getOwner()->SearchScope ?? '');
         if (!ScopedSearch::validateSearchScope($searchScope)) {
             // ensure a default scope is set, if invalid
-            $searchScope = ScopedSearch::getDefaultScope();
+            $searchScope = json_encode(ScopedSearch::getDefaultScope());
         }
 
         try {
