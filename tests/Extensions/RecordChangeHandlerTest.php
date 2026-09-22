@@ -57,6 +57,7 @@ class RecordChangeHandlerTest extends SapphireTest
     {
         $record = TypesenseTestRecord::create(['Title' => 'A title', 'ShowInSearch' => true]);
         $record->write();
+
         $recordId = $record->ID;
 
         $this->fakeQueue->queued = [];
