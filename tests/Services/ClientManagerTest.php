@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NSWDPC\Search\Typesense\Tests\Services;
 
 use NSWDPC\Search\Typesense\Services\ClientManager;
@@ -9,23 +11,18 @@ use Typesense\Client as TypesenseClient;
 
 class ClientManagerTest extends SapphireTest
 {
-    private ?string $originalServer = null;
-
-    private ?string $originalApiKey = null;
-
     #[\Override]
     protected function setUp(): void
     {
+        Environment::setEnv('TYPESENSE_SERVER', '');
+        Environment::setEnv('TYPESENSE_API_KEY', '');
+        Environment::setEnv('TYPESENSE_SEARCH_KEY', 'test-search-key');
         parent::setUp();
-        $this->originalServer = Environment::getEnv('TYPESENSE_SERVER') ?: null;
-        $this->originalApiKey = Environment::getEnv('TYPESENSE_API_KEY') ?: null;
     }
 
     #[\Override]
     protected function tearDown(): void
     {
-        Environment::setEnv('TYPESENSE_SERVER', $this->originalServer ?? '');
-        Environment::setEnv('TYPESENSE_API_KEY', $this->originalApiKey ?? '');
         parent::tearDown();
     }
 

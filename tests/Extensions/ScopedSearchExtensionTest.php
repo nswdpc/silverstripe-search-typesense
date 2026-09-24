@@ -5,6 +5,7 @@ namespace NSWDPC\Search\Typesense\Tests\Extensions;
 use NSWDPC\Search\Typesense\Models\InstantSearch;
 use NSWDPC\Search\Typesense\Services\ClientManager;
 use NSWDPC\Search\Typesense\Tests\Mocks\TestClientManager;
+use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 
@@ -13,6 +14,9 @@ class ScopedSearchExtensionTest extends SapphireTest
     #[\Override]
     protected function setUp(): void
     {
+        Environment::setEnv('TYPESENSE_SERVER', '');
+        Environment::setEnv('TYPESENSE_API_KEY', '');
+        Environment::setEnv('TYPESENSE_SEARCH_KEY', 'test-search-key');
         parent::setUp();
         Injector::inst()->registerService(TestClientManager::create(), ClientManager::class);
         TestClientManager::reset();
@@ -45,18 +49,22 @@ class ScopedSearchExtensionTest extends SapphireTest
 
     public function testGetTypesenseSearchOnlyKeyPrefersStoredKeyOverEmptyEnvironment(): void
     {
+        Environment::setEnv('TYPESENSE_SEARCH_KEY', '');
         $instantSearch = InstantSearch::create(['SearchKey' => 'stored-key']);
         $this->assertSame('stored-key', $instantSearch->getTypesenseSearchOnlyKey());
     }
 
     public function testGetTypesenseScopedSearchKeyReturnsNullWithoutAKey(): void
     {
+        Environment::setEnv('TYPESENSE_SEARCH_KEY', '');
         $instantSearch = InstantSearch::create(['SearchKey' => '', 'SearchScope' => '{"filter_by":"a:b"}']);
         $this->assertNull($instantSearch->getTypesenseScopedSearchKey());
     }
 
     public function testGetTypesenseScopedSearchKeyReturnsKeyForValidScope(): void
     {
+
+        Environment::setEnv('TYPESENSE_SEARCH_KEY', '');
         $instantSearch = InstantSearch::create([
             'SearchKey' => 'a-search-key',
             'SearchScope' => '{"filter_by":"a:b"}',
@@ -71,6 +79,8 @@ class ScopedSearchExtensionTest extends SapphireTest
 
     public function testGetTypesenseScopedSearchKeyFallsBackToDefaultScopeWhenInvalid(): void
     {
+
+        Environment::setEnv('TYPESENSE_SEARCH_KEY', '');
         $instantSearch = InstantSearch::create([
             'SearchKey' => 'a-search-key',
             'SearchScope' => 'not valid json',

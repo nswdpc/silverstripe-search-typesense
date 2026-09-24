@@ -62,10 +62,12 @@ class TypesenseSearchCollectionTest extends SapphireTest
         $this->assertSame('', $collection->getValidRecordClass());
 
         $collection->RecordClass = 'Not\\A\\Real\\Class';
-        $this->assertSame('', $collection->getValidRecordClass());
+        $valid = null;
+        $this->assertSame('', $collection->getValidRecordClass($valid));
 
         $collection->RecordClass = \stdClass::class;
-        $this->assertSame('', $collection->getValidRecordClass());
+        $valid = null;
+        $this->assertSame('', $collection->getValidRecordClass($valid));
 
         $collection->RecordClass = TypesenseTestRecord::class;
         $this->assertSame(TypesenseTestRecord::class, $collection->getValidRecordClass());
