@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NSWDPC\Search\Typesense\Tests\Services;
 
 use NSWDPC\Search\Typesense\Services\ClientManager;
@@ -9,10 +11,6 @@ use Typesense\Client as TypesenseClient;
 
 class ClientManagerTest extends SapphireTest
 {
-    private ?string $originalServer = null;
-
-    private ?string $originalApiKey = null;
-
     #[\Override]
     protected function setUp(): void
     {
