@@ -46,6 +46,7 @@ class IncludeInSearchIndex
             if(!$custom) {
                 Logger::log("IncludeInSearchIndex::check() no - customIncludeInSearch is false ", "INFO");
             }
+
             return $custom;
         }
 
@@ -61,6 +62,7 @@ class IncludeInSearchIndex
         if($hasLoggedInViewPermission) {
             Logger::log("IncludeInSearchIndex::check() no - record has logged in view permission", "INFO");
         }
+
         return !$hasLoggedInViewPermission;
     }
 
@@ -73,10 +75,9 @@ class IncludeInSearchIndex
         if(!$hasField) {
             // no field - no restriction
             return true;
-        } else {
-            // has field, must be allowed to show in search
-            return (bool) $record->ShowInSearch;
         }
+        // has field, must be allowed to show in search
+        return (bool) $record->ShowInSearch;
     }
 
     /**
