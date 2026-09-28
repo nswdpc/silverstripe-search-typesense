@@ -43,7 +43,7 @@ class IncludeInSearchIndex
         // return null to skip
         $custom = self::customIncludeInSearch($record);
         if (is_bool($custom)) {
-            if(!$custom) {
+            if (!$custom) {
                 Logger::log("IncludeInSearchIndex::check() no - customIncludeInSearch is false ", "INFO");
             }
 
@@ -59,7 +59,7 @@ class IncludeInSearchIndex
         // default allow
         // logged in user permissions - excluded
         $hasLoggedInViewPermission = self::hasLoggedInViewPermission($record);
-        if($hasLoggedInViewPermission) {
+        if ($hasLoggedInViewPermission) {
             Logger::log("IncludeInSearchIndex::check() no - record has logged in view permission", "INFO");
         }
 
@@ -72,7 +72,7 @@ class IncludeInSearchIndex
     public static function canShowInSearch(DataObject $record): bool
     {
         $hasField = $record->hasField('ShowInSearch');
-        if(!$hasField) {
+        if (!$hasField) {
             // no field - no restriction
             return true;
         }
