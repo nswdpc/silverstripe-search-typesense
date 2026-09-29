@@ -58,11 +58,18 @@ class RecordChangeHandlerTest extends SapphireTest
         $record = TypesenseTestRecord::create(['Title' => 'A title', 'ShowInSearch' => true]);
         $record->write();
 
+        $recordId = $record->ID;
+
         $this->fakeQueue->queued = [];
 
         $record->delete();
 
-        $this->assertInstanceOf(DeleteJob::class, $this->fakeQueue->getLastJob());
+        // the job must carry the record ID/collection names it was queued with,
+        // since by the time it runs the record row (just deleted above) is gone
+        $job = $this->fakeQueue->getLastJob();
+        $this->assertInstanceOf(DeleteJob::class, $job);
+        $this->assertSame($recordId, $job->RecordID);
+        $this->assertSame(['unversioned-docs'], $job->CollectionNames);
     }
 
     public function testOnAfterWriteIsANoOpForVersionedRecord(): void
@@ -123,6 +130,9 @@ class RecordChangeHandlerTest extends SapphireTest
 
         $record->onAfterUnpublish();
 
-        $this->assertInstanceOf(DeleteJob::class, $this->fakeQueue->getLastJob());
+        $job = $this->fakeQueue->getLastJob();
+        $this->assertInstanceOf(DeleteJob::class, $job);
+        $this->assertSame($record->ID, $job->RecordID);
+        $this->assertSame(['versioned-docs'], $job->CollectionNames);
     }
 }

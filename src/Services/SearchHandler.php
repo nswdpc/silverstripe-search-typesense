@@ -376,27 +376,44 @@ class SearchHandler
             return false;
         }
 
+        $collectionNames = $collections->column('Name');
+
         if (!$viaQueuedJob) {
             // Direct delete .. DeleteJob process calls this.
-            $success = 0;
-            $client = static::getClient();
-            foreach ($collections as $collection) {
-                try {
-                    if ($client->collections[$collection->Name]->exists()) {
-                        $client->collections[$collection->Name]->documents[(string) $record->ID]->delete();
-                        Logger::log("Delete record #{$record->ID}/{$record->ClassName} from collection {$collection->Name}", "INFO");
-                        $success++;
-                    }
-                } catch (\Exception $exception) {
-                    Logger::log($exception::class . ": failed to delete #{$record->ID}/{$record->ClassName} from collection {$collection->Name}: " . $exception->getMessage(), "NOTICE");
-                }
-            }
-
-            return $success === $collections->count();
+            return static::deleteDocumentFromCollections((int) $record->ID, $collectionNames);
         }
 
         // delete via job
-        return DeleteJob::queueMyself($record);
+        return DeleteJob::queueMyself((int) $record->ID, $record::class, $collectionNames);
+    }
+
+    /**
+     * Delete a document, by ID, from the given Typesense collections (by Name).
+     * This does not require the local record to still exist, as only its ID is
+     * required to remove the corresponding document from each collection.
+     * @param string[] $collectionNames
+     */
+    public static function deleteDocumentFromCollections(int $recordId, array $collectionNames): bool
+    {
+        if ($collectionNames === []) {
+            return false;
+        }
+
+        $success = 0;
+        $client = static::getClient();
+        foreach ($collectionNames as $collectionName) {
+            try {
+                if ($client->collections[$collectionName]->exists()) {
+                    $client->collections[$collectionName]->documents[(string) $recordId]->delete();
+                    Logger::log("Delete record #{$recordId} from collection {$collectionName}", "INFO");
+                    $success++;
+                }
+            } catch (\Exception $exception) {
+                Logger::log($exception::class . ": failed to delete #{$recordId} from collection {$collectionName}: " . $exception->getMessage(), "NOTICE");
+            }
+        }
+
+        return $success === count($collectionNames);
     }
 
 }

@@ -678,6 +678,8 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
                     // Try to get the document directly
                     $data = TypesenseDocument::get($record, $collectionFields);
                 }
+            } else {
+                Logger::log("Record #{$record->ID} is excluded from indexing", "INFO");
             }
 
             if (is_array($data) && $data !== []) {

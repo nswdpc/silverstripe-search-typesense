@@ -35,6 +35,7 @@ class IncludeInSearchIndex
     {
         if (!self::canShowInSearch($record)) {
             // overrides all checks
+            Logger::log("IncludeInSearchIndex::check() no - ShowInSearch is false", "INFO");
             return false;
         }
 
@@ -42,17 +43,27 @@ class IncludeInSearchIndex
         // return null to skip
         $custom = self::customIncludeInSearch($record);
         if (is_bool($custom)) {
+            if (!$custom) {
+                Logger::log("IncludeInSearchIndex::check() no - customIncludeInSearch is false ", "INFO");
+            }
+
             return $custom;
         }
 
         if (self::hasGranularViewPermissions($record)) {
             // granular permissions - excluded
+            Logger::log("IncludeInSearchIndex::check() no - record has granular view permission", "INFO");
             return false;
         }
 
         // default allow
         // logged in user permissions - excluded
-        return !self::hasLoggedInViewPermission($record);
+        $hasLoggedInViewPermission = self::hasLoggedInViewPermission($record);
+        if ($hasLoggedInViewPermission) {
+            Logger::log("IncludeInSearchIndex::check() no - record has logged in view permission", "INFO");
+        }
+
+        return !$hasLoggedInViewPermission;
     }
 
     /**
@@ -60,11 +71,18 @@ class IncludeInSearchIndex
      */
     public static function canShowInSearch(DataObject $record): bool
     {
-        return $record->hasField('ShowInSearch') && $record->ShowInSearch;
+        $hasField = $record->hasField('ShowInSearch');
+        if (!$hasField) {
+            // no field - no restriction
+            return true;
+        }
+
+        // has field, must be allowed to show in search
+        return (bool) $record->ShowInSearch;
     }
 
     /**
-     * This method can be overridden to provide specific logic
+     * This method can be overridden via Injector to provide specific logic
      */
     public static function customIncludeInSearch(DataObject $record): ?bool
     {
@@ -135,7 +153,7 @@ class IncludeInSearchIndex
                 return true;
             }
 
-            // check if page has permissions
+            // check if parent has permissions
             if ($record->CanViewType === InheritedPermissions::INHERIT
                 && ($record->hasExtension(Hierarchy::class) || $record->hasMethod('getParent'))
                 && (

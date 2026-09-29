@@ -5,6 +5,7 @@ namespace NSWDPC\Search\Typesense\Tests\Extensions;
 use NSWDPC\Search\Typesense\Models\InstantSearch;
 use NSWDPC\Search\Typesense\Services\ClientManager;
 use NSWDPC\Search\Typesense\Tests\Mocks\TestClientManager;
+use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\ORM\FieldType\DBHTMLText;
@@ -17,6 +18,9 @@ class InstantSearchExtensionTest extends SapphireTest
     #[\Override]
     protected function setUp(): void
     {
+        Environment::setEnv('TYPESENSE_SERVER', '');
+        Environment::setEnv('TYPESENSE_API_KEY', '');
+        Environment::setEnv('TYPESENSE_SEARCH_KEY', 'test-search-key');
         parent::setUp();
         Injector::inst()->registerService(TestClientManager::create(), ClientManager::class);
         TestClientManager::reset();
@@ -67,6 +71,8 @@ class InstantSearchExtensionTest extends SapphireTest
 
     public function testTypesenseInstantSearchRendersFragmentWhenConfigured(): void
     {
+
+        Environment::setEnv('TYPESENSE_SEARCH_KEY', '');
         $instantSearch = InstantSearch::create([
             'Title' => 'Site search',
             'Enabled' => true,

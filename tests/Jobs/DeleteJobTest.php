@@ -43,39 +43,36 @@ class DeleteJobTest extends SapphireTest
         $fakeQueue = new FakeQueuedJobService();
         Injector::inst()->registerService($fakeQueue, QueuedJobService::class);
 
-        $record = TypesenseTestRecord::create(['Title' => 'A title']);
-        $record->write();
+        DeleteJob::queueMyself(123, TypesenseTestRecord::class, ['docs']);
 
-        DeleteJob::queueMyself($record);
-
-        $this->assertInstanceOf(DeleteJob::class, $fakeQueue->getLastJob());
+        $job = $fakeQueue->getLastJob();
+        $this->assertInstanceOf(DeleteJob::class, $job);
+        $this->assertSame(123, $job->RecordID);
+        $this->assertSame(TypesenseTestRecord::class, $job->RecordType);
+        $this->assertSame(['docs'], $job->CollectionNames);
     }
 
-    public function testProcessDeletesLinkedRecordFromTypesense(): void
+    public function testProcessDeletesRecordFromGivenCollectionsWithoutNeedingTheLocalRowToExist(): void
     {
-        TypesenseSearchCollection::create(['Name' => 'docs', 'RecordClass' => TypesenseTestRecord::class, 'Enabled' => true])->write();
-
-        // process() looks up the record by ID via getObject('Record') and requires
-        // it to still exist locally, so (unlike a real delete workflow) the local
-        // row is left in place here to exercise that lookup
-        $record = TypesenseTestRecord::create(['Title' => 'A title']);
-        $record->write();
-
+        // the local record is deliberately never written: process() is queued from
+        // onBeforeDelete()/onAfterUnpublish() and typically runs after the row is
+        // gone, so it must not depend on the record still existing locally
         TestClientManager::$httpClient->queueJson(200, ['name' => 'docs']);
-        TestClientManager::$httpClient->queueJson(200, ['id' => (string) $record->ID]);
+        TestClientManager::$httpClient->queueJson(200, ['id' => '123']);
 
-        $job = new DeleteJob($record->ID, TypesenseTestRecord::class);
+        $job = new DeleteJob(123, TypesenseTestRecord::class, ['docs']);
         $job->process();
 
         $this->assertTrue($job->jobFinished());
         $this->assertSame(2, TestClientManager::$httpClient->getRequestCount());
         $deleteRequest = TestClientManager::$httpClient->getRequests()[1];
         $this->assertSame('DELETE', $deleteRequest->getMethod());
+        $this->assertStringContainsString('/collections/docs/documents/123', (string) $deleteRequest->getUri());
     }
 
-    public function testProcessCompletesWhenRecordNoLongerExists(): void
+    public function testProcessCompletesWithoutCollectionNames(): void
     {
-        $job = new DeleteJob(999999, TypesenseTestRecord::class);
+        $job = new DeleteJob(999999, TypesenseTestRecord::class, []);
         $job->process();
 
         $this->assertTrue($job->jobFinished());
