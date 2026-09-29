@@ -34,7 +34,7 @@ class ScopedSearchExtension extends DataExtension
         $owner = $this->getOwner();
         // validate the scope if a string value is provided
         $searchScope = $owner->SearchScope;
-        if(is_string($searchScope)) {
+        if (is_string($searchScope)) {
             $searchScope = trim($searchScope);
             if ($searchScope === '') {
                 $result->addError(
