@@ -76,6 +76,7 @@ class IncludeInSearchIndex
             // no field - no restriction
             return true;
         }
+
         // has field, must be allowed to show in search
         return (bool) $record->ShowInSearch;
     }
