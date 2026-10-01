@@ -85,7 +85,7 @@ class InstantSearch extends DataObject implements PermissionProvider
     {
         $fields = parent::getCMSFields();
         $fields->removeByName(array_merge(['CollectionID'], array_keys(static::config()->get('db'))));
-        $fields->removeByName(['SearchKey','SearchScope']);
+        $fields->removeByName(['SearchKey','UseSelectedKey','SearchOnlyKeyID','SearchScope']);
         $fields->addFieldsToTab(
             'Root.Main',
             [

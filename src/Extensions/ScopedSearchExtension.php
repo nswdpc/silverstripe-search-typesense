@@ -2,6 +2,7 @@
 
 namespace NSWDPC\Search\Typesense\Extensions;
 
+use NSWDPC\Search\Typesense\Models\TypesenseSearchOnlyKey;
 use NSWDPC\Search\Typesense\Services\Logger;
 use NSWDPC\Search\Typesense\Services\ScopedSearch;
 use SilverStripe\Core\Environment;
@@ -21,8 +22,13 @@ class ScopedSearchExtension extends DataExtension
      * Provide a search scope + search only key field
      */
     private static array $db = [
-        'SearchKey' => 'Varchar(255)',// search-only API key
-        'SearchScope' => 'Text'// JSON text of search scope
+        'SearchKey' => 'Varchar(255)',// search-only API key (deprecated)
+        'SearchScope' => 'Text',// JSON text of search scope
+        'UseSelectedKey' => 'Boolean' // whether to use SearchOnlyKey.KeyVal or not
+    ];
+
+    private static array $has_one = [
+        'SearchOnlyKey' => TypesenseSearchOnlyKey::class
     ];
 
     /**
@@ -49,33 +55,24 @@ class ScopedSearchExtension extends DataExtension
             );
         }
 
-        // validate the key entered - not currently in use
-        /*
-        $searchKey = trim((string)$this->getOwner()->SearchKey);
-        if($searchKey !== '' && !ScopedSearch::validateSearchOnlyKey($searchKey)) {
-            $this->getOwner()->SearchKey = '';// reset on invalid
-            $result->addError(
-                _t(
-                    static::class . ".SEARCH_KEY_INVALID",
-                    "The search key provided is invalid. It must exist at the Typesense server and have a single action 'documents:search'"
-                )
-            );
-        }
-        */
     }
 
+    /**
+     * Get the key used as the search-only key
+     */
     public function getTypesenseSearchOnlyKey(): string
     {
-        // prefer the stored key
-        $searchKey = Environment::getEnv('TYPESENSE_SEARCH_KEY');
-        if (!$searchKey) {
-            // try the one entered in the UI
-            $searchKey = $this->getOwner()->SearchKey;
+        $owner = $this->getOwner();
+        if($owner->UseSelectedKey == 1) {
+            // requested to use selected key
+            $searchOnlyKey = $owner->SearchOnlyKey();
+            $keyVal = $searchOnlyKey && $searchOnlyKey->IsEnabled == 1 ? $searchOnlyKey->KeyVal : '';
+            $searchKey = $keyVal;
         } else {
-            Logger::log("Using TYPESENSE_SEARCH_KEY value", "INFO");
+            // use the stored key
+            $searchKey = Environment::getEnv('TYPESENSE_SEARCH_KEY');
         }
-
-        return $searchKey ?? '';
+        return trim($searchKey ?? '');
     }
 
     /**
@@ -86,7 +83,7 @@ class ScopedSearchExtension extends DataExtension
 
         $searchKey = $this->getTypesenseSearchOnlyKey();
         // check if valid
-        if ($searchKey === '' || $searchKey === '0') {
+        if ($searchKey === '') {
             Logger::log("No Typesense search or API key defined - cannot create a scoped search key", "NOTICE");
             return null;
         }
