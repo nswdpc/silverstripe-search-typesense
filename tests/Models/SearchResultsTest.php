@@ -4,7 +4,6 @@ namespace NSWDPC\Search\Typesense\Tests\Models;
 
 use NSWDPC\Search\Typesense\Models\SearchResults;
 use SilverStripe\Dev\SapphireTest;
-use SilverStripe\ORM\ArrayList;
 
 class SearchResultsTest extends SapphireTest
 {

@@ -11,7 +11,6 @@ use NSWDPC\Search\Typesense\Tests\Mocks\TestClientManager;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
-use SilverStripe\ORM\ValidationException;
 
 class TypesenseSearchCollectionTest extends SapphireTest
 {
