@@ -77,7 +77,7 @@ class TypesenseSearchCollectionTest extends SapphireTest
     {
         TypesenseSearchCollection::create(['Name' => 'dup-name', 'RecordClass' => TypesenseTestRecord::class])->write();
 
-        $this->expectException(ValidationException::class);
+        $this->expectException(\SilverStripe\Core\Validation\ValidationException::class);
         TypesenseSearchCollection::create(['Name' => 'dup-name', 'RecordClass' => TypesenseTestRecord::class])->write();
     }
 
@@ -130,7 +130,7 @@ class TypesenseSearchCollectionTest extends SapphireTest
         $collection = TypesenseSearchCollection::create();
         $collection->Metadata = json_encode(['name' => 'a-collection']);
 
-        $this->expectException(ValidationException::class);
+        $this->expectException(\SilverStripe\Core\Validation\ValidationException::class);
         $collection->validateMetadata();
     }
 
@@ -269,7 +269,7 @@ class TypesenseSearchCollectionTest extends SapphireTest
         $collection->Metadata = json_encode(['name' => 'missing-fields-key']);
         $collection->write();
 
-        $this->expectException(ValidationException::class);
+        $this->expectException(\SilverStripe\Core\Validation\ValidationException::class);
         $collection->createAtServer();
     }
 

@@ -64,81 +64,74 @@ class ImportTask extends BuildTask
                 )
             );
             return Command::FAILURE;
-        } else {
-
-            try {
-                $output->writeln(
-                    _t(
-                        self::class . ".COLLECTION_IMPORTING",
-                        "The collection '{collectionName}' is importing",
-                        [
-                            'collectionName' => $collectionName
-                        ]
-                    )
-                );
-                $recordCount = $collection->import($limit, $sort, $verbose);
-                $output->writeln(
-                    _t(
-                        self::class . ".COLLECTION_IMPORTING",
-                        "The collection '{collectionName}' imported {recordCount} records",
-                        [
-                            'collectionName' => $collectionName,
-                            'recordCount' => $recordCount
-                        ]
-                    )
-                );
-            } catch (\Exception $exception) {
-                $output->writeln(
-                    _t(
-                        self::class . ".COLLECTION_IMPORT_TASK_FAILED",
-                        "The collection '{collectionName}' import failed with error '{error}' of type '{type}'",
-                        [
-                            'collectionName' => $collectionName,
-                            'error' => $exception->getMessage(),
-                            'type' => $exception::class
-                        ]
-                    )
-                );
-                return Command::FAILURE;
-            }
-
-            $importSuccesses = $collection->getImportSuccesses();
-            $importErrors = $collection->getImportErrors();
-            $importStats = $collection->getImportStats();
-
-            if ($verbose) {
-                foreach ($importSuccesses as $success) {
-                    $output->writeln(
-                        json_encode($success)
-                    );
-                }
-
-                foreach ($importErrors as $error) {
-                    $output->writeln(
-                        json_encode($error)
-                    );
-                }
-            } else {
-                $output->writeln("Success:" . count($importSuccesses));
-                $output->writeln("Error:" . count($importErrors));
-            }
-
-            $docs = 0;
-            $size = 0;
-            $avgSize = 0;
-            $sizeMB = 0;
-            foreach ($importStats as $importStat) {
-                $docs += $importStat['docs'];
-                $size += $importStat['sizeBytes'];
-            }
-
-            if ($docs > 0) {
-                $avgSize = round($size / $docs);
-            }
-
-            $sizeMB = round($size / (1024 * 1024));
-            $output->writeln("Stats: docs={$docs} sizeBytes={$size} sizeMB={$sizeMB} avgSizeBytes={$avgSize}");
         }
+        try {
+            $output->writeln(
+                _t(
+                    self::class . ".COLLECTION_IMPORTING",
+                    "The collection '{collectionName}' is importing",
+                    [
+                        'collectionName' => $collectionName
+                    ]
+                )
+            );
+            $recordCount = $collection->import($limit, $sort, $verbose);
+            $output->writeln(
+                _t(
+                    self::class . ".COLLECTION_IMPORTING",
+                    "The collection '{collectionName}' imported {recordCount} records",
+                    [
+                        'collectionName' => $collectionName,
+                        'recordCount' => $recordCount
+                    ]
+                )
+            );
+        } catch (\Exception $exception) {
+            $output->writeln(
+                _t(
+                    self::class . ".COLLECTION_IMPORT_TASK_FAILED",
+                    "The collection '{collectionName}' import failed with error '{error}' of type '{type}'",
+                    [
+                        'collectionName' => $collectionName,
+                        'error' => $exception->getMessage(),
+                        'type' => $exception::class
+                    ]
+                )
+            );
+            return Command::FAILURE;
+        }
+        $importSuccesses = $collection->getImportSuccesses();
+        $importErrors = $collection->getImportErrors();
+        $importStats = $collection->getImportStats();
+        if ($verbose) {
+            foreach ($importSuccesses as $success) {
+                $output->writeln(
+                    json_encode($success)
+                );
+            }
+
+            foreach ($importErrors as $error) {
+                $output->writeln(
+                    json_encode($error)
+                );
+            }
+        } else {
+            $output->writeln("Success:" . count($importSuccesses));
+            $output->writeln("Error:" . count($importErrors));
+        }
+        $docs = 0;
+        $size = 0;
+        $avgSize = 0;
+        $sizeMB = 0;
+        foreach ($importStats as $importStat) {
+            $docs += $importStat['docs'];
+            $size += $importStat['sizeBytes'];
+        }
+        if ($docs > 0) {
+            $avgSize = round($size / $docs);
+        }
+        $sizeMB = round($size / (1024 * 1024));
+        $output->writeln("Stats: docs={$docs} sizeBytes={$size} sizeMB={$sizeMB} avgSizeBytes={$avgSize}");
 
         return Command::SUCCESS;
 
