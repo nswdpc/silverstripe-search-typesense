@@ -12,7 +12,7 @@ The current documentation is available at: [https://typesense.org/docs/guide/](h
 
 ## Collections
 
-In the current implementation of this module, a Typesense collection represents the indexable records of a single Silverstripe DataObject model e.g. for all searchable pages, the SiteTree model should be configured as a collection.
+In the current implementation of this module, a Typesense collection represents the indexable records of a single Silverstripe DataObject model and it's child classes e.g. for all searchable pages in the Silverstripe CMS, the SiteTree model should be configured as a collection.
 
 The `nswdpc/silverstripe-typesense-cms` provides a module that sets up an indexable collection of SiteTree records (all types of pages).
 

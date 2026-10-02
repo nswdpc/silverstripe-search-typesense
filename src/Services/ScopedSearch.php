@@ -2,11 +2,13 @@
 
 namespace NSWDPC\Search\Typesense\Services;
 
+use NSWDPC\Search\Typesense\Models\TypesenseSearchOnlyKey;
 use KevinGroeger\CodeEditorField\Forms\CodeEditorField;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\ToggleCompositeField;
-use SilverStripe\Forms\TextField;
+use SilverStripe\Forms\DropdownField;
+use SilverStripe\Forms\CheckboxField;
 
 /**
  * Collection of methods to assist with scoped search handling
@@ -32,27 +34,33 @@ abstract class ScopedSearch
      */
     public static function getSearchKeyField(): ToggleCompositeField
     {
-        $searchKey = trim(Environment::getEnv('TYPESENSE_SEARCH_KEY') ?? '');
-        $warning = "";
-        if ($searchKey !== '') {
-            $warning = _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_USING_SYSTEM', "A system provided search-only key is in use and will override the value provided here.");
+
+        if (Environment::getEnv('TYPESENSE_SEARCH_KEY')) {
+            $systemKeyAvailable = _t(static::class . '.SYSTEM_SEARCH_KEY_AVAILABLE', 'A system-provided search-only key is available and will be used if no key is selected/used here. If no keys are available, ask an adminisrator to create one.');
+        } else {
+            $systemKeyAvailable = _t(static::class . '.SYSTEM_SEARCH_KEY_AVAILABLE', 'A system-provided search-only key is not available. Select an available key below. If no keys are available, ask an adminisrator to create one.');
         }
 
-        $textField = TextField::create(
-            'SearchKey',
-            _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY', 'Search-only key')
+        $keyField = DropdownField::create(
+            'SearchOnlyKeyID',
+            _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY', 'Search-only key'),
+            TypesenseSearchOnlyKey::get()->filter(['IsEnabled' => 1])->map('ID', 'TitleWithMaskedKey')->toArray()
+        )->setEmptyString(_t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_SELECT', 'Select a key'))
+        ->setDescription($systemKeyAvailable);
+
+        $selectionField = CheckboxField::create(
+            'UseSelectedKey',
+            _t(static::class . '.INSTANT_SEARCH_USE_THIS_KEY', 'Use the selected key ')
         )->setDescription(
-            _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_WARNING', "Use a Typesense search-only API key with the single action 'documents:search'. This will be checked and validated on save.")
+            _t(static::class . '.INSTANT_SEARCH_USE_THIS_KEY_HELP', 'Overrides system-provided search-only key'),
         );
-        if ($warning !== '') {
-            $textField = $textField->setRightTitle($warning);
-        }
 
         return ToggleCompositeField::create(
             'SearchKeyToggle',
             _t(static::class . '.SEARCH_KEY', 'Key'),
             [
-                $textField
+                $keyField,
+                $selectionField
             ]
         );
     }
@@ -85,8 +93,10 @@ abstract class ScopedSearch
             $keyFound = false;
             // print_r($results);
             foreach ($results['keys'] as $key) {
+
+                // if it's not the same key identifier..
                 if (!str_starts_with($searchKey, (string) $key['value_prefix'])) {
-                    // ignore this key returned
+                    // ignore this key
                     continue;
                 }
 
@@ -105,7 +115,8 @@ abstract class ScopedSearch
 
             return true;
 
-        } catch (\Exception) {
+        } catch (\Exception $exception) {
+            Logger::log("Failed to validate key with error: {$exception->getMessage()}", "NOTICE");
             return false;
         }
     }

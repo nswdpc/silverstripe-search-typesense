@@ -85,7 +85,7 @@ class InstantSearch extends DataObject implements PermissionProvider
     {
         $fields = parent::getCMSFields();
         $fields->removeByName(array_merge(['CollectionID'], array_keys(static::config()->get('db'))));
-        $fields->removeByName(['SearchKey','SearchScope']);
+        $fields->removeByName(['SearchKey','UseSelectedKey','SearchOnlyKeyID','SearchScope']);
         $fields->addFieldsToTab(
             'Root.Main',
             [
@@ -302,20 +302,20 @@ class InstantSearch extends DataObject implements PermissionProvider
     {
         return [
             'INSTANTSEARCH_CONFIG_VIEW' => [
-                'name' => _t(static::class . '.PERMISSION_VIEW', 'View Typesense InstantSearch configuration'),
-                'category' => 'Typesense InstantSearch',
+                'name' => _t(static::class . '.PERMISSION_VIEW', 'InstantSearch configuration - view'),
+                'category' => 'Typesense',
             ],
             'INSTANTSEARCH_CONFIG_EDIT' => [
-                'name' => _t(static::class . '.PERMISSION_EDIT', 'Edit Typesense InstantSearch configuration'),
-                'category' => 'Typesense InstantSearch',
+                'name' => _t(static::class . '.PERMISSION_EDIT', 'InstantSearch configuration - edit'),
+                'category' => 'Typesense',
             ],
             'INSTANTSEARCH_CONFIG_CREATE' => [
-                'name' => _t(static::class . '.PERMISSION_CREATE', 'Create Typesense InstantSearch configuration'),
-                'category' => 'Typesense InstantSearch',
+                'name' => _t(static::class . '.PERMISSION_CREATE', 'InstantSearch configuration - create'),
+                'category' => 'Typesense',
             ],
             'INSTANTSEARCH_CONFIG_DELETE' => [
-                'name' => _t(static::class . '.PERMISSION_DELETE', 'Delete Typesense InstantSearch configuration'),
-                'category' => 'Typesense InstantSearch',
+                'name' => _t(static::class . '.PERMISSION_DELETE', 'InstantSearch configuration - delete'),
+                'category' => 'Typesense',
             ]
         ];
     }
@@ -333,7 +333,7 @@ class InstantSearch extends DataObject implements PermissionProvider
             return null;
         }
 
-        /** getTypesenseScopedSearchKey provided by SearchScope data extension */
+        /** getTypesenseScopedSearchKey provided by ScopedSearchExtension extension */
         $scopedApiKey = $this->getTypesenseScopedSearchKey();
         if (in_array($scopedApiKey, [null, '', '0'], true)) {
             return null;
