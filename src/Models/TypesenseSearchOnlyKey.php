@@ -2,8 +2,11 @@
 
 namespace NSWDPC\Search\Typesense\Models;
 
+use NSWDPC\Search\Typesense\Services\Logger;
 use NSWDPC\Search\Typesense\Services\ScopedSearch;
 use NSWDPC\Typesense\CMS\Models\TypesenseSearchPage;
+use SilverStripe\Core\ClassInfo;
+use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Convert;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\TextField;
@@ -105,6 +108,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
      */
     public function validate() {
         $valid = parent::validate();
+
         $keyVal = $this->KeyVal;
         if(is_string($keyVal)) {
             $keyVal = trim($keyVal);
@@ -178,10 +182,33 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
         return Permission::checkMember($member, 'TYPESENSE_KEY_DELETE');
     }
 
+    /**
+     * Migrate a key
+     * This is done outside the ORM as the key might fail validation as
+     * it may not be a search only key but it still needs to be migrated.
+     * Subsequent writes of the key will validate and the user can fix.
+     */
+    private function migrateKey(string $searchKey, string $label): int {
+        try {
+            DB::prepared_query(
+                'INSERT INTO "TypesenseSearchOnlyKey" ("Title", "KeyVal") Values (?, ?)',
+                [
+                    $label,
+                    $searchKey
+                ]
+            );
+            $id = DB::get_generated_id('TypesenseSearchOnlyKey');
+            return is_int($id) ? $id : 0;
+        } catch (\Exception $exception) {
+            Logger::log("Failed to migrate key: {$exception->getMessage()}", "NOTICE");
+            return 0;
+        }
+    }
+
     public function requireDefaultRecords() {
         parent::requireDefaultRecords();
 
-        // ScopedSearchExtension handling
+        // ScopedSearchExtension handling - get all core classes using it
         $knownClasses = [];
         $knownClasses[] = InstantSearch::class;
         if(\class_exists(TypesenseSearchPage::class)) {
@@ -190,28 +217,33 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
 
         $changes = 0;
         foreach($knownClasses as $knownClass) {
+
+            // table for class
             $tableName = DataObject::getSchema()->tableName($knownClass);
+
+            // get human label
+            $classLabel = Config::inst()->get($knownClass, 'singular_name');
+            if(!$classLabel) {
+                $classLabel = ClassInfo::shortName($knownClass);
+            }
             // update all known models
             $result = DB::prepared_query(
                 'SELECT "ID", "SearchKey" FROM "' . Convert::raw2sql($tableName) . '" WHERE "SearchKey" IS NOT NULL AND "SearchKey" <> \'\'',
                 []
             );
             foreach ($result as $record) {
-                // create a key record for this key
-                $searchOnlyKey = TypesenseSearchOnlyKey::create([
-                    'Title' => 'Automigrated key from InstantSearch #' . $record['ID'],
-                    'KeyVal' => $record['SearchKey']
-                ]);
-                $searchOnlyKey->write();
+
+                $label = "Automigrated key from {$classLabel} #{$record['ID']}";
+                $keyId = $this->migrateKey($record['SearchKey'], $label);
 
                 // update the source table if success
-                if($searchOnlyKey->ID) {
+                if($keyId > 0) {
                     DB::alteration_message("Migrating {$knownClass} SearchKey #" . $record['ID'], "changed");
                     // remove the key val to avoid re-migrations
                     DB::prepared_query(
-                        'UPDATE "TypesenseInstantSearch" SET "UseSelectedKey" = 1, "SearchKey" = \'\', SearchOnlyKeyID = ? WHERE ID = ?',
+                        'UPDATE "' . Convert::raw2sql($tableName) . '" SET "UseSelectedKey" = 1, "SearchKey" = \'\', SearchOnlyKeyID = ? WHERE ID = ?',
                         [
-                            $searchOnlyKey->ID,// assign this search key
+                            $keyId,// assign this search key
                             $record['ID'] // for this record
                         ]
                     );
