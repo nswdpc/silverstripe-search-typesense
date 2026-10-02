@@ -15,6 +15,9 @@ use SilverStripe\ORM\ValidationResult;
  * @property ?string $SearchKey
  * @property ?string $SearchScope
  * @extends \SilverStripe\ORM\DataExtension<(\NSWDPC\Search\Typesense\Models\InstantSearch & static)>
+ * @property bool $UseSelectedKey
+ * @property int $SearchOnlyKeyID
+ * @method \NSWDPC\Search\Typesense\Models\TypesenseSearchOnlyKey SearchOnlyKey()
  */
 class ScopedSearchExtension extends DataExtension
 {
@@ -73,6 +76,7 @@ class ScopedSearchExtension extends DataExtension
             // use the stored key
             $searchKey = Environment::getEnv('TYPESENSE_SEARCH_KEY');
         }
+
         return trim($searchKey ?? '');
     }
 

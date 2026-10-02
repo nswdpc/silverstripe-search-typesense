@@ -18,6 +18,9 @@ use SilverStripe\Security\PermissionProvider;
 
 /**
  * Represents a key that is validated to only have the relevant search only permission
+ * @property string $Title
+ * @property ?string $KeyVal
+ * @property bool $IsEnabled
  */
 class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
 {
@@ -63,8 +66,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
         if(!is_string($val)) {
             $val = '';
         }
-        $val = substr($val, 0, 4);
-        return $val;
+        return substr($val, 0, 4);
     }
 
     public function setKeyValInput(?string $keyVal = null) {
@@ -123,7 +125,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
                         'KeyVal',
                         _t(
                             self::class . '.INVALID_SEARCH_ONLY_KEY',
-                            'The key provided is not a valid search-only key. It must exist at the Typesense server and only have the assigned actions: \'{actions}\'. To fix this, provide a valid search-only key.',
+                            "The key provided is not a valid search-only key. It must exist at the Typesense server and only have the assigned actions: '{actions}'. To fix this, provide a valid search-only key.",
                             [
                                 'actions' => 'documents:search'
                             ]
@@ -233,6 +235,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
             if(!$classLabel) {
                 $classLabel = ClassInfo::shortName($knownClass);
             }
+
             // update all known models
             $result = DB::prepared_query(
                 'SELECT "ID", "SearchKey" FROM "' . Convert::raw2sql($tableName) . '" WHERE "SearchKey" IS NOT NULL AND "SearchKey" <> \'\'',
@@ -260,7 +263,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
             }
         }
 
-        if($changes == 0) {
+        if($changes === 0) {
             DB::alteration_message("No typesense key migrations", "changed");
         }
     }
