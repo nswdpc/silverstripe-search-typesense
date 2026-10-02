@@ -123,7 +123,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
                         'KeyVal',
                         _t(
                             self::class . '.INVALID_SEARCH_ONLY_KEY',
-                            'The key entered is not a valid search-only key. It must exist at the Typesense server and only have the assigned actions: {actions}',
+                            'The key provided is not a valid search-only key. It must exist at the Typesense server and only have the assigned actions: \'{actions}\'. To fix this, provide a valid search-only key.',
                             [
                                 'actions' => 'documents:search'
                             ]
