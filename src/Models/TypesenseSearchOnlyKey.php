@@ -66,6 +66,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
         if (!is_string($val)) {
             $val = '';
         }
+
         return substr($val, 0, 4);
     }
 
