@@ -11,14 +11,17 @@ This module implements instant search using the Typesense InstantSearch Adapter.
 > The current implentation requires a site administrator to have an understanding of the HTML elements on their site.
 > To create Instantsearch configurations, your site administrator should understand the concepts of Search-only API keys, search scopes and have a working Typesense search server set up.
 
+> Note: keys used in InstantSearch are currently validated against the TYPESENSE_SERVER set in environment configuration.
+
 #### Examples
 
 1. You have search form in your website pulling results from a collection in Typesense. You can create an Instantsearch configuration and attach it to the form to provide results in-situ.
-1. You have an input field, and an Instantsearch configuration is created and references this field.
+1. You have a search input field, and an Instantsearch configuration is created and references this field.
+1. You have a section of a page that will display display results (the hitbox). This is usually closely coupled with the search input field.
 
 ### Implementation
 
-1. The model being rendered in a template must have the InstantSearchExtension applied
+1. The model being rendered in a template must have the `InstantSearchExtension` applied
 2. In the template being used to render the model, add the following template code (in the scope of the model)
 
 To add InstantSearch support to a current model, apply the InstantSearchExtension in your configuration. The template rendering that model will now have a `TypesenseInstantSearch` method accessible in the model scope:
@@ -41,6 +44,8 @@ Template e.g. templates/My/App/SearchFormModel.ss:
 
 Remember to re-index your data either via the import task or the the synchronisation job.
 
+Example: check the nswdpc/silverstripe-typesense-elemental module. This provides elemental content blocks for the CMS with instantsearch integration.
+
 ### Configuring a model
 
 Provided you have the relevant permissions, navigate to 'Typesense Search' in the administration area of your website. If you cannot see this but require access, an administrator can set up access.
@@ -59,22 +64,30 @@ Add a search scope using the "Search scope" field in configuration. The search s
 
 #### Fields
 
-##### General
+##### General information
+
 + **Title**: an internal value used by CMS Editors to pick the relevant search configuration. Be descriptive to help them.
 + **Enabled**: whether to enable this configuration or not
 
-##### API/Server
-+ **Search-only key**: your search-only API key with a single aciton of 'documents:search'. A scoped API key will be created from this using the scope you set. If you do not provide one, the value of the environment variable `TYPESENSE_SEARCH_KEY` will be used to create a Scoped search API key using the search scope provided (see below). The scoped API key is added to your HTML source.
+##### API configuration
+
++ **Search-only key**: your search-only API key with a single aciton of `documents:search`. A scoped API key will be created from this using the scope you set. If you do not provide or select one, the value of the environment variable `TYPESENSE_SEARCH_KEY` will be used to create a Scoped search API key using the search scope provided (see below). The scoped API key is added to your HTML source.
 + **Search scope (JSON)**: enter JSON values for a search scope. This is advanced configuration and requires knowledge of search scopes.
 + **Server nodes**: your Typesense server nodes.Add the full URL of each server node, one per line, including the port.
-+ **Fields to query**: query these fields in your search. Relevant to the collection chosen
++ **Fields to query**: query these fields in your search. Relevant to the collection chosen. This will override values provided as a `uery_by` in the search scope. (This field will be removed in a future release, use query_by in the search scope instead).
 
-##### Searchbox
+##### Collection selection
+
++ Select or enter a collection
+
+##### Searchbox/form details
+
 + **Id attribute of the field**: in your page, the search input should have an "id" attribute. Enter this value in this field to bind the configuration to the search field on your webpage.
 + **Field prompt**: the placeholder value for the search input, optional
 + **Instructions for screen readers**: provide instructions for people using screen readers.
 
-##### Hitbox
+##### Hitbox details
+
 + **Id attribute of the parent container**: the hitbox containing results will be appended to this element
 + **The property on the 'hit' that holds the link to the result**: enter a property on the hit e.g. TypesenseSearchResultData.Link, without this a link to a result cannot be created. Example: If a search hit holds the value for the link to the result in the "ResultLink" property, enter "ResultLink" here.
 + **The property on the 'hit' that holds the title of the result**: ditto as above, but for the title of the result.
@@ -106,9 +119,10 @@ Have a look at the `nswdpc/silverstripe-typesense-elemental` module, specificall
 
 ### Troubleshooting
 
-> The browser console will generally show errors that assist in determining issues.
+> The browser dev console will generally show errors that assist in determining issues.
 
 #### Results are not showing
+
 1. By default the hitbox relies on there being a "TypesenseSearchResultData" and "Title" property in the hits returned from Typesense multi-search. If this is not the case, results will not show.
 
 ```json
@@ -121,17 +135,19 @@ Have a look at the `nswdpc/silverstripe-typesense-elemental` module, specificall
 
 2. The Typesense server URL, search scope or API key are incorrect. You may have added a search scope that cannot be used to run a search. Please add a valid search scope.
 3. The collection chosen does not exist at the Typesense server
-4. The search-only API key is not allowed to access the collection chosen
+4. The scoped search key is not allowed to access the collection chosen, or has not been created from a search-only key (its only action being `documents:search`).
 5. A field name in the "Fields to query" field of the configuration does not exist in the collection to be searched.
-6. There is no Typesense search-only API key in configuration
+6. There is no Typesense search-only API key available or one was not selected
 
 #### The link is not correct in the result
+
 1. Make sure the link and title fields are returned in the list of documents. If you type and get results, inspect the fields returned.
 
-### No configuration tag is added for my search form
+#### No configuration tag is added for my search form
+
 1. It is possible the configuration is not enabled
-2. It is possible the configuration is invalid
-3. The model does not have the InstantSearchExtension applied
-4. The <% include %> is added in the wrong scope
+1. It is possible the configuration is invalid
+1. The model does not have the InstantSearchExtension applied
+1. The <% include %> is added in the wrong scope
 
 Check the configuration for errors, incorrect 'id' attribute values and the like.
