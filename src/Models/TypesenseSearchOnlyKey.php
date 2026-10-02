@@ -12,6 +12,7 @@ use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\TextField;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DB;
+use SilverStripe\ORM\FieldType\DBDatetime;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
 
@@ -41,7 +42,9 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
     private static array $summary_fields = [
         'Title' => 'Title',
         'MaskedKeyVal' => 'Key identifier',
-        'IsEnabled.Nice' => 'Enabled?'
+        'IsEnabled.Nice' => 'Enabled?',
+        'Created.Nice' => 'Created',
+        'LastEdited.Nice' => 'Last edited',
     ];
 
     /**
@@ -190,11 +193,15 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
      */
     private function migrateKey(string $searchKey, string $label): int {
         try {
+            $lastEdited = DBDatetime::now();
+            $created = $lastEdited;
             DB::prepared_query(
-                'INSERT INTO "TypesenseSearchOnlyKey" ("Title", "KeyVal") Values (?, ?)',
+                'INSERT INTO "TypesenseSearchOnlyKey" ("Title", "KeyVal","Created","LastEdited") Values (?, ?, ?, ?)',
                 [
                     $label,
-                    $searchKey
+                    $searchKey,
+                    $lastEdited->Format(DBDatetime::ISO_DATETIME),
+                    $created->Format(DBDatetime::ISO_DATETIME)
                 ]
             );
             $id = DB::get_generated_id('TypesenseSearchOnlyKey');
