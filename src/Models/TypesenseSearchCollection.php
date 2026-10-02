@@ -82,24 +82,24 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
     {
         return [
             'TYPESENSE_COLLECTION_VIEW' => [
-                'name' => _t(static::class . '.PERMISSION_VIEW', 'View Typesense collections'),
-                'category' => 'Typesense InstantSearch',
+                'name' => _t(static::class . '.PERMISSION_VIEW', 'Collections - view'),
+                'category' => 'Typesense',
             ],
             'TYPESENSE_COLLECTION_EDIT' => [
-                'name' => _t(static::class . '.PERMISSION_EDIT', 'Edit Typesense collections'),
-                'category' => 'Typesense InstantSearch',
+                'name' => _t(static::class . '.PERMISSION_EDIT', 'Collections - edit'),
+                'category' => 'Typesense',
             ],
             'TYPESENSE_COLLECTION_CREATE' => [
-                'name' => _t(static::class . '.PERMISSION_CREATE', 'Create Typesense collections'),
-                'category' => 'Typesense InstantSearch',
+                'name' => _t(static::class . '.PERMISSION_CREATE', 'Collections - create'),
+                'category' => 'Typesense',
             ],
             'TYPESENSE_COLLECTION_DELETE' => [
-                'name' => _t(static::class . '.PERMISSION_DELETE', 'Delete Typesense collections'),
-                'category' => 'Typesense InstantSearch',
+                'name' => _t(static::class . '.PERMISSION_DELETE', 'Collections - delete'),
+                'category' => 'Typesense',
             ],
             'TYPESENSE_COLLECTION_REINDEX' => [
-                'name' => _t(static::class . '.PERMISSION_REINDEX', 'Reindex Typesense collections'),
-                'category' => 'Typesense InstantSearch',
+                'name' => _t(static::class . '.PERMISSION_REINDEX', 'Collections - reindex'),
+                'category' => 'Typesense',
             ],
         ];
     }

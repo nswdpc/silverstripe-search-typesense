@@ -140,20 +140,20 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
     {
         return [
             'TYPESENSE_KEY_VIEW' => [
-                'name' => _t(static::class . '.PERMISSION_VIEW', 'View Typesense search only keys'),
-                'category' => 'Typesense keys',
+                'name' => _t(static::class . '.PERMISSION_VIEW', 'Search-only keys - view'),
+                'category' => 'Typesense',
             ],
             'TYPESENSE_KEY_EDIT' => [
-                'name' => _t(static::class . '.PERMISSION_EDIT', 'Edit Typesense search only keys'),
-                'category' => 'Typesense keys',
+                'name' => _t(static::class . '.PERMISSION_EDIT', 'Search-only keys - edit'),
+                'category' => 'Typesense',
             ],
             'TYPESENSE_KEY_CREATE' => [
-                'name' => _t(static::class . '.PERMISSION_CREATE', 'Create Typesense search only keys'),
-                'category' => 'Typesense keys',
+                'name' => _t(static::class . '.PERMISSION_CREATE', 'Search-only keys - create'),
+                'category' => 'Typesense',
             ],
             'TYPESENSE_KEY_DELETE' => [
-                'name' => _t(static::class . '.PERMISSION_DELETE', 'Delete Typesense search only keys'),
-                'category' => 'Typesense keys',
+                'name' => _t(static::class . '.PERMISSION_DELETE', 'Search-only keys - delete'),
+                'category' => 'Typesense',
             ]
         ];
     }
