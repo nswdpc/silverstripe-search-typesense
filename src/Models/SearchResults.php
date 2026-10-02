@@ -2,7 +2,7 @@
 
 namespace NSWDPC\Search\Typesense\Models;
 
-use SilverStripe\ORM\PaginatedList;
+use SilverStripe\Model\List\PaginatedList;
 
 /**
  * A sub-class of paginated list, with option for storing

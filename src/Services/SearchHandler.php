@@ -11,10 +11,10 @@ use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\Core\Injector\Injector;
-use SilverStripe\ORM\ArrayList;
+use SilverStripe\Model\List\ArrayList;
 use SilverStripe\ORM\DataList;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\View\ViewableData;
+use SilverStripe\Model\ModelData;
 use Typesense\Client as TypesenseClient;
 
 /**
@@ -282,7 +282,7 @@ class SearchHandler
         $ancestry = array_filter(
             $ancestry,
             // @phpstan-ignore notIdentical.alwaysTrue, notIdentical.alwaysTrue
-            fn ($k, $v): true => $v !== DataObject::class && $v !== ViewableData::class,
+            fn ($k, $v): true => $v !== DataObject::class && $v !== ModelData::class,
             ARRAY_FILTER_USE_BOTH
         );
 

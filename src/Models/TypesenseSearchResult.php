@@ -3,9 +3,9 @@
 namespace NSWDPC\Search\Typesense\Models;
 
 use SilverStripe\Core\Injector\Injectable;
-use SilverStripe\ORM\ArrayList;
-use SilverStripe\View\ArrayData;
-use SilverStripe\View\ViewableData;
+use SilverStripe\Model\List\ArrayList;
+use SilverStripe\Model\ArrayData;
+use SilverStripe\Model\ModelData;
 
 /**
  * This is a single Typesense search result
@@ -24,7 +24,7 @@ use SilverStripe\View\ViewableData;
  * Label -  the primary label or category of the result
  * Context -  some extra context for the result, usually a one liner
  */
-class TypesenseSearchResult extends ViewableData
+class TypesenseSearchResult extends ModelData
 {
     use Injectable;
 
@@ -41,24 +41,24 @@ class TypesenseSearchResult extends ViewableData
      * Set custom data value
      */
     #[\Override]
-    public function __set($name, $value)
+    public function __set(string $property, mixed $value): void
     {
-        $this->data[$name] = $value;
+        $this->data[$property] = $value;
     }
 
     /**
      * Allows templates to request values from this instance's data
      */
     #[\Override]
-    public function __get($name)
+    public function __get(string $property): mixed
     {
-        return $this->data[$name] ?? null;
+        return $this->data[$property] ?? null;
     }
 
     #[\Override]
-    public function __isset($name)
+    public function __isset(string $property): bool
     {
-        return array_key_exists($name, $this->data);
+        return array_key_exists($property, $this->data);
     }
 
     public function toArray(): array

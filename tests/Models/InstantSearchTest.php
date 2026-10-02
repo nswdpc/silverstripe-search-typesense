@@ -26,7 +26,7 @@ class InstantSearchTest extends SapphireTest
     public function testGetTypesenseNodesThrowsForMissingSchemeOrHost(): void
     {
         $instantSearch = InstantSearch::create(['Nodes' => 'not-a-url']);
-        $this->expectException(\SilverStripe\ORM\ValidationException::class);
+        $this->expectException(\SilverStripe\Core\Validation\ValidationException::class);
         $instantSearch->getTypesenseNodes();
     }
 
