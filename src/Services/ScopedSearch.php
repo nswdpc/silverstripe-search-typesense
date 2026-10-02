@@ -6,6 +6,7 @@ use NSWDPC\Search\Typesense\Models\TypesenseSearchOnlyKey;
 use KevinGroeger\CodeEditorField\Forms\CodeEditorField;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
+use SilverStripe\Forms\LiteralField;
 use SilverStripe\Forms\ToggleCompositeField;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\CheckboxField;
@@ -35,13 +36,18 @@ abstract class ScopedSearch
     public static function getSearchKeyField(): ToggleCompositeField
     {
 
+        if(Environment::getEnv('TYPESENSE_SEARCH_KEY')) {
+            $systemKeyAvailable = _t(static::class . '.SYSTEM_SEARCH_KEY_AVAILABLE', 'A system-provided search-only key is available and will be used if no key is selected/used here. If no keys are available, ask an adminisrator to create one.');
+        } else {
+            $systemKeyAvailable = _t(static::class . '.SYSTEM_SEARCH_KEY_AVAILABLE', 'A system-provided search-only key is not available. Select an available key below. If no keys are available, ask an adminisrator to create one.');
+        }
+
         $keyField = DropdownField::create(
             'SearchOnlyKeyID',
             _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY', 'Search-only key'),
             TypesenseSearchOnlyKey::get()->filter(['IsEnabled' => 1])->map('ID', 'TitleWithMaskedKey')->toArray()
-        )->setDescription(
-            _t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_WARNING', "Select a Typesense search-only API key")
-        )->setEmptyString('');
+        )->setEmptyString(_t(static::class . '.INSTANT_SEARCH_PUBLIC_KEY_SELECT', 'Select a key'))
+        ->setDescription($systemKeyAvailable);
 
         $selectionField = CheckboxField::create(
             'UseSelectedKey',
