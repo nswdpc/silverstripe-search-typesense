@@ -35,6 +35,7 @@ class IncludeInSearchIndex
     {
         if (!self::canShowInSearch($record)) {
             // overrides all checks
+            Logger::log("IncludeInSearchIndex::check() no - ShowInSearch is false", "INFO");
             return false;
         }
 
@@ -42,19 +43,27 @@ class IncludeInSearchIndex
         // return null to skip
         $custom = self::customIncludeInSearch($record);
         if (is_bool($custom)) {
+            if (!$custom) {
+                Logger::log("IncludeInSearchIndex::check() no - customIncludeInSearch is false ", "INFO");
+            }
+
             return $custom;
         }
 
         if (self::hasGranularViewPermissions($record)) {
             // granular permissions - excluded
+            Logger::log("IncludeInSearchIndex::check() no - record has granular view permission", "INFO");
             return false;
-        } elseif (self::hasLoggedInViewPermission($record)) {
-            // logged in user permissions - excluded
-            return false;
-        } else {
-            // default allow
-            return true;
         }
+
+        // default allow
+        // logged in user permissions - excluded
+        $hasLoggedInViewPermission = self::hasLoggedInViewPermission($record);
+        if ($hasLoggedInViewPermission) {
+            Logger::log("IncludeInSearchIndex::check() no - record has logged in view permission", "INFO");
+        }
+
+        return !$hasLoggedInViewPermission;
     }
 
     /**
@@ -62,11 +71,18 @@ class IncludeInSearchIndex
      */
     public static function canShowInSearch(DataObject $record): bool
     {
-        return $record->hasField('ShowInSearch') && $record->ShowInSearch;
+        $hasField = $record->hasField('ShowInSearch');
+        if (!$hasField) {
+            // no field - no restriction
+            return true;
+        }
+
+        // has field, must be allowed to show in search
+        return (bool) $record->ShowInSearch;
     }
 
     /**
-     * This method can be overridden to provide specific logic
+     * This method can be overridden via Injector to provide specific logic
      */
     public static function customIncludeInSearch(DataObject $record): ?bool
     {
@@ -96,7 +112,10 @@ class IncludeInSearchIndex
             if ($record->CanViewType === InheritedPermissions::ONLY_THESE_USERS || $record->CanViewType === InheritedPermissions::ONLY_THESE_MEMBERS) {
                 // has a granular view permission set on the record
                 return true;
-            } elseif ($record->CanViewType === InheritedPermissions::INHERIT
+            }
+
+            // check if page has permissions
+            if ($record->CanViewType === InheritedPermissions::INHERIT
                 && ($record->hasExtension(Hierarchy::class) || $record->hasMethod('getParent'))
                 && (
                     // @phpstan-ignore method.notFound
@@ -107,12 +126,12 @@ class IncludeInSearchIndex
                 )) {
                 // inherited permission, check parent
                 return static::hasGranularViewPermissions($parent);
-            } else {
-                return false;
             }
-        } else {
+
             return false;
         }
+
+        return false;
     }
 
     /**
@@ -132,7 +151,10 @@ class IncludeInSearchIndex
             if ($record->CanViewType === InheritedPermissions::LOGGED_IN_USERS) {
                 // has a LoggedInUsers view permission set on the record
                 return true;
-            } elseif ($record->CanViewType === InheritedPermissions::INHERIT
+            }
+
+            // check if parent has permissions
+            if ($record->CanViewType === InheritedPermissions::INHERIT
                 && ($record->hasExtension(Hierarchy::class) || $record->hasMethod('getParent'))
                 && (
                     // @phpstan-ignore method.notFound
@@ -143,12 +165,12 @@ class IncludeInSearchIndex
                 )) {
                 // inherited permission, check parent
                 return static::hasLoggedInViewPermission($parent);
-            } else {
-                return false;
             }
-        } else {
+
             return false;
         }
+
+        return false;
     }
 
 

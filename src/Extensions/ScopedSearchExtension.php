@@ -31,22 +31,26 @@ class ScopedSearchExtension extends Extension
     public function updateValidate(ValidationResult $result)
     {
 
-        // validate the scope
-        $searchScope = trim((string)$this->getOwner()->SearchScope);
-        if ($searchScope === '') {
-            $result->addError(
-                _t(
-                    static::class . ".SEARCH_SCOPE_INVALID_EMPTY",
-                    "Please provide a search scope."
-                )
-            );
-        } elseif (!ScopedSearch::validateSearchScope($searchScope)) {
-            $result->addError(
-                _t(
-                    static::class . ".SEARCH_SCOPE_INVALID_JSON",
-                    "The search scope provided is not valid JSON"
-                )
-            );
+        $owner = $this->getOwner();
+        // validate the scope if a string value is provided
+        $searchScope = $owner->SearchScope;
+        if (is_string($searchScope)) {
+            $searchScope = trim($searchScope);
+            if ($searchScope === '') {
+                $result->addError(
+                    _t(
+                        static::class . ".SEARCH_SCOPE_INVALID_EMPTY",
+                        "Please provide a search scope."
+                    )
+                );
+            } elseif (!ScopedSearch::validateSearchScope($searchScope)) {
+                $result->addError(
+                    _t(
+                        static::class . ".SEARCH_SCOPE_INVALID_JSON",
+                        "The search scope provided is not valid JSON"
+                    )
+                );
+            }
         }
 
         // validate the key entered - not currently in use
@@ -94,7 +98,7 @@ class ScopedSearchExtension extends Extension
         $searchScope = trim($this->getOwner()->SearchScope ?? '');
         if (!ScopedSearch::validateSearchScope($searchScope)) {
             // ensure a default scope is set, if invalid
-            $searchScope = ScopedSearch::getDefaultScope();
+            $searchScope = json_encode(ScopedSearch::getDefaultScope());
         }
 
         try {

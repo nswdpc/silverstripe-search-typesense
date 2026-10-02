@@ -53,9 +53,9 @@ class SearchHandler
     {
         if (str_contains($string, "`")) {
             return "`" . str_replace("`", "\\`", $string) . "`";
-        } else {
-            return $string;
         }
+
+        return $string;
     }
 
 
@@ -209,9 +209,9 @@ class SearchHandler
             $results->setTotalItems($search['found']);
 
             return $results;
-        } else {
-            return null;
         }
+
+        return null;
     }
 
     /**
@@ -255,10 +255,10 @@ class SearchHandler
     {
         if (!static::config()->get('log_queries')) {
             return false;
-        } else {
-            Logger::log("Typesense Query=" . json_encode(["query" => $query, "collection" => $collectionName]), static::config()->get('log_level'));
-            return true;
         }
+
+        Logger::log("Typesense Query=" . json_encode(["query" => $query, "collection" => $collectionName]), static::config()->get('log_level'));
+        return true;
     }
 
     public function setPerPage(int $perPage): int
@@ -302,9 +302,9 @@ class SearchHandler
         $collections = static::getCollectionsForRecord($record);
         if (is_null($collections) || $collections->count() === 0) {
             return null;
-        } else {
-            return $collections;
         }
+
+        return $collections;
     }
 
     /**
@@ -358,10 +358,10 @@ class SearchHandler
             }
 
             return $success === $collections->count();
-        } else {
-            // Upsert via job
-            return UpsertJob::queueMyself($record);
         }
+
+        // Upsert via job
+        return UpsertJob::queueMyself($record);
     }
 
     /**
@@ -376,27 +376,44 @@ class SearchHandler
             return false;
         }
 
+        $collectionNames = $collections->column('Name');
+
         if (!$viaQueuedJob) {
             // Direct delete .. DeleteJob process calls this.
-            $success = 0;
-            $client = static::getClient();
-            foreach ($collections as $collection) {
-                try {
-                    if ($client->collections[$collection->Name]->exists()) {
-                        $client->collections[$collection->Name]->documents[(string) $record->ID]->delete();
-                        Logger::log("Delete record #{$record->ID}/{$record->ClassName} from collection {$collection->Name}", "INFO");
-                        $success++;
-                    }
-                } catch (\Exception $exception) {
-                    Logger::log($exception::class . ": failed to delete #{$record->ID}/{$record->ClassName} from collection {$collection->Name}: " . $exception->getMessage(), "NOTICE");
-                }
-            }
-
-            return $success === $collections->count();
-        } else {
-            // delete via job
-            return DeleteJob::queueMyself($record);
+            return static::deleteDocumentFromCollections((int) $record->ID, $collectionNames);
         }
+
+        // delete via job
+        return DeleteJob::queueMyself((int) $record->ID, $record::class, $collectionNames);
+    }
+
+    /**
+     * Delete a document, by ID, from the given Typesense collections (by Name).
+     * This does not require the local record to still exist, as only its ID is
+     * required to remove the corresponding document from each collection.
+     * @param string[] $collectionNames
+     */
+    public static function deleteDocumentFromCollections(int $recordId, array $collectionNames): bool
+    {
+        if ($collectionNames === []) {
+            return false;
+        }
+
+        $success = 0;
+        $client = static::getClient();
+        foreach ($collectionNames as $collectionName) {
+            try {
+                if ($client->collections[$collectionName]->exists()) {
+                    $client->collections[$collectionName]->documents[(string) $recordId]->delete();
+                    Logger::log("Delete record #{$recordId} from collection {$collectionName}", "INFO");
+                    $success++;
+                }
+            } catch (\Exception $exception) {
+                Logger::log($exception::class . ": failed to delete #{$recordId} from collection {$collectionName}: " . $exception->getMessage(), "NOTICE");
+            }
+        }
+
+        return $success === count($collectionNames);
     }
 
 }

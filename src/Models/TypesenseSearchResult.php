@@ -102,9 +102,9 @@ class TypesenseSearchResult extends ModelData
             }
 
             return $list;
-        } else {
-            return null;
         }
+
+        return null;
     }
 
     /**

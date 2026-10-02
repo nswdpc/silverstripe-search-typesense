@@ -1,6 +1,6 @@
 <?php
 
-namespace NSWDPC\Search\Typesense\Jobs;
+namespace NSWDPC\Search\Typesense\Tasks;
 
 use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection as Collection;
 use SilverStripe\Dev\BuildTask;

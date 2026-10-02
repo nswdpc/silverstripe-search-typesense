@@ -26,7 +26,7 @@ abstract class FormCreator
 
         if (!$useAdvancedSearch) {
             //basic search form
-            $form = SearchForm::create(
+            return SearchForm::create(
                 $controller,
                 'SearchForm',
                 FieldList::create([
@@ -42,22 +42,21 @@ abstract class FormCreator
                     )
                 ])
             );
-        } else {
-            $form = AdvancedSearchForm::create(
-                $controller,
-                'SearchForm',
-                FieldList::create([]),
-                FieldList::create([
-                    FormAction::create(
-                        'doSearch',
-                        'Search'
-                    )
-                ])
-            );
-            $form = self::getFields($collection, $form);
         }
 
-        return $form;
+        $form = AdvancedSearchForm::create(
+            $controller,
+            'SearchForm',
+            FieldList::create([]),
+            FieldList::create([
+                FormAction::create(
+                    'doSearch',
+                    'Search'
+                )
+            ])
+        );
+
+        return self::getFields($collection, $form);
     }
 
     protected static function getFields(Collection $collection, AdvancedSearchForm $form): AdvancedSearchForm
