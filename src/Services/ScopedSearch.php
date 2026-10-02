@@ -6,7 +6,6 @@ use NSWDPC\Search\Typesense\Models\TypesenseSearchOnlyKey;
 use KevinGroeger\CodeEditorField\Forms\CodeEditorField;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
-use SilverStripe\Forms\LiteralField;
 use SilverStripe\Forms\ToggleCompositeField;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\CheckboxField;
@@ -36,7 +35,7 @@ abstract class ScopedSearch
     public static function getSearchKeyField(): ToggleCompositeField
     {
 
-        if(Environment::getEnv('TYPESENSE_SEARCH_KEY')) {
+        if (Environment::getEnv('TYPESENSE_SEARCH_KEY')) {
             $systemKeyAvailable = _t(static::class . '.SYSTEM_SEARCH_KEY_AVAILABLE', 'A system-provided search-only key is available and will be used if no key is selected/used here. If no keys are available, ask an adminisrator to create one.');
         } else {
             $systemKeyAvailable = _t(static::class . '.SYSTEM_SEARCH_KEY_AVAILABLE', 'A system-provided search-only key is not available. Select an available key below. If no keys are available, ask an adminisrator to create one.');

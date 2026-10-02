@@ -66,7 +66,7 @@ class ScopedSearchExtension extends DataExtension
     public function getTypesenseSearchOnlyKey(): string
     {
         $owner = $this->getOwner();
-        if($owner->UseSelectedKey == 1) {
+        if ($owner->UseSelectedKey == 1) {
             // requested to use selected key
             $searchOnlyKey = $owner->SearchOnlyKey();
             // retrieve the key value only is present and enabled

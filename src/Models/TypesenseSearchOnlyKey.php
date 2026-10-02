@@ -24,7 +24,6 @@ use SilverStripe\Security\PermissionProvider;
  */
 class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
 {
-
     private static array $indexes = [
         'IsEnabled' => true
     ];
@@ -53,7 +52,8 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
     /**
      * Return identifier for menu selections
      */
-    public function TitleWithMaskedKey(): string {
+    public function TitleWithMaskedKey(): string
+    {
         return trim(($this->Title ?? '') . " - (" . $this->getMaskedKeyVal() . ")");
     }
 
@@ -63,23 +63,26 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
     public function getMaskedKeyVal(): string
     {
         $val = $this->getField('KeyVal');
-        if(!is_string($val)) {
+        if (!is_string($val)) {
             $val = '';
         }
         return substr($val, 0, 4);
     }
 
-    public function setKeyValInput(?string $keyVal = null) {
-        if($keyVal) {
+    public function setKeyValInput(?string $keyVal = null)
+    {
+        if ($keyVal) {
             $this->KeyVal = $keyVal;
         }
     }
 
-    public function getCmsFields() {
+    public function getCmsFields()
+    {
         $fields = parent::getCmsFields();
         $fields->removeByName(['KeyVal']);
         $fields->addFieldsToTab(
-            'Root.Main', [
+            'Root.Main',
+            [
                 TextField::create(
                     'Title',
                     _t(static::class . '.SEARCHONLY_KEY_TITLE', 'Name of the key'),
@@ -111,15 +114,16 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
     /**
      * Validate record
      */
-    public function validate() {
+    public function validate()
+    {
         $valid = parent::validate();
 
         $keyVal = $this->KeyVal;
-        if(is_string($keyVal)) {
+        if (is_string($keyVal)) {
             $keyVal = trim($keyVal);
-            if($keyVal !== '') {
+            if ($keyVal !== '') {
                 $result = ScopedSearch::validateSearchOnlyKey($keyVal);
-                if(!$result) {
+                if (!$result) {
                     $this->KeyVal = '';
                     $valid->addFieldError(
                         'KeyVal',
@@ -193,7 +197,8 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
      * it may not be a search only key but it still needs to be migrated.
      * Subsequent writes of the key will validate and the user can fix.
      */
-    private function migrateKey(string $searchKey, string $label): int {
+    private function migrateKey(string $searchKey, string $label): int
+    {
         try {
             $lastEdited = DBDatetime::now();
             $created = $lastEdited;
@@ -214,25 +219,26 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
         }
     }
 
-    public function requireDefaultRecords() {
+    public function requireDefaultRecords()
+    {
         parent::requireDefaultRecords();
 
         // ScopedSearchExtension handling - get all core classes using it
         $knownClasses = [];
         $knownClasses[] = InstantSearch::class;
-        if(\class_exists(TypesenseSearchPage::class)) {
+        if (\class_exists(TypesenseSearchPage::class)) {
             $knownClasses[] = TypesenseSearchPage::class;
         }
 
         $changes = 0;
-        foreach($knownClasses as $knownClass) {
+        foreach ($knownClasses as $knownClass) {
 
             // table for class
             $tableName = DataObject::getSchema()->tableName($knownClass);
 
             // get human label
             $classLabel = Config::inst()->get($knownClass, 'singular_name');
-            if(!$classLabel) {
+            if (!$classLabel) {
                 $classLabel = ClassInfo::shortName($knownClass);
             }
 
@@ -247,7 +253,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
                 $keyId = $this->migrateKey($record['SearchKey'], $label);
 
                 // update the source table if success
-                if($keyId > 0) {
+                if ($keyId > 0) {
                     DB::alteration_message("Migrating {$knownClass} SearchKey #" . $record['ID'], "changed");
                     // remove the key val to avoid re-migrations
                     DB::prepared_query(
@@ -263,7 +269,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
             }
         }
 
-        if($changes === 0) {
+        if ($changes === 0) {
             DB::alteration_message("No typesense key migrations", "changed");
         }
     }
