@@ -333,7 +333,7 @@ class InstantSearch extends DataObject implements PermissionProvider
             return null;
         }
 
-        /** getTypesenseScopedSearchKey provided by SearchScope data extension */
+        /** getTypesenseScopedSearchKey provided by ScopedSearchExtension extension */
         $scopedApiKey = $this->getTypesenseScopedSearchKey();
         if (in_array($scopedApiKey, [null, '', '0'], true)) {
             return null;

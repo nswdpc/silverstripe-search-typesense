@@ -66,6 +66,7 @@ class ScopedSearchExtension extends DataExtension
         if($owner->UseSelectedKey == 1) {
             // requested to use selected key
             $searchOnlyKey = $owner->SearchOnlyKey();
+            // retrieve the key value only is present and enabled
             $keyVal = $searchOnlyKey && $searchOnlyKey->IsEnabled == 1 ? $searchOnlyKey->KeyVal : '';
             $searchKey = $keyVal;
         } else {
