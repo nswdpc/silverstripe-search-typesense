@@ -880,7 +880,7 @@ class TypesenseSearchCollection extends DataObject implements PermissionProvider
                     static::class . ' .COLLECTION_DELETE_FAIL',
                     'Collection {name} failed to delete',
                     [
-                        'name' => $name
+                        'name' => $name ?? '?'
                     ]
                 ),
                 "NOTICE"
