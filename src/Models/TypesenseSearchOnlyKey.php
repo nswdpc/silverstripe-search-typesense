@@ -226,13 +226,17 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
     public function requireDefaultRecords()
     {
         parent::requireDefaultRecords();
-        static::migrateKeys();
+        try {
+            static::migrateKeys(true);
+        } catch(\Exception $exception) {
+            Logger::log("Failed to migrate keys: " . $exception->getMessage(), "NOTICE");
+        }
     }
 
     /**
      * Migrate keys
      */
-    public static function migrateKeys(): int
+    public static function migrateKeys(bool $verbose = false): int
     {
 
         // ScopedSearchExtension handling - get all core classes using it
@@ -266,7 +270,9 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
 
                 // update the source table if success
                 if ($keyId > 0) {
-                    DB::alteration_message("Migrating {$knownClass} SearchKey #" . $record['ID'], "changed");
+                    if($verbose) {
+                        DB::alteration_message("Migrating {$knownClass} SearchKey #" . $record['ID'], "changed");
+                    }
                     // remove the key val to avoid re-migrations
                     DB::prepared_query(
                         'UPDATE "' . Convert::raw2sql($tableName) . '" SET "UseSelectedKey" = 1, "SearchKey" = \'\', SearchOnlyKeyID = ? WHERE ID = ?',
@@ -275,14 +281,18 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
                             $record['ID'] // for this record
                         ]
                     );
-                    DB::alteration_message("Migrated {$knownClass} SearchKey key #" . $record['ID'], "changed");
+                    if($verbose) {
+                        DB::alteration_message("Migrated {$knownClass} SearchKey key #" . $record['ID'], "changed");
+                    }
                     $changes++;
                 }
             }
         }
 
         if ($changes === 0) {
-            DB::alteration_message("No typesense key migrations", "changed");
+            if($verbose) {
+                DB::alteration_message("No typesense key migrations", "changed");
+            }
         }
 
         return $changes;
