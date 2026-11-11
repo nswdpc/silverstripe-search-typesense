@@ -198,7 +198,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
      * it may not be a search only key but it still needs to be migrated.
      * Subsequent writes of the key will validate and the user can fix.
      */
-    private function migrateKey(string $searchKey, string $label): int
+    private static function migrateKey(string $searchKey, string $label): int
     {
         try {
             $lastEdited = DBDatetime::now();
@@ -220,9 +220,20 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
         }
     }
 
+    /**
+     * Migrate keys on build
+     */
     public function requireDefaultRecords()
     {
         parent::requireDefaultRecords();
+        static::migrateKeys();
+    }
+
+    /**
+     * Migrate keys
+     */
+    public static function migrateKeys(): int
+    {
 
         // ScopedSearchExtension handling - get all core classes using it
         $knownClasses = [];
@@ -251,7 +262,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
             foreach ($result as $record) {
 
                 $label = "Automigrated key from {$classLabel} #{$record['ID']}";
-                $keyId = $this->migrateKey($record['SearchKey'], $label);
+                $keyId = static::migrateKey($record['SearchKey'], $label);
 
                 // update the source table if success
                 if ($keyId > 0) {
@@ -273,5 +284,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
         if ($changes === 0) {
             DB::alteration_message("No typesense key migrations", "changed");
         }
+
+        return $changes;
     }
 }
