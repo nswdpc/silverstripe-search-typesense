@@ -256,6 +256,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
                 if($verbose) {
                     DB::alteration_message("Class {$knownClass} has no table name", "changed");
                 }
+
                 continue;
             }
 
@@ -273,13 +274,14 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
             foreach ($result as $record) {
 
                 $label = "Automigrated key from {$classLabel} #{$record['ID']}";
-                $keyId = static::migrateKey($record['SearchKey'], $label);
+                $keyId = self::migrateKey($record['SearchKey'], $label);
 
                 // update the source table if success
                 if ($keyId > 0) {
                     if($verbose) {
                         DB::alteration_message("Migrating {$knownClass} SearchKey #" . $record['ID'], "changed");
                     }
+
                     // remove the key val to avoid re-migrations
                     DB::prepared_query(
                         'UPDATE "' . Convert::raw2sql($tableName) . '" SET "UseSelectedKey" = 1, "SearchKey" = \'\', SearchOnlyKeyID = ? WHERE ID = ?',
@@ -291,6 +293,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
                     if($verbose) {
                         DB::alteration_message("Migrated {$knownClass} SearchKey key #" . $record['ID'], "changed");
                     }
+
                     $changes++;
                 }
             }
