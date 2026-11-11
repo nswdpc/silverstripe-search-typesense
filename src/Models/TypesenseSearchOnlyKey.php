@@ -228,7 +228,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
         parent::requireDefaultRecords();
         try {
             static::migrateKeys(true);
-        } catch(\Exception $exception) {
+        } catch (\Exception $exception) {
             Logger::log("Failed to migrate keys: " . $exception->getMessage(), "NOTICE");
         }
     }
@@ -252,8 +252,8 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
             // table for class
             $tableName = DataObject::getSchema()->tableName($knownClass);
 
-            if($tableName === '' || is_null($tableName)) {
-                if($verbose) {
+            if ($tableName === '' || is_null($tableName)) {
+                if ($verbose) {
                     DB::alteration_message("Class {$knownClass} has no table name", "changed");
                 }
 
@@ -278,7 +278,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
 
                 // update the source table if success
                 if ($keyId > 0) {
-                    if($verbose) {
+                    if ($verbose) {
                         DB::alteration_message("Migrating {$knownClass} SearchKey #" . $record['ID'], "changed");
                     }
 
@@ -290,7 +290,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
                             $record['ID'] // for this record
                         ]
                     );
-                    if($verbose) {
+                    if ($verbose) {
                         DB::alteration_message("Migrated {$knownClass} SearchKey key #" . $record['ID'], "changed");
                     }
 
@@ -300,7 +300,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
         }
 
         if ($changes === 0) {
-            if($verbose) {
+            if ($verbose) {
                 DB::alteration_message("No typesense key migrations", "changed");
             }
         }
