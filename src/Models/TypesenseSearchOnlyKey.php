@@ -252,6 +252,13 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
             // table for class
             $tableName = DataObject::getSchema()->tableName($knownClass);
 
+            if($tableName === '' || is_null($tableName)) {
+                if($verbose) {
+                    DB::alteration_message("Class {$knownClass} has no table name", "changed");
+                }
+                continue;
+            }
+
             // get human label
             $classLabel = Config::inst()->get($knownClass, 'singular_name');
             if (!$classLabel) {
