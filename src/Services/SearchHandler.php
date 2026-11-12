@@ -74,26 +74,41 @@ class SearchHandler
     }
 
     /**
-     * Get the Typesense client from the Typesense SDK
+     * Get the Typesense search client from the Typesense SDK
      * Provide a search scope and search only API key to return a client using that scoped API key
-     * If not provided, the default API key will be used
+     * If no key is provided, no client is returned.
      * @param string $searchOnlyApiKey a Typesense search-only API key
      * @param array $searchScope a Typesense scope
      */
-    protected static function getClient(string $searchOnlyApiKey = '', array $searchScope = []): TypesenseClient
+    protected static function getSearchClient(string $searchOnlyApiKey = '', array $searchScope = []): ?TypesenseClient
+    {
+        if($searchOnlyApiKey === '') {
+            return null;
+        }
+        $manager = Injector::inst()->get(ClientManager::class);
+        if ($searchScope !== []) {
+            $scopedApiKey = ScopedSearch::getScopedApiKey($searchOnlyApiKey, $searchScope);
+            return $manager->getConfiguredClientForApiKey($scopedApiKey);
+        } else {
+            return $manager->getConfiguredClientForApiKey($searchOnlyApiKey);
+        }
+    }
+
+    /**
+     * BC method pointing at getSearchClient()
+     */
+    protected static function getClient(string $searchOnlyApiKey = '', array $searchScope = []): ?TypesenseClient
+    {
+        return static::getSearchClient($searchOnlyApiKey, $searchScope);
+    }
+
+    /**
+     * Returns a Typesense client for conducting management operations
+     */
+    protected static function getManagementClient(array $clientOptions = []): TypesenseClient
     {
         $manager = Injector::inst()->get(ClientManager::class);
-        if ($searchOnlyApiKey !== '' && $searchScope !== []) {
-            $scopedApiKey = ScopedSearch::getScopedApiKey($searchOnlyApiKey, $searchScope);
-            $client = $manager->getConfiguredClientForApiKey($scopedApiKey);
-        } elseif ($searchOnlyApiKey !== '') {
-            $client = $manager->getConfiguredClientForApiKey($searchOnlyApiKey);
-        } else {
-            // Return default client
-            $client = $manager->getConfiguredClient();
-        }
-
-        return $client;
+        return $manager->getConfiguredClient($clientOptions);
     }
 
     /**
@@ -115,7 +130,10 @@ class SearchHandler
         }
 
         // Client
-        $client = static::getClient($searchOnlyApiKey, $searchScope);
+        $client = static::getSearchClient($searchOnlyApiKey, $searchScope);
+        if(is_null($client)) {
+            return null;
+        }
 
         // query by handling
         $queryBy = '';
@@ -240,7 +258,10 @@ class SearchHandler
             // allow custom argument setting
             $searchRequests = array_merge($searchRequests, $searchScope);
             $commonSearchParams = [];
-            $client = static::getClient($searchOnlyApiKey, $searchScope);
+            $client = static::getSearchClient($searchOnlyApiKey, $searchScope);
+            if(is_null($client)) {
+                return [];
+            }
             $this->logQuery($searchRequests);
             $search = $client->multiSearch->perform($searchRequests, $commonSearchParams);
         }
@@ -328,7 +349,7 @@ class SearchHandler
         if (!$viaQueuedJob) {
             // Direct upsert .. UpsertJob process calls this.
             $success = 0;
-            $client = static::getClient();
+            $client = static::getManagementClient();
             foreach ($collections as $collection) {
                 try {
                     if ($client->collections[$collection->Name]->exists()) {
@@ -400,7 +421,7 @@ class SearchHandler
         }
 
         $success = 0;
-        $client = static::getClient();
+        $client = static::getManagementClient();
         foreach ($collectionNames as $collectionName) {
             try {
                 if ($client->collections[$collectionName]->exists()) {

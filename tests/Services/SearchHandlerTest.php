@@ -119,7 +119,7 @@ class SearchHandlerTest extends SapphireTest
         ]);
 
         $handler = SearchHandler::create();
-        $results = $handler->doSearch($collection, 'hello', 0, 10);
+        $results = $handler->doSearch($collection, 'hello', 0, 10, [], 'a-search-only-key');
 
         $this->assertInstanceOf(SearchResults::class, $results);
         $this->assertSame(1, $results->count());
@@ -131,13 +131,34 @@ class SearchHandlerTest extends SapphireTest
         $this->assertStringContainsString('query_by=Title', (string) $request->getUri());
     }
 
+    public function testDoSearchAuthenticatesWithTheProvidedSearchOnlyApiKey(): void
+    {
+        $collection = $this->createCollection();
+        TestClientManager::$httpClient->queueJson(200, ['found' => 0, 'hits' => []]);
+
+        $handler = SearchHandler::create();
+        $handler->doSearch($collection, 'hello', 0, 10, [], 'a-search-only-key');
+
+        $request = TestClientManager::$httpClient->getLastRequest();
+        $this->assertSame('a-search-only-key', $request->getHeaderLine('X-TYPESENSE-API-KEY'));
+    }
+
+    public function testDoSearchReturnsNullAndMakesNoRequestWithoutASearchOnlyApiKey(): void
+    {
+        $collection = $this->createCollection();
+        $handler = SearchHandler::create();
+
+        $this->assertNull($handler->doSearch($collection, 'hello'));
+        $this->assertSame(0, TestClientManager::$httpClient->getRequestCount());
+    }
+
     public function testDoSearchReturnsNullWhenNoHitsKeyInResponse(): void
     {
         $collection = $this->createCollection();
         TestClientManager::$httpClient->queueJson(200, ['found' => 0]);
 
         $handler = SearchHandler::create();
-        $this->assertNull($handler->doSearch($collection, 'hello'));
+        $this->assertNull($handler->doSearch($collection, 'hello', 0, 10, [], 'a-search-only-key'));
     }
 
     public function testDoSearchWithArrayQueryBuildsFilterBy(): void
@@ -146,7 +167,7 @@ class SearchHandlerTest extends SapphireTest
         TestClientManager::$httpClient->queueJson(200, ['found' => 0, 'hits' => []]);
 
         $handler = SearchHandler::create();
-        $results = $handler->doSearch($collection, ['Title' => 'value']);
+        $results = $handler->doSearch($collection, ['Title' => 'value'], 0, 10, [], 'a-search-only-key');
 
         $this->assertInstanceOf(SearchResults::class, $results);
         $this->assertSame(0, $results->count());
@@ -160,12 +181,20 @@ class SearchHandlerTest extends SapphireTest
         TestClientManager::$httpClient->queueJson(200, ['results' => [['found' => 1]]]);
 
         $handler = SearchHandler::create();
-        $result = $handler->doMultiSearch('docs', ['Title' => 'value']);
+        $result = $handler->doMultiSearch('docs', ['Title' => 'value'], [], 'a-search-only-key');
 
         $this->assertSame(['results' => [['found' => 1]]], $result);
         $request = TestClientManager::$httpClient->getLastRequest();
         $this->assertSame('POST', $request->getMethod());
         $this->assertStringContainsString('/multi_search', (string) $request->getUri());
+    }
+
+    public function testDoMultiSearchReturnsEmptyArrayAndMakesNoRequestWithoutASearchOnlyApiKey(): void
+    {
+        $handler = SearchHandler::create();
+
+        $this->assertSame([], $handler->doMultiSearch('docs', ['Title' => 'value']));
+        $this->assertSame(0, TestClientManager::$httpClient->getRequestCount());
     }
 
     public function testUpsertToTypesenseReturnsFalseWhenNotLinkedToCollections(): void
@@ -199,6 +228,23 @@ class SearchHandlerTest extends SapphireTest
 
         $this->assertTrue(SearchHandler::upsertToTypesense($record, false));
         $this->assertSame(2, TestClientManager::$httpClient->getRequestCount());
+    }
+
+    public function testUpsertToTypesenseAuthenticatesWithTheManagementApiKeyNotASearchOnlyKey(): void
+    {
+        $this->createCollection();
+        $record = TypesenseTestRecord::create(['Title' => 'A title', 'ShowInSearch' => true]);
+        $record->write();
+
+        TestClientManager::$httpClient->queueJson(200, ['name' => 'docs']);
+        TestClientManager::$httpClient->queueJson(200, ['id' => (string) $record->ID]);
+
+        SearchHandler::upsertToTypesense($record, false);
+
+        // no TYPESENSE_SEARCH_KEY/search-only key is involved in an upsert; the
+        // management client falls back to TestClientManager's default api key
+        $request = TestClientManager::$httpClient->getLastRequest();
+        $this->assertSame('test-api-key', $request->getHeaderLine('X-TYPESENSE-API-KEY'));
     }
 
     public function testUpsertToTypesenseSkipsCollectionThatDoesNotExistAtServer(): void
