@@ -4,6 +4,7 @@ namespace NSWDPC\Search\Typesense\Admin;
 
 use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection as Collection;
 use NSWDPC\Search\Typesense\Models\InstantSearch;
+use NSWDPC\Search\Typesense\Models\TypesenseSearchOnlyKey;
 use SilverStripe\Admin\ModelAdmin;
 use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\Forms\GridField\GridFieldDetailForm;
@@ -16,7 +17,8 @@ class TypesenseAdmin extends ModelAdmin
 
     private static array $managed_models = [
         Collection::class,
-        InstantSearch::class
+        InstantSearch::class,
+        TypesenseSearchOnlyKey::class
     ];
 
     private static string $menu_icon_class = 'font-icon-dashboard';

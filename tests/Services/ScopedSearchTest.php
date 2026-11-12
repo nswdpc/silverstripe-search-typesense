@@ -2,14 +2,20 @@
 
 namespace NSWDPC\Search\Typesense\Tests\Services;
 
+use NSWDPC\Search\Typesense\Models\TypesenseSearchOnlyKey;
 use NSWDPC\Search\Typesense\Services\ClientManager;
 use NSWDPC\Search\Typesense\Services\ScopedSearch;
 use NSWDPC\Search\Typesense\Tests\Mocks\TestClientManager;
+use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
+use SilverStripe\Forms\CheckboxField;
+use SilverStripe\Forms\DropdownField;
 
 class ScopedSearchTest extends SapphireTest
 {
+    protected $usesDatabase = true;
+
     #[\Override]
     protected function setUp(): void
     {
@@ -92,5 +98,49 @@ class ScopedSearchTest extends SapphireTest
     {
         $this->assertFalse(ScopedSearch::validateSearchOnlyKey(''));
         $this->assertSame(0, TestClientManager::$httpClient->getRequestCount());
+    }
+
+    // -- getSearchKeyField(), no HTTP --
+
+    public function testGetSearchKeyFieldReturnsDropdownAndCheckbox(): void
+    {
+        $toggle = ScopedSearch::getSearchKeyField();
+        $dropdown = $toggle->fieldByName('SearchOnlyKeyID');
+        $checkbox = $toggle->fieldByName('UseSelectedKey');
+
+        $this->assertInstanceOf(DropdownField::class, $dropdown);
+        $this->assertInstanceOf(CheckboxField::class, $checkbox);
+    }
+
+    public function testGetSearchKeyFieldDropdownOnlyListsEnabledKeys(): void
+    {
+        $enabledKey = TypesenseSearchOnlyKey::create(['Title' => 'Enabled key', 'IsEnabled' => true]);
+        $enabledKey->write();
+
+        $disabledKey = TypesenseSearchOnlyKey::create(['Title' => 'Disabled key', 'IsEnabled' => false]);
+        $disabledKey->write();
+
+        $toggle = ScopedSearch::getSearchKeyField();
+        $dropdown = $toggle->fieldByName('SearchOnlyKeyID');
+        $source = $dropdown->getSource();
+
+        $this->assertArrayHasKey($enabledKey->ID, $source);
+        $this->assertArrayNotHasKey($disabledKey->ID, $source);
+    }
+
+    public function testGetSearchKeyFieldDescriptionNotesWhenSystemKeyIsAvailable(): void
+    {
+        Environment::setEnv('TYPESENSE_SEARCH_KEY', 'a-system-key');
+        $toggle = ScopedSearch::getSearchKeyField();
+        $dropdown = $toggle->fieldByName('SearchOnlyKeyID');
+        $this->assertStringContainsString('is available', (string) $dropdown->getDescription());
+    }
+
+    public function testGetSearchKeyFieldDescriptionNotesWhenSystemKeyIsNotAvailable(): void
+    {
+        Environment::setEnv('TYPESENSE_SEARCH_KEY', '');
+        $toggle = ScopedSearch::getSearchKeyField();
+        $dropdown = $toggle->fieldByName('SearchOnlyKeyID');
+        $this->assertStringContainsString('is not available', (string) $dropdown->getDescription());
     }
 }
