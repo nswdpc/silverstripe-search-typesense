@@ -91,6 +91,7 @@ class SearchHandler
             $scopedApiKey = ScopedSearch::getScopedApiKey($searchOnlyApiKey, $searchScope);
             return $manager->getConfiguredClientForApiKey($scopedApiKey);
         }
+
         return $manager->getConfiguredClientForApiKey($searchOnlyApiKey);
     }
 
