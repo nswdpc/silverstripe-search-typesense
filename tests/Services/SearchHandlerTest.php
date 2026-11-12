@@ -8,6 +8,7 @@ use NSWDPC\Search\Typesense\Services\ClientManager;
 use NSWDPC\Search\Typesense\Services\SearchHandler;
 use NSWDPC\Search\Typesense\Tests\Fixtures\TypesenseTestRecord;
 use NSWDPC\Search\Typesense\Tests\Mocks\TestClientManager;
+use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 
@@ -22,6 +23,7 @@ class SearchHandlerTest extends SapphireTest
     #[\Override]
     protected function setUp(): void
     {
+        Environment::setEnv('TYPESENSE_API_KEY', 'test-searchandler-api-key');
         parent::setUp();
         Injector::inst()->registerService(TestClientManager::create(), ClientManager::class);
         TestClientManager::reset();
@@ -244,7 +246,7 @@ class SearchHandlerTest extends SapphireTest
         // no TYPESENSE_SEARCH_KEY/search-only key is involved in an upsert; the
         // management client falls back to TestClientManager's default api key
         $request = TestClientManager::$httpClient->getLastRequest();
-        $this->assertSame('test-api-key', $request->getHeaderLine('X-TYPESENSE-API-KEY'));
+        $this->assertSame(Environment::getEnv('TYPESENSE_API_KEY'), $request->getHeaderLine('X-TYPESENSE-API-KEY'));
     }
 
     public function testUpsertToTypesenseSkipsCollectionThatDoesNotExistAtServer(): void
