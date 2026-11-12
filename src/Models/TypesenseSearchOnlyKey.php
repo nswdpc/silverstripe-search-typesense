@@ -240,7 +240,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
     public static function migrateKeys(bool $verbose = false): int
     {
 
-        if(!self::config()->get('migrate_keys')) {
+        if (!self::config()->get('migrate_keys')) {
             return 0;
         }
 
