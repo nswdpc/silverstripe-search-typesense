@@ -6,6 +6,7 @@ use NSWDPC\Search\Typesense\Models\InstantSearch;
 use NSWDPC\Search\Typesense\Models\TypesenseSearchOnlyKey;
 use NSWDPC\Search\Typesense\Services\ClientManager;
 use NSWDPC\Search\Typesense\Tests\Mocks\TestClientManager;
+use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\ORM\DataObject;
@@ -21,6 +22,7 @@ class TypesenseSearchOnlyKeyMigrationTest extends SapphireTest
         parent::setUp();
         Injector::inst()->registerService(TestClientManager::create(), ClientManager::class);
         TestClientManager::reset();
+        Config::modify()->set(TypesenseSearchOnlyKey::class, 'migrate_keys', true);
     }
 
     /**
