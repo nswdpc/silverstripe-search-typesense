@@ -85,13 +85,13 @@ class SearchHandler
         if($searchOnlyApiKey === '') {
             return null;
         }
+
         $manager = Injector::inst()->get(ClientManager::class);
         if ($searchScope !== []) {
             $scopedApiKey = ScopedSearch::getScopedApiKey($searchOnlyApiKey, $searchScope);
             return $manager->getConfiguredClientForApiKey($scopedApiKey);
-        } else {
-            return $manager->getConfiguredClientForApiKey($searchOnlyApiKey);
         }
+        return $manager->getConfiguredClientForApiKey($searchOnlyApiKey);
     }
 
     /**
@@ -262,6 +262,7 @@ class SearchHandler
             if(is_null($client)) {
                 return [];
             }
+
             $this->logQuery($searchRequests);
             $search = $client->multiSearch->perform($searchRequests, $commonSearchParams);
         }
