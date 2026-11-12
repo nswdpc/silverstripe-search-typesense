@@ -204,7 +204,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
             $lastEdited = DBDatetime::now();
             $created = $lastEdited;
             DB::prepared_query(
-                'INSERT INTO "TypesenseSearchOnlyKey" ("Title", "KeyVal","Created","LastEdited") Values (?, ?, ?, ?)',
+                'INSERT INTO "TypesenseSearchOnlyKey" ("Title", "KeyVal", "IsEnabled", "Created","LastEdited") Values (?, ?, 1, ?, ?)',
                 [
                     $label,
                     $searchKey,
