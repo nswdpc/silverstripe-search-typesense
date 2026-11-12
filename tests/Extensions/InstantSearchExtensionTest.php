@@ -72,13 +72,13 @@ class InstantSearchExtensionTest extends SapphireTest
     public function testTypesenseInstantSearchRendersFragmentWhenConfigured(): void
     {
 
-        Environment::setEnv('TYPESENSE_SEARCH_KEY', '');
+        // TYPESENSE_SEARCH_KEY remains set from setUp() and is used because
+        // UseSelectedKey is not set on this InstantSearch record
         $instantSearch = InstantSearch::create([
             'Title' => 'Site search',
             'Enabled' => true,
             'CollectionName' => 'my-collection',
             'Nodes' => 'https://search.example.com:443',
-            'SearchKey' => 'a-search-key',
             'SearchScope' => '{"filter_by":"a:b"}',
         ]);
         $instantSearch->write();
