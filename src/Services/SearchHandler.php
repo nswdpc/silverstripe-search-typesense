@@ -82,7 +82,7 @@ class SearchHandler
      */
     protected static function getSearchClient(string $searchOnlyApiKey = '', array $searchScope = []): ?TypesenseClient
     {
-        if($searchOnlyApiKey === '') {
+        if ($searchOnlyApiKey === '') {
             return null;
         }
 
@@ -131,7 +131,7 @@ class SearchHandler
 
         // Client
         $client = static::getSearchClient($searchOnlyApiKey, $searchScope);
-        if(is_null($client)) {
+        if (is_null($client)) {
             return null;
         }
 
@@ -259,7 +259,7 @@ class SearchHandler
             $searchRequests = array_merge($searchRequests, $searchScope);
             $commonSearchParams = [];
             $client = static::getSearchClient($searchOnlyApiKey, $searchScope);
-            if(is_null($client)) {
+            if (is_null($client)) {
                 return [];
             }
 
