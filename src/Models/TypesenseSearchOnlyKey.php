@@ -34,6 +34,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
 
     private static string $plural_name = 'Search-only keys';
 
+    private static bool $migrate_keys = true;
 
     private static array $db = [
         'Title' => 'Varchar(255)',// internal title of key
@@ -238,6 +239,10 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
      */
     public static function migrateKeys(bool $verbose = false): int
     {
+
+        if(!self::config()->get('migrate_keys')) {
+            return 0;
+        }
 
         // ScopedSearchExtension handling - get all core classes using it
         $knownClasses = [];
