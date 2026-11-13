@@ -56,13 +56,13 @@ class SearchHandlerTest extends SapphireTest
 
     public function testEscapeString(): void
     {
-        $this->assertSame('plain', SearchHandler::escapeString('plain'));
+        $this->assertSame('`plain`', SearchHandler::escapeString('plain'));
         $this->assertSame('`has \\`backtick\\``', SearchHandler::escapeString('has `backtick`'));
     }
 
     public function testEscapeArray(): void
     {
-        $this->assertSame(['a', '`b\\`c`'], SearchHandler::escapeArray(['a', 'b`c', 123]));
+        $this->assertSame(['`a`', '`b\\`c`'], SearchHandler::escapeArray(['a', 'b`c', 123]));
     }
 
     public function testSetPerPage(): void
