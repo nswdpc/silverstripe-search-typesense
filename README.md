@@ -39,10 +39,45 @@ composer require nswdpc/silverstripe-search-typesense
 
 Environment:
 
+### Management key
+
+> [Avoid using the bootstrap API key as documented at](https://typesense.org/docs/30.2/api/api-keys.html#api-keys)
+>
+> The key can be limited to collections, have an expiry, [as defined here](https://typesense.org/docs/30.2/api/api-keys.html#create-an-api-key).
+
+This key should have `actions` to:
+
+- create collections (`collections:create`)
+- check existence of a collection (`collections:get`, `collections:list`)
+- import documents to collections (`documents:import`)
+- upsert a document (`documents:upsert`)
+- delete a document (`documents:delete`)
+- read API keys, for validating search-only keys (`keys:list`)
+
+Optionally:
+
+- delete collections (`collections:delete`)
+
 ```sh
 TYPESENSE_API_KEY="API key that can read and write"
+```
+
+### Server endpoint
+
+Add one or more endpoints for Typesense. Multiple endpoints are separated by a comma.
+
+```sh
 TYPESENSE_SERVER="https://host:port"
-TYPESENSE_SEARCH_KEY='Optional search only key for creating scoped API keys for Instantsearch'
+```
+
+### Search-only key
+
+Set a search-only key, this will be used to create scoped search keys. It must only have the action `documents:search`.
+
+> The key can be limited to collections, have an expiry, [as defined here](https://typesense.org/docs/30.2/api/api-keys.html#create-an-api-key).
+
+```sh
+TYPESENSE_SEARCH_KEY='Optional search-only key for creating scoped API keys for Instantsearch'
 ```
 
 ## Maintainers

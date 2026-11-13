@@ -87,4 +87,15 @@ class InstantSearchTest extends SapphireTest
         $this->assertNotNull($fields->dataFieldByName('SearchScope'));
         $this->assertNotNull($fields->dataFieldByName('QueryBy'));
     }
+
+    public function testGetCmsFieldsReplacesRawKeyFieldsWithTheSearchKeyField(): void
+    {
+        $fields = InstantSearch::create()->getCMSFields();
+        // the deprecated raw field has no replacement and is simply removed
+        $this->assertNull($fields->dataFieldByName('SearchKey'));
+        // UseSelectedKey/SearchOnlyKeyID are removed as scaffolded fields, but
+        // re-added as the checkbox/dropdown from ScopedSearch::getSearchKeyField()
+        $this->assertNotNull($fields->dataFieldByName('UseSelectedKey'));
+        $this->assertNotNull($fields->dataFieldByName('SearchOnlyKeyID'));
+    }
 }

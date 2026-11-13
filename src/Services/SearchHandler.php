@@ -51,11 +51,20 @@ class SearchHandler
 
     public static function escapeString(string $string): string
     {
-        if (str_contains($string, "`")) {
-            return "`" . str_replace("`", "\\`", $string) . "`";
-        }
+        return self::filterByEscape($string);
+    }
 
-        return $string;
+    /**
+     * Pulled from the SDK in 6.1.x
+     * Ref: https://github.com/typesense/typesense-php/blob/v6.1.0-RC2/src/FilterBy.php
+     */
+    private static function filterByEscape(string|int|float|bool $value): string
+    {
+        return match (true) {
+            is_string($value) => '`' . str_replace('`', '\\`', $value) . '`',
+            is_bool($value) => $value ? 'true' : 'false',
+            default => (string) $value,
+        };
     }
 
 
@@ -74,26 +83,42 @@ class SearchHandler
     }
 
     /**
-     * Get the Typesense client from the Typesense SDK
+     * Get the Typesense search client from the Typesense SDK
      * Provide a search scope and search only API key to return a client using that scoped API key
-     * If not provided, the default API key will be used
+     * If no key is provided, no client is returned.
      * @param string $searchOnlyApiKey a Typesense search-only API key
      * @param array $searchScope a Typesense scope
      */
-    protected static function getClient(string $searchOnlyApiKey = '', array $searchScope = []): TypesenseClient
+    protected static function getSearchClient(string $searchOnlyApiKey = '', array $searchScope = []): ?TypesenseClient
     {
-        $manager = Injector::inst()->get(ClientManager::class);
-        if ($searchOnlyApiKey !== '' && $searchScope !== []) {
-            $scopedApiKey = ScopedSearch::getScopedApiKey($searchOnlyApiKey, $searchScope);
-            $client = $manager->getConfiguredClientForApiKey($scopedApiKey);
-        } elseif ($searchOnlyApiKey !== '') {
-            $client = $manager->getConfiguredClientForApiKey($searchOnlyApiKey);
-        } else {
-            // Return default client
-            $client = $manager->getConfiguredClient();
+        if ($searchOnlyApiKey === '') {
+            return null;
         }
 
-        return $client;
+        $manager = Injector::inst()->get(ClientManager::class);
+        if ($searchScope !== []) {
+            $scopedApiKey = ScopedSearch::getScopedApiKey($searchOnlyApiKey, $searchScope);
+            return $manager->getConfiguredClientForApiKey($scopedApiKey);
+        }
+
+        return $manager->getConfiguredClientForApiKey($searchOnlyApiKey);
+    }
+
+    /**
+     * BC method pointing at getSearchClient()
+     */
+    protected static function getClient(string $searchOnlyApiKey = '', array $searchScope = []): ?TypesenseClient
+    {
+        return static::getSearchClient($searchOnlyApiKey, $searchScope);
+    }
+
+    /**
+     * Returns a Typesense client for conducting management operations
+     */
+    protected static function getManagementClient(array $clientOptions = []): TypesenseClient
+    {
+        $manager = Injector::inst()->get(ClientManager::class);
+        return $manager->getConfiguredClient($clientOptions);
     }
 
     /**
@@ -115,13 +140,16 @@ class SearchHandler
         }
 
         // Client
-        $client = static::getClient($searchOnlyApiKey, $searchScope);
+        $client = static::getSearchClient($searchOnlyApiKey, $searchScope);
+        if (is_null($client)) {
+            return null;
+        }
 
         // query by handling
         $queryBy = '';
+        $fieldsForSearch = $collection->getCollectionFieldsForQueryBy();
         if (!isset($searchScope['query_by'])) {
-            $fieldsForSearch = $collection->getCollectionFieldsForQueryBy();
-            $queryBy = implode(",", self::escapeArray($fieldsForSearch));
+            $queryBy = implode(",", $fieldsForSearch);
         } elseif (is_string($searchScope['query_by'])) {
             $queryBy = trim($searchScope['query_by']);
         }
@@ -130,7 +158,7 @@ class SearchHandler
         if (is_string($searchQuery)) {
             // basic string search on multiple fields
             $searchParameters = [
-                'q' => $searchQuery
+                'q' => self::escapeString($searchQuery)
             ];
             if ($queryBy !== '') {
                 $searchParameters['query_by'] = $queryBy;
@@ -138,9 +166,7 @@ class SearchHandler
         } else {
             // array of search queries
             // Search in all fields and filter by fields
-            // v26
-            //Ref: https://github.com/typesense/typesense/issues/561
-            //Ref: https://github.com/typesense/typesense/issues/696#issuecomment-1985042336
+            // Note that this currently only supports basic OR and string matching
             $searchParameters = [
                 'q' => '*'
             ];
@@ -150,9 +176,10 @@ class SearchHandler
 
             $filterBy = [];
             foreach ($searchQuery as $field => $value) {
-                //TODO escaping
-                //TODO operations
-                $filterBy[] = "{$field}:*{$value}*";
+                if (is_string($field) && in_array($field, $fieldsForSearch)) {
+                    //TODO operations
+                    $filterBy[] = $field . ":*" . self::escapeString($value) . "*";
+                }
             }
 
             if ($filterBy !== []) {
@@ -240,7 +267,11 @@ class SearchHandler
             // allow custom argument setting
             $searchRequests = array_merge($searchRequests, $searchScope);
             $commonSearchParams = [];
-            $client = static::getClient($searchOnlyApiKey, $searchScope);
+            $client = static::getSearchClient($searchOnlyApiKey, $searchScope);
+            if (is_null($client)) {
+                return [];
+            }
+
             $this->logQuery($searchRequests);
             $search = $client->multiSearch->perform($searchRequests, $commonSearchParams);
         }
@@ -328,7 +359,7 @@ class SearchHandler
         if (!$viaQueuedJob) {
             // Direct upsert .. UpsertJob process calls this.
             $success = 0;
-            $client = static::getClient();
+            $client = static::getManagementClient();
             foreach ($collections as $collection) {
                 try {
                     if ($client->collections[$collection->Name]->exists()) {
@@ -400,7 +431,7 @@ class SearchHandler
         }
 
         $success = 0;
-        $client = static::getClient();
+        $client = static::getManagementClient();
         foreach ($collectionNames as $collectionName) {
             try {
                 if ($client->collections[$collectionName]->exists()) {

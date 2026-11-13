@@ -39,7 +39,7 @@ class TestClientManager extends ClientManager
     {
         return $this->getClient(array_merge(
             [
-                'api_key' => $apiKey !== '' ? $apiKey : 'test-api-key',
+                'api_key' => $apiKey,
                 'nodes' => [
                     ['host' => 'typesense.test', 'port' => 443, 'protocol' => 'https'],
                 ],
