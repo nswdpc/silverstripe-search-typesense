@@ -51,11 +51,20 @@ class SearchHandler
 
     public static function escapeString(string $string): string
     {
-        if (str_contains($string, "`")) {
-            return "`" . str_replace("`", "\\`", $string) . "`";
-        }
+        return self::filterByEscape($string);
+    }
 
-        return $string;
+    /**
+     * Pulled from the SDK in 6.1.x
+     * Ref: https://github.com/typesense/typesense-php/blob/v6.1.0-RC2/src/FilterBy.php
+     */
+    private static function filterByEscape(string|int|float|bool $value): string
+    {
+        return match (true) {
+            is_string($value) => '`' . str_replace('`', '\\`', $value) . '`',
+            is_bool($value) => $value ? 'true' : 'false',
+            default => (string) $value,
+        };
     }
 
 
@@ -138,8 +147,8 @@ class SearchHandler
 
         // query by handling
         $queryBy = '';
+        $fieldsForSearch = $collection->getCollectionFieldsForQueryBy();
         if (!isset($searchScope['query_by'])) {
-            $fieldsForSearch = $collection->getCollectionFieldsForQueryBy();
             $queryBy = implode(",", self::escapeArray($fieldsForSearch));
         } elseif (is_string($searchScope['query_by'])) {
             $queryBy = trim($searchScope['query_by']);
@@ -149,7 +158,7 @@ class SearchHandler
         if (is_string($searchQuery)) {
             // basic string search on multiple fields
             $searchParameters = [
-                'q' => $searchQuery
+                'q' => self::escapeString($searchQuery)
             ];
             if ($queryBy !== '') {
                 $searchParameters['query_by'] = $queryBy;
@@ -157,9 +166,7 @@ class SearchHandler
         } else {
             // array of search queries
             // Search in all fields and filter by fields
-            // v26
-            //Ref: https://github.com/typesense/typesense/issues/561
-            //Ref: https://github.com/typesense/typesense/issues/696#issuecomment-1985042336
+            // Note that this currently only supports basic OR and string matching
             $searchParameters = [
                 'q' => '*'
             ];
@@ -169,9 +176,10 @@ class SearchHandler
 
             $filterBy = [];
             foreach ($searchQuery as $field => $value) {
-                //TODO escaping
-                //TODO operations
-                $filterBy[] = "{$field}:*{$value}*";
+                if(is_string($field) && in_array($field, $fieldsForSearch)) {
+                    //TODO operations
+                    $filterBy[] = $field . ":*" . self::escapeString($value) . "*";
+                }
             }
 
             if ($filterBy !== []) {
