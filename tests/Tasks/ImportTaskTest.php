@@ -43,12 +43,11 @@ class ImportTaskTest extends SapphireTest
     {
 
         $buffer = new BufferedOutput();
-        // @phpstan-ignore silverstan.injectable.useCreate
-        $output = new PolyOutput(PolyOutput::FORMAT_ANSI, wrappedOutput: $buffer);
+        $output = \SilverStripe\PolyExecution\PolyOutput::create(PolyOutput::FORMAT_ANSI, wrappedOutput: $buffer);
         $input = new ArrayInput([]);
         $input->setInteractive(false);
-        // @phpstan-ignore silverstan.injectable.useCreate
-        $task = new ImportTask();
+
+        $task = \NSWDPC\Search\Typesense\Tasks\ImportTask::create();
         $task->run($input, $output);
 
         return $buffer->fetch();

@@ -65,6 +65,7 @@ class ImportTask extends BuildTask
             );
             return Command::FAILURE;
         }
+
         try {
             $output->writeln(
                 _t(
@@ -100,6 +101,7 @@ class ImportTask extends BuildTask
             );
             return Command::FAILURE;
         }
+
         $importSuccesses = $collection->getImportSuccesses();
         $importErrors = $collection->getImportErrors();
         $importStats = $collection->getImportStats();
@@ -119,6 +121,7 @@ class ImportTask extends BuildTask
             $output->writeln("Success:" . count($importSuccesses));
             $output->writeln("Error:" . count($importErrors));
         }
+
         $docs = 0;
         $size = 0;
         $avgSize = 0;
@@ -127,9 +130,11 @@ class ImportTask extends BuildTask
             $docs += $importStat['docs'];
             $size += $importStat['sizeBytes'];
         }
+
         if ($docs > 0) {
             $avgSize = round($size / $docs);
         }
+
         $sizeMB = round($size / (1024 * 1024));
         $output->writeln("Stats: docs={$docs} sizeBytes={$size} sizeMB={$sizeMB} avgSizeBytes={$avgSize}");
 
