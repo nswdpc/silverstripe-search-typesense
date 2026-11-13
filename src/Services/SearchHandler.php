@@ -149,7 +149,7 @@ class SearchHandler
         $queryBy = '';
         $fieldsForSearch = $collection->getCollectionFieldsForQueryBy();
         if (!isset($searchScope['query_by'])) {
-            $queryBy = implode(",", self::escapeArray($fieldsForSearch));
+            $queryBy = implode(",", $fieldsForSearch);
         } elseif (is_string($searchScope['query_by'])) {
             $queryBy = trim($searchScope['query_by']);
         }
