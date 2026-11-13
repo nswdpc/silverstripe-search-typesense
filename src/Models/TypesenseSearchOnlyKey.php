@@ -8,6 +8,7 @@ use NSWDPC\Typesense\CMS\Models\TypesenseSearchPage;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Convert;
+use SilverStripe\Core\Validation\ValidationResult;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\TextField;
 use SilverStripe\ORM\DataObject;
@@ -116,7 +117,7 @@ class TypesenseSearchOnlyKey extends DataObject implements PermissionProvider
     /**
      * Validate record
      */
-    public function validate()
+    public function validate(): ValidationResult
     {
         $valid = parent::validate();
 
