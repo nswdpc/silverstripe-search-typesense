@@ -7,7 +7,6 @@ use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection;
 use NSWDPC\Search\Typesense\Services\ClientManager;
 use NSWDPC\Search\Typesense\Tests\Fixtures\TypesenseTestRecord;
 use NSWDPC\Search\Typesense\Tests\Mocks\TestClientManager;
-use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\ORM\DB;
