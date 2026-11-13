@@ -11,6 +11,9 @@ use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\ORM\DB;
+use SilverStripe\PolyExecution\PolyOutput;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 class ImportTaskTest extends SapphireTest
 {
@@ -38,10 +41,17 @@ class ImportTaskTest extends SapphireTest
 
     protected function runTask(array $getVars): string
     {
-        $request = new HTTPRequest('GET', '/', $getVars);
-        ob_start();
-        ImportTask::create()->run($request);
-        return ob_get_clean();
+
+        $buffer = new BufferedOutput();
+        // @phpstan-ignore silverstan.injectable.useCreate
+        $output = new PolyOutput(PolyOutput::FORMAT_ANSI, wrappedOutput: $buffer);
+        $input = new ArrayInput([]);
+        $input->setInteractive(false);
+        // @phpstan-ignore silverstan.injectable.useCreate
+        $task = new ImportTask();
+        $task->run($input, $output);
+
+        return $buffer->fetch();
     }
 
     public function testRunWithoutCollectionParameterShowsError(): void
