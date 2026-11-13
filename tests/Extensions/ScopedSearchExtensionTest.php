@@ -18,7 +18,7 @@ class ScopedSearchExtensionTest extends SapphireTest
     protected function setUp(): void
     {
         Environment::setEnv('TYPESENSE_SERVER', '');
-        Environment::setEnv('TYPESENSE_API_KEY', '');
+        Environment::setEnv('TYPESENSE_API_KEY', 'test-api-key');
         Environment::setEnv('TYPESENSE_SEARCH_KEY', 'test-search-key');
         parent::setUp();
         Injector::inst()->registerService(TestClientManager::create(), ClientManager::class);
