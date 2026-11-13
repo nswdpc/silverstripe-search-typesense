@@ -176,7 +176,7 @@ class SearchHandler
 
             $filterBy = [];
             foreach ($searchQuery as $field => $value) {
-                if(is_string($field) && in_array($field, $fieldsForSearch)) {
+                if (is_string($field) && in_array($field, $fieldsForSearch)) {
                     //TODO operations
                     $filterBy[] = $field . ":*" . self::escapeString($value) . "*";
                 }
