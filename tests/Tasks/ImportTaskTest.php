@@ -7,10 +7,12 @@ use NSWDPC\Search\Typesense\Models\TypesenseSearchCollection;
 use NSWDPC\Search\Typesense\Services\ClientManager;
 use NSWDPC\Search\Typesense\Tests\Fixtures\TypesenseTestRecord;
 use NSWDPC\Search\Typesense\Tests\Mocks\TestClientManager;
-use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\ORM\DB;
+use SilverStripe\PolyExecution\PolyOutput;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 class ImportTaskTest extends SapphireTest
 {
@@ -38,10 +40,16 @@ class ImportTaskTest extends SapphireTest
 
     protected function runTask(array $getVars): string
     {
-        $request = new HTTPRequest('GET', '/', $getVars);
-        ob_start();
-        ImportTask::create()->run($request);
-        return ob_get_clean();
+
+        $buffer = new BufferedOutput();
+        $output = \SilverStripe\PolyExecution\PolyOutput::create(PolyOutput::FORMAT_ANSI, wrappedOutput: $buffer);
+        $input = new ArrayInput([]);
+        $input->setInteractive(false);
+
+        $task = \NSWDPC\Search\Typesense\Tasks\ImportTask::create();
+        $task->run($input, $output);
+
+        return $buffer->fetch();
     }
 
     public function testRunWithoutCollectionParameterShowsError(): void

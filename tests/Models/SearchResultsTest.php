@@ -4,13 +4,12 @@ namespace NSWDPC\Search\Typesense\Tests\Models;
 
 use NSWDPC\Search\Typesense\Models\SearchResults;
 use SilverStripe\Dev\SapphireTest;
-use SilverStripe\ORM\ArrayList;
 
 class SearchResultsTest extends SapphireTest
 {
     public function testGetLimitItemsIsAlwaysFalse(): void
     {
-        $results = SearchResults::create(ArrayList::create());
+        $results = SearchResults::create(\SilverStripe\Model\List\ArrayList::create());
         $this->assertFalse($results->getLimitItems());
         $results->setLimitItems(true);
         $this->assertFalse($results->getLimitItems());
@@ -18,7 +17,7 @@ class SearchResultsTest extends SapphireTest
 
     public function testResultData(): void
     {
-        $results = SearchResults::create(ArrayList::create());
+        $results = SearchResults::create(\SilverStripe\Model\List\ArrayList::create());
         $results->setResultData(['found' => 5, 'hits' => ['a', 'b'], 'search_time_ms' => 2], ['hits']);
 
         $resultData = $results->getResultData();
